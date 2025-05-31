@@ -15,8 +15,3 @@ class Doctor(Base):
 
     patients = relationship("Patient", back_populates="doctor")
     samples = relationship("Sample", back_populates="doctor")
-
-    @property
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
-    
