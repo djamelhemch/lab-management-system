@@ -3,8 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\DoctorController;
-
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AnalysisController;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -15,3 +15,4 @@ Route::resource('doctors', DoctorController::class)->only(['index', 'create', 's
 // web.php
 Route::resource('samples', SampleController::class);
 Route::resource('reports', ReportController::class);
+Route::resource('analyses', AnalysisController::class);

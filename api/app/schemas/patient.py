@@ -21,6 +21,22 @@ class PatientBase(BaseModel):
 class PatientCreate(PatientBase):
     pass
 
+class PatientUpdate(PatientBase):  
+    file_number: Optional[str] = None  
+    first_name: Optional[str] = None  
+    last_name: Optional[str] = None  
+    dob: Optional[date] = None  
+    gender: Optional[str] = None  
+    address: Optional[str] = None  
+    phone: Optional[str] = None  
+    email: Optional[str] = None  
+    blood_type: Optional[str] = None  
+    weight: Optional[float] = None  
+    allergies: Optional[str] = None  
+    medical_history: Optional[str] = None  
+    chronic_conditions: Optional[str] = None  
+    doctor_id: Optional[int] = None
+
 class PatientRead(BaseModel):
     id: int
     file_number: str
@@ -37,7 +53,9 @@ class PatientRead(BaseModel):
     medical_history: str
     chronic_conditions: str
     created_at: datetime  # Read only
-    doctor_id: Optional[int]  # Read only
+    doctor_id: Optional[int] = None
+    doctor_name: Optional[str]  = None
+
     class Config:
         orm_mode = True
         json_encoders = {
