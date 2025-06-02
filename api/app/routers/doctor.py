@@ -24,3 +24,5 @@ def get_doctor_route(doctor_id: int, db: Session = Depends(get_db)):
     if not db_doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
     return db_doctor
+
+

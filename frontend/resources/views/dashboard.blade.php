@@ -3,51 +3,79 @@
 @section('title', 'Dashboard')
 
 @section('content')
+
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="stat-card border-l-8 border-blue-500">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Total Patients</p>
-                <p class="text-3xl font-extrabold text-blue-700">{{ $patientsCount }}</p>
+    {{-- Total Patients --}}
+    <a href="{{ route('patients.index') }}" class="block">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:scale-105 duration-300 border-l-8 border-blue-500">
+            <div class="p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Patients</p>
+                    <p class="text-3xl font-extrabold text-blue-700">{{ $patientsCount }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shadow-inner">
+                    <i class="fas fa-users text-blue-600 text-2xl"></i>
+                </div>
             </div>
-            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center shadow">
-                <i class="fas fa-users text-blue-600 text-2xl"></i>
-            </div>
-        </div>
-    </div>
-    <div class="stat-card border-l-8 border-green-500">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Doctors</p>
-                <p class="text-3xl font-extrabold text-green-700">{{ $doctorsCount }}</p>
-            </div>
-            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center shadow">
-                <i class="fas fa-user-md text-green-600 text-2xl"></i>
+            <div class="bg-blue-50 text-blue-700 text-sm py-2 px-4">
+                <span class="font-medium">Updated:</span> Just now
             </div>
         </div>
-    </div>
-    <div class="stat-card border-l-8 border-yellow-500">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Samples Today</p>
-                <p class="text-3xl font-extrabold text-yellow-700">{{ $samplesToday }}</p>
+    </a>
+
+    {{-- Doctors --}}
+    <a href="{{ route('doctors.index') }}" class="block">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:scale-105 duration-300 border-l-8 border-green-500">
+            <div class="p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Doctors</p>
+                    <p class="text-3xl font-extrabold text-green-700">{{ $doctorsCount }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center shadow-inner">
+                    <i class="fas fa-user-md text-green-600 text-2xl"></i>
+                </div>
             </div>
-            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center shadow">
-                <i class="fas fa-vial text-yellow-600 text-2xl"></i>
-            </div>
-        </div>
-    </div>
-    <div class="stat-card border-l-8 border-red-500">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Pending Reports</p>
-                <p class="text-3xl font-extrabold text-red-700">{{ $pendingReports }}</p>
-            </div>
-            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center shadow">
-                <i class="fas fa-file-medical text-red-600 text-2xl"></i>
+            <div class="bg-green-50 text-green-700 text-sm py-2 px-4">
+                <span class="font-medium">Updated:</span> Just now
             </div>
         </div>
-    </div>
+    </a>
+
+    {{-- Samples Today --}}
+    <a href="{{ route('samples.index') }}" class="block">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:scale-105 duration-300 border-l-8 border-yellow-500">
+            <div class="p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Samples Today</p>
+                    <p class="text-3xl font-extrabold text-yellow-700">{{ $samplesToday }}</p>
+                </div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center shadow-inner">
+                    <i class="fas fa-vial text-yellow-600 text-2xl"></i>
+                </div>
+            </div>
+            <div class="bg-yellow-50 text-yellow-700 text-sm py-2 px-4">
+                <span class="font-medium">Updated:</span> Just now
+            </div>
+        </div>
+    </a>
+
+    {{-- Pending Reports --}}
+    <a href="{{ route('reports.index') }}" class="block">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:scale-105 duration-300 border-l-8 border-red-500">
+            <div class="p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pending Reports</p>
+                    <p class="text-3xl font-extrabold text-red-700">{{ $pendingReports }}</p>
+                </div>
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shadow-inner">
+                    <i class="fas fa-file-medical text-red-600 text-2xl"></i>
+                </div>
+            </div>
+            <div class="bg-red-50 text-red-700 text-sm py-2 px-4">
+                <span class="font-medium">Updated:</span> Just now
+            </div>
+        </div>
+    </a>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

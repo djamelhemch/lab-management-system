@@ -36,3 +36,7 @@ class SampleRead(SampleBase):
     class Config:
         orm_mode = True
         use_enum_values = True
+        
+class SampleStatusUpdate(BaseModel):
+    status: SampleStatus
+    rejection_reason: Optional[str] = None
