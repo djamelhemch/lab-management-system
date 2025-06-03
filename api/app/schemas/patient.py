@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import date, datetime
 
 class PatientBase(BaseModel):
-    file_number: Optional[str]
+    file_number: Optional[str] = None
     first_name: Optional[str]
     last_name: Optional[str]
     dob: Optional[date]
@@ -16,7 +16,7 @@ class PatientBase(BaseModel):
     allergies: Optional[str]
     medical_history: Optional[str]
     chronic_conditions: Optional[str]
-
+    doctor_id: Optional[int] = None  # Foreign key to Doctor
 
 class PatientCreate(PatientBase):
     pass
@@ -53,9 +53,20 @@ class PatientRead(BaseModel):
     medical_history: str
     chronic_conditions: str
     created_at: datetime  # Read only
+    age: Optional[int] = None
+    
     doctor_id: Optional[int] = None
     doctor_name: Optional[str]  = None
 
+class PatientListItem(BaseModel):  
+    id: int  
+    full_name: str  
+    file_number: str
+    blood_type: str
+    phone: str
+    dob: date
+    age: Optional[int] = None  # Calculated field, not stored in DB
+    
     class Config:
         orm_mode = True
         json_encoders = {

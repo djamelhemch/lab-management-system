@@ -1,5 +1,5 @@
 # crud/analysis.py
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from app.models.analysis import AnalysisCatalog  # Import the updated model
 from app.schemas.analysis import AnalysisCreate, AnalysisUpdate
@@ -20,18 +20,21 @@ class AnalysisCRUD:
         return db.query(AnalysisCatalog).filter(AnalysisCatalog.code == code).first()
 
     def get_all(self, db: Session, skip: int = 0, limit: int = 100,
-                category: Optional[str] = None, search: Optional[str] = None) -> List[AnalysisCatalog]:
-        query = db.query(AnalysisCatalog)  # Removed is_active filter
+                category_analyse_id: Optional[int] = None, search: Optional[str] = None) -> List[AnalysisCatalog]:
+        query = db.query(AnalysisCatalog).options(
+            joinedload(AnalysisCatalog.category_analyse),
+            joinedload(AnalysisCatalog.unit),
+            joinedload(AnalysisCatalog.sample_type)
+        )
 
-        if category:
-            query = query.filter(AnalysisCatalog.category == category)
+        if category_analyse_id:
+            query = query.filter(AnalysisCatalog.category_analyse_id == category_analyse_id)
 
         if search:
             query = query.filter(
                 or_(
                     AnalysisCatalog.name.ilike(f"%{search}%"),
-                    AnalysisCatalog.code.ilike(f"%{search}%"),
-                    AnalysisCatalog.category.ilike(f"%{search}%")
+                    AnalysisCatalog.code.ilike(f"%{search}%")
                 )
             )
 
@@ -50,12 +53,9 @@ class AnalysisCRUD:
     def delete(self, db: Session, analysis_id: int) -> bool:
         db_analysis = self.get(db, analysis_id)
         if db_analysis:
-            db.delete(db_analysis)  # Hard delete instead of soft delete
+            db.delete(db_analysis)
             db.commit()
             return True
         return False
-
-    def get_categories(self, db: Session) -> List[str]:
-        return [cat[0] for cat in db.query(AnalysisCatalog.category).distinct().all() if cat[0]]
 
 analysis_crud = AnalysisCRUD()

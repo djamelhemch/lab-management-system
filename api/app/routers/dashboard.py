@@ -15,21 +15,34 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/metrics")  
 def get_dashboard_metrics(db: Session = Depends(get_db)):  
+    now = datetime.now(timezone.utc)  
     patients_count = db.query(func.count(Patient.id)).scalar()  
     doctors_count = db.query(func.count(Doctor.id)).scalar()  
     samples_today = db.query(func.count()).select_from(Sample).filter(  
         func.date(Sample.collection_date) == date.today()  
     ).scalar()  
-
-    # If you have a Report model, use this:  
-    # pending_reports = db.query(func.count(Report.id)).filter(Report.status == 'pending').scalar()  
     pending_reports = 0  # Placeholder  
+
+    # Get last created/updated times with null checks  
+    last_patient = db.query(Patient).order_by(desc(Patient.created_at)).first()  
+
+    # Handle doctors that might not have created_at yet  
+    try:  
+        last_doctor = db.query(Doctor).filter(Doctor.created_at.isnot(None)).order_by(desc(Doctor.created_at)).first()  
+    except:  
+        last_doctor = None  
+
+    last_sample = db.query(Sample).order_by(desc(Sample.collection_date)).first()  
 
     return {  
         "patients_count": patients_count,  
         "doctors_count": doctors_count,  
         "samples_today": samples_today,  
         "pending_reports": pending_reports,  
+        "last_patient": last_patient.created_at.isoformat() if last_patient else None,  
+        "last_doctor": last_doctor.created_at.isoformat() if last_doctor and hasattr(last_doctor, 'created_at') else None,  
+        "last_sample": last_sample.collection_date.isoformat() if last_sample else None,  
+        "now": now.isoformat(),  
     }
 
 @router.get("/recent-activities")  
@@ -46,10 +59,10 @@ def get_recent_activities(db: Session = Depends(get_db)) -> List[Dict[str, Any]]
             time_str = f"{time_diff.days}d ago"  
 
         activities.append({  
-            "description": f"Sample collected for patient {sample.patient.first_name} {sample.patient.last_name}",  
-            "time": time_str,  
-            "color": "blue"  
-        })  
+                "description": f"Sample collected for patient {sample.patient.first_name} {sample.patient.last_name}",  
+                "time": humanize_time(sample.collection_date),  
+                "color": "blue"  
+            })
 
     # Get recent patients (last 3)  
     recent_patients = db.query(Patient).order_by(desc(Patient.created_at)).limit(3).all()  
@@ -104,16 +117,15 @@ def get_recent_patients(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
 
 
 
-
-def humanize_time(dt):  
-    now = datetime.now(timezone.utc)  
-    diff = now - dt  
-    if diff.days > 0:  
-        return f"{diff.days}d ago"  
-    hours = diff.seconds // 3600  
-    if hours > 0:  
-        return f"{hours}h ago"  
-    minutes = diff.seconds // 60  
-    if minutes > 0:  
-        return f"{minutes}m ago"  
+def humanize_time(dt):
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+    if diff.days > 0:
+        return f"{diff.days}d ago"
+    hours = diff.seconds // 3600
+    if hours > 0:
+        return f"{hours}h ago"
+    minutes = diff.seconds // 60
+    if minutes > 0:
+        return f"{minutes}m ago"
     return "Just now"

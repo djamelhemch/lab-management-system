@@ -11,7 +11,7 @@ class Patient(Base):
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
     dob = Column(Date, nullable=True)
-    gender = Column(Enum('M', 'F'), nullable=True)
+    gender = Column(Enum('M', 'F', 'H'), nullable=True)
     address = Column(Text, nullable=True)
     phone = Column(String(20), nullable=True)
     email = Column(String(100), nullable=True)

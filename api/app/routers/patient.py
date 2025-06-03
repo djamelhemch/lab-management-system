@@ -2,20 +2,48 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session,joinedload
 from sqlalchemy import func, or_  
 from typing import List 
-
+from pydantic import ValidationError
+from app.schemas.patient import PatientBase
 from app.database import SessionLocal, get_db
 from app.schemas.patient import PatientCreate, PatientRead, PatientUpdate
 from app.crud import patient as crud
 from app.models.patient import Patient  # Import your ORM Patient model
-
+from datetime import datetime
+from sqlalchemy import desc
+from datetime import date
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
+def calculate_age(date_of_birth):  
+    """Calculate age from date of birth."""
+    today = date.today()  
+    age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))  
+    return age
 
+@router.post("/", response_model=PatientRead)  
+def create_patient_route(patient: PatientBase, db: Session = Depends(get_db)):  
+    try:  
+        # Get the last file_number  
+        last_patient = db.query(Patient).filter(Patient.file_number != None).order_by(desc(Patient.id)).first()  
+        if last_patient and last_patient.file_number:  
+            # Extract the numeric part and increment  
+            last_num = int(last_patient.file_number[5:])  
+            next_num = last_num + 1  
+        else:  
+            next_num = 1  
+        # Format: PYYYYNNN (e.g., P2025002)  
+        year = datetime.now().year  
+        file_number = f"P{year}{str(next_num).zfill(3)}"  
 
-@router.post("/", response_model=PatientRead)
-def create_patient_route(patient: PatientCreate, db: Session = Depends(get_db)):
-    return crud.create_patient(db, patient)
+        # Create a dict from patient, add file_number  
+        patient_data = patient.dict()  
+        patient_data['file_number'] = file_number  
+
+        result = crud.create_patient(db, PatientCreate(**patient_data))  
+        return result  
+    except Exception as e:  
+        print("Other error:", str(e))  
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/", response_model=List[PatientRead])  
 def list_patients_route(  
@@ -41,15 +69,22 @@ def list_patients_route(
         data = p.__dict__.copy()  
         # Add doctor_name using the relationship  
         data['doctor_name'] = p.doctor.full_name if p.doctor else None  
+        data = p.__dict__.copy()  
+        data['age'] = calculate_age(p.dob)  
         result.append(data)  
     return result
 
-@router.get("/{patient_id}", response_model=PatientRead)
-def get_patient_route(patient_id: int, db: Session = Depends(get_db)):
-    db_patient = crud.get_patient(db, patient_id)
-    if not db_patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
-    return db_patient
+@router.get("/{patient_id}", response_model=PatientRead)  
+def get_patient_route(patient_id: int, db: Session = Depends(get_db)):  
+    db_patient = crud.get_patient(db, patient_id)  
+    if not db_patient:  
+        raise HTTPException(status_code=404, detail="Patient not found")  
+
+    # Convert to dictionary and add age  
+    patient_data = db_patient.__dict__.copy()  
+    patient_data['age'] = calculate_age(db_patient.dob)  
+
+    return PatientRead(**patient_data)
 
 @router.put("/{patient_id}", response_model=PatientRead)  
 def update_patient_route(  
@@ -70,3 +105,5 @@ def delete_patient_route(patient_id: int, db: Session = Depends(get_db)):
     db.delete(db_patient)  
     db.commit()  
     return {"detail": "Patient deleted successfully"}  # Return a success message
+
+
