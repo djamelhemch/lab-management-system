@@ -23,13 +23,13 @@
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select name="category" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                <option value="">All Categories</option>
-                @foreach($categories as $category)
-                    <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
-                        {{ $category }}
-                    </option>
-                @endforeach
+            <select name="category_analyse_id" class="...">  
+                <option value="">All Categories</option>  
+                @foreach($categories as $category)  
+                    <option value="{{ $category['id'] }}" {{ request('category_analyse_id') == $category['id'] ? 'selected' : '' }}>  
+                        {{ $category['name'] }}  
+                    </option>  
+                @endforeach  
             </select>
         </div>
         
@@ -81,9 +81,9 @@
                                 {{ $analysis['name'] }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                @if($analysis['category'])
+                                @if($analysis['category_analyse'])
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        {{ $analysis['category'] }}
+                                        {{ $analysis['category_analyse']['name']  ?? 'N/A' }}
                                     </span>
                                 @else
                                     <span class="text-gray-400">N/A</span>
@@ -93,10 +93,10 @@
                                 {{ number_format($analysis['price'], 2) }} DZD
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $analysis['unit'] ?? 'N/A' }}
+                                {{ $analysis['unit']['name'] ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $analysis['sample_type'] ?? 'N/A' }}
+                                {{ $analysis['sample_type']['name'] ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($analysis['is_active'] ?? true)

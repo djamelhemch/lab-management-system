@@ -63,4 +63,69 @@ class DoctorController extends Controller
         }
     }
 
+    public function update(Request $request, $id)  
+    {  
+        // Manually coerce checkbox value to a boolean  
+        $request->merge([  
+            'is_prescriber' => $request->has('is_prescriber') ? true : false  
+        ]);  
+    
+        $validator = Validator::make($request->all(), [  
+            'full_name' => 'required|string|max:100',  
+            'specialty' => 'nullable|string|max:100',  
+            'phone' => 'nullable|string|max:20',  
+            'email' => 'nullable|email|max:100',  
+            'address' => 'nullable|string',  
+            'is_prescriber' => 'boolean',  
+        ]);  
+    
+        if ($validator->fails()) {  
+            return redirect()  
+                ->back()  
+                ->withErrors($validator)  
+                ->withInput();  
+        }  
+    
+        $data = $request->only(['full_name', 'specialty', 'phone', 'email', 'address', 'is_prescriber']);  
+    
+        $response = $this->api->put("doctors/{$id}", $data);  
+    
+        if ($response->successful()) {  
+            return redirect()->route('doctors.index')->with('success', 'Doctor updated successfully.');  
+        } else {  
+            return redirect()->back()->with('error', 'Failed to update doctor.')->withInput();  
+        }  
+    }
+
+    public function edit($id)  
+    {  
+        $doctorResponse = $this->api->get("doctors/{$id}");  
+    
+        if (!$doctorResponse->successful()) {  
+            return redirect()->route('doctors.index')->with('error', 'Doctor not found.');  
+        }  
+    
+        $doctor = $doctorResponse->json();  
+    
+        return view('doctors.edit', compact('doctor'));  
+    }
+
+    public function show($id)  
+    {  
+        // Get doctor details  
+        $doctorResponse = $this->api->get("doctors/{$id}");  
+          
+        if (!$doctorResponse->successful()) {  
+            return redirect()->route('doctors.index')->with('error', 'Doctor not found.');  
+        }  
+          
+        $doctor = $doctorResponse->json();  
+          
+        // Get patients for this doctor  
+        $patientsResponse = $this->api->get("doctors/{$id}/patients");  
+        $patients = $patientsResponse->successful() ? $patientsResponse->json() : [];  
+          
+        return view('doctors.show', compact('doctor', 'patients'));  
+    }
+
 }

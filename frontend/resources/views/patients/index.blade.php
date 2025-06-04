@@ -30,6 +30,7 @@
                     <th class="px-4 py-3 text-left">Dossier N°</th>
                     <th class="px-4 py-3 text-left">Nom Prénom</th>
                     <th class="px-4 py-3 text-left">Sexe</th>
+                    <th class="px-4 py-3 text-left">Age</th>
                     <th class="px-4 py-3 text-left">Médecin Traitant</th>
                     <th class="px-4 py-3 text-left">Actions</th>
                 </tr>
@@ -40,6 +41,7 @@
                         <td class="px-4 py-3">{{ $p['file_number'] }}</td>
                         <td class="px-4 py-3">{{ $p['first_name'] }} {{ $p['last_name'] }}</td>
                         <td class="px-4 py-3">{{ $p['gender'] }}</td>
+                        <td class="px-4 py-3">{{ $p['age'] }} ans</td>
                         <td class="px-4 py-3">
                             {{ $p['doctor_name'] ?? 'N/A' }}
                         </td>

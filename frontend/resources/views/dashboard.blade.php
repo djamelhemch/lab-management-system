@@ -11,14 +11,14 @@
             <div class="p-4 flex items-center justify-between">
                 <div>
                     <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Patients</p>
-                    <p class="text-3xl font-extrabold text-blue-700">{{ $patientsCount }}</p>
+                   <p class="text-3xl font-extrabold text-blue-700" id="patientsCount">{{ $patientsCount }}</p>
                 </div>
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shadow-inner">
                     <i class="fas fa-users text-blue-600 text-2xl"></i>
                 </div>
             </div>
-            <div class="bg-blue-50 text-blue-700 text-sm py-2 px-4">
-                <span class="font-medium">Updated:</span> Just now
+            <div class="bg-blue-50 text-blue-700 text-sm py-2 px-4">  
+                <span class="font-medium">Updated:</span> <span id="patientsUpdated">Just now</span>  
             </div>
         </div>
     </a>
@@ -29,14 +29,14 @@
             <div class="p-4 flex items-center justify-between">
                 <div>
                     <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Doctors</p>
-                    <p class="text-3xl font-extrabold text-green-700">{{ $doctorsCount }}</p>
+                    <p class="text-3xl font-extrabold text-green-700" id="doctorsCount">{{ $doctorsCount }}</p>
                 </div>
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center shadow-inner">
                     <i class="fas fa-user-md text-green-600 text-2xl"></i>
                 </div>
             </div>
-            <div class="bg-green-50 text-green-700 text-sm py-2 px-4">
-                <span class="font-medium">Updated:</span> Just now
+            <div class="bg-green-50 text-green-700 text-sm py-2 px-4">    
+                <span class="font-medium">Updated:</span> <span id="doctorsUpdated">Just now</span>    
             </div>
         </div>
     </a>
@@ -47,14 +47,14 @@
             <div class="p-4 flex items-center justify-between">
                 <div>
                     <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Samples Today</p>
-                    <p class="text-3xl font-extrabold text-yellow-700">{{ $samplesToday }}</p>
+                    <p class="text-3xl font-extrabold text-yellow-700" id="samplesToday">{{ $samplesToday }}</p>
                 </div>
                 <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center shadow-inner">
                     <i class="fas fa-vial text-yellow-600 text-2xl"></i>
                 </div>
             </div>
-            <div class="bg-yellow-50 text-yellow-700 text-sm py-2 px-4">
-                <span class="font-medium">Updated:</span> Just now
+            <div class="bg-blue-50 text-blue-700 text-sm py-2 px-4">  
+                <span class="font-medium">Updated:</span> <span id="samplesUpdated">Just now</span>  
             </div>
         </div>
     </a>
@@ -65,14 +65,14 @@
             <div class="p-4 flex items-center justify-between">
                 <div>
                     <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pending Reports</p>
-                    <p class="text-3xl font-extrabold text-red-700">{{ $pendingReports }}</p>
+                    <p class="text-3xl font-extrabold text-red-700" id="pendingReports">{{ $pendingReports }}</p>
                 </div>
                 <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shadow-inner">
                     <i class="fas fa-file-medical text-red-600 text-2xl"></i>
                 </div>
             </div>
-            <div class="bg-red-50 text-red-700 text-sm py-2 px-4">
-                <span class="font-medium">Updated:</span> Just now
+            <div class="bg-blue-50 text-blue-700 text-sm py-2 px-4">  
+                <span class="font-medium">Updated:</span> <span id="pendingReportsUpdated">Just now</span>  
             </div>
         </div>
     </a>
@@ -150,3 +150,42 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')  
+<script>  
+function fetchDashboardMetrics() {  
+    fetch('/api/dashboard/metrics')  
+        .then(response => response.json())  
+        .then(data => {  
+            document.getElementById('patientsCount').textContent = data.patients_count;  
+            document.getElementById('doctorsCount').textContent = data.doctors_count;  
+            document.getElementById('samplesToday').textContent = data.samples_today;  
+            document.getElementById('pendingReports').textContent = data.pending_reports;  
+              
+            // Update "Updated" times with better formatting  
+            const formatTime = (dateString) => {  
+                if (!dateString) return 'N/A';  
+                const date = new Date(dateString);  
+                return date.toLocaleString('en-US', {  
+                    month: 'short',  
+                    day: 'numeric',  
+                    hour: '2-digit',  
+                    minute: '2-digit'  
+                });  
+            };  
+              
+            document.getElementById('patientsUpdated').textContent = formatTime(data.last_patient);  
+            document.getElementById('doctorsUpdated').textContent = formatTime(data.last_doctor);  
+            document.getElementById('samplesUpdated').textContent = formatTime(data.last_sample);  
+        })  
+        .catch(error => {  
+            console.error('Error fetching dashboard metrics:', error);  
+        });  
+}  
+  
+// Poll every 30 seconds  
+setInterval(fetchDashboardMetrics, 30000);  
+// Initial load  
+document.addEventListener('DOMContentLoaded', fetchDashboardMetrics);  
+</script>  
+@endpush

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\ApiService;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 
 class PatientController extends Controller
 {
@@ -33,16 +34,55 @@ class PatientController extends Controller
         return view('patients.create', compact('doctors'));  
     }
 
-    public function store(Request $request)
-    {
-        $this->api->post('patients', $request->except('_token'));
-        return redirect()->route('patients.index');
+    public function store(Request $request)  
+    {  
+        $data = $request->except('_token');  
+
+        // Ensure doctor_id is sent as an integer or null
+       $data = $request->except('_token');  
+        if (isset($data['doctor_id'])) {  
+            $data['doctor_id'] = (int) $data['doctor_id'];  
+        } else {  
+            $data['doctor_id'] = null;  
+        }
+        // Send to API
+        $response = $this->api->post('patients', $data);
+
+        // Logging
+        Log::info('API Response Status: ' . $response->status());  
+        Log::info('API Response Body: ' . $response->body());  
+        Log::info('Request data sent to API:', $data);
+
+        if ($response->failed()) {  
+            Log::error('Failed to create patient', [  
+                'status' => $response->status(),  
+                'body' => $response->body(),  
+            ]);  
+            return back()->withErrors(['error' => 'Failed to create patient']);  
+        }  
+
+        return redirect()->route('patients.index');  
     }
 
     public function show($id)
     {
         $response = $this->api->get("patients/{$id}");
         $patient = $response->successful() ? $response->json() : null;
+
+        $doctorFullName = null;
+        if ($patient && isset($patient['doctor_id'])) {
+            $doctorResponse = $this->api->get("doctors/{$patient['doctor_id']}");
+            if ($doctorResponse->successful()) {
+                $doctor = $doctorResponse->json();
+                $doctorFullName = $doctor['full_name'] ?? null;
+            }
+        }
+
+        // Inject into the patient array for convenience
+        if ($patient) {
+            $patient['doctor_full_name'] = $doctorFullName;
+        }
+
         return view('patients.show', compact('patient'));
     }
 

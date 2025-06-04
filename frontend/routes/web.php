@@ -10,11 +10,16 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 
 Route::resource('patients', PatientController::class);
-Route::resource('doctors', DoctorController::class)->only(['index', 'create', 'store']);
+Route::resource('doctors', DoctorController::class)->only(['index', 'create', 'store','show', 'edit', 'update']);
 
 
 Route::resource('reports', ReportController::class);
 Route::resource('analyses', AnalysisController::class);
+
+Route::post('/analyses/category-analyse', [AnalysisController::class, 'storeCategory']);  
+Route::post('/analyses/sample-types', [AnalysisController::class, 'storeSampleType']);  
+Route::post('/analyses/units', [AnalysisController::class, 'storeUnit']);
+
 
 Route::resource('samples', SamplesController::class);
 Route::put('samples/{id}/status', [SamplesController::class, 'updateStatus'])->name('samples.updateStatus');

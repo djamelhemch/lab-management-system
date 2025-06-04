@@ -2,40 +2,41 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">Add New Patient</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Ajouter un Patient</h2>
     <form method="POST" action="{{ route('patients.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @csrf
 
-        <input name="first_name" placeholder="First Name" required class="input" />
-        <input name="last_name" placeholder="Last Name" required class="input" />
+        <input name="first_name" placeholder="Prénom" required class="input" />
+        <input name="last_name" placeholder="Nom" required class="input" />
         <input type="date" name="dob" required class="input" />
         <select name="gender" class="input" required>
-            <option value="">Gender</option>
-            <option value="M">Male</option>
-            <option value="F">Female</option>
+            <option value="">Sexe</option>
+            <option value="H">Homme</option>
+            <option value="F">Femme</option>
         </select>
-        <input name="phone" placeholder="Phone" class="input" />
+        <input name="phone" placeholder="Tél" class="input" />
         <input name="email" placeholder="Email" class="input" />
         <input name="address" placeholder="Address" class="input" />
-        <input name="blood_type" placeholder="Blood Type" class="input" />
+        <input name="blood_type" placeholder="Groupe Sanguin" class="input" />
         <input name="weight" type="number" step="0.1" placeholder="Weight (kg)" class="input" />
         <textarea name="allergies" placeholder="Allergies" class="input"></textarea>
-        <textarea name="medical_history" placeholder="Medical History" class="input"></textarea>
-        <textarea name="chronic_conditions" placeholder="Chronic Conditions" class="input"></textarea>
+        <textarea name="medical_history" placeholder="Historique Médical" class="input"></textarea>
+        <textarea name="chronic_conditions" placeholder="Maladies Chroniques" class="input"></textarea>
 
         <div class="md:col-span-2">
-            <label class="block mb-1 font-semibold text-gray-700">Doctor</label>
-            <select name="doctor_id" class="input" x-data x-init="$el._choices = new Choices($el, {searchEnabled: true, itemSelectText: ''})">
-                <option value="">Select Doctor</option>
+            <label class="block mb-1 font-semibold text-gray-700">Médecin Traitant</label>
+            <select name="doctor_id" class="input">
                 @foreach($doctors as $doctor)
-                    <option value="{{ $doctor['id'] }}">{{ $doctor['full_name'] }} ({{ $doctor['specialty'] ?? 'N/A' }})</option>
+                    <option value="{{ $doctor['id'] }}" {{ old('doctor_id') == $doctor['id'] ? 'selected' : '' }}>
+                        {{ $doctor['full_name'] }}
+                    </option>
                 @endforeach
             </select>
         </div>
 
         <div class="md:col-span-2">
             <button type="submit" class="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 font-semibold transition">
-                Save Patient
+                Créer Patient
             </button>
         </div>
     </form>
