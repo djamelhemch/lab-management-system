@@ -39,15 +39,16 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <select name="category" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Select Category</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category }}" {{ old('category', $analysis['category']) == $category ? 'selected' : '' }}>
-                                    {{ $category }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('category')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
+                        <select name="category_analyse_id" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">  
+                            <option value="">Select Category</option>  
+                            @foreach($categories as $category)  
+                                <option value="{{ $category['id'] }}"  
+                                    {{ old('category_analyse_id', $analysis['category_analyse']['id'] ?? null) == $category['id'] ? 'selected' : '' }}>  
+                                    {{ $category['name'] }}  
+                                </option>  
+                            @endforeach  
+                        </select>  
+                        @error('category_analyse_id')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
                     </div>
                     
                     <div>
@@ -64,15 +65,16 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                        <select name="unit" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Select Unit</option>
-                            <option value="mg/dL" {{ old('unit', $analysis['unit']) == 'mg/dL' ? 'selected' : '' }}>mg/dL</option>
-                            <option value="%" {{ old('unit', $analysis['unit']) == '%' ? 'selected' : '' }}>%</option>
-                            <option value="cells/μL" {{ old('unit', $analysis['unit']) == 'cells/μL' ? 'selected' : '' }}>cells/μL</option>
-                             <option value="IU/L" {{ old('unit', $analysis['unit']) == 'IU/L' ? 'selected' : '' }}>IU/L</option>
-                            <option value="g/L" {{ old('unit', $analysis['unit']) == 'g/L' ? 'selected' : '' }}>g/L</option>
-                        </select>
-                        @error('unit')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
+                        <select name="unit_id" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Unit</option>  
+                            @foreach($units as $unit)  
+                                <option value="{{ $unit['id'] }}"  
+                                    {{ old('unit_id', $analysis['unit']['id'] ?? null) == $unit['id'] ? 'selected' : '' }}>  
+                                    {{ $unit['name'] }}  
+                                </option>  
+                            @endforeach  
+                        </select>  
+                        @error('unit_id')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
                     </div>
                 </div>
             </div>
@@ -110,18 +112,16 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Sample Type</label>
-                    <select name="sample_type" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Select Sample Type</option>
-                        <option value="Blood" {{ old('sample_type', $analysis['sample_type']) == 'Blood' ? 'selected' : '' }}>Blood</option>
-                        <option value="Urine" {{ old('sample_type', $analysis['sample_type']) == 'Urine' ? 'selected' : '' }}>Urine</option>
-                        <option value="Serum" {{ old('sample_type', $analysis['sample_type']) == 'Serum' ? 'selected' : '' }}>Serum</option>
-                        <option value="Plasma" {{ old('sample_type', $analysis['sample_type']) == 'Plasma' ? 'selected' : '' }}>Plasma</option>
-                        <option value="CSF" {{ old('sample_type', $analysis['sample_type']) == 'CSF' ? 'selected' : '' }}>CSF</option>
-                        <option value="Stool" {{ old('sample_type', $analysis['sample_type']) == 'Stool' ? 'selected' : '' }}>Stool</option>
-                        <option value="Swab" {{ old('sample_type', $analysis['sample_type']) == 'Swab' ? 'selected' : '' }}>Swab</option>
-                        <option value="Other" {{ old('sample_type', $analysis['sample_type']) == 'Other' ? 'selected' : '' }}>Other</option>
-                    </select>
-                    @error('sample_type')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
+                    <select name="sample_type_id" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select Sample Type</option>  
+                        @foreach($sampleTypes as $sampleType)  
+                            <option value="{{ $sampleType['id'] }}"  
+                                {{ old('sample_type_id', $analysis['sample_type']['id'] ?? null) == $sampleType['id'] ? 'selected' : '' }}>  
+                                {{ $sampleType['name'] }}  
+                            </option>  
+                        @endforeach  
+                    </select>  
+                    @error('sample_type_id')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
                 </div>
 
                     <div class="flex items-center">

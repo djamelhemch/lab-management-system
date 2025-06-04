@@ -12,8 +12,6 @@ class ApiService
     {
         
         $this->baseUrl = env('FASTAPI_URL', 'http://127.0.0.1:8000');
-        
-        $response = Http::timeout(10)->get(env('FASTAPI_URL') . '/patients');
 
         if (empty($this->baseUrl)) {
             throw new \Exception('FASTAPI_URL environment variable is not set.');
@@ -21,9 +19,9 @@ class ApiService
         
     }
 
-    public function get($endpoint)
+    public function get($endpoint, $params = [])
     {
-        return Http::get("{$this->baseUrl}/{$endpoint}");
+        return Http::get("{$this->baseUrl}/{$endpoint}", $params);
     }
 
     public function post($endpoint, $data)

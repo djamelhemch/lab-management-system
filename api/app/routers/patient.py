@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session,joinedload
 from sqlalchemy import func, or_  
 from typing import List 
@@ -11,7 +11,9 @@ from app.models.patient import Patient  # Import your ORM Patient model
 from datetime import datetime
 from sqlalchemy import desc
 from datetime import date
-
+from typing import Optional
+import logging
+logger = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
 def calculate_age(date_of_birth):  
@@ -73,7 +75,47 @@ def list_patients_route(
         data['age'] = calculate_age(p.dob)  
         result.append(data)  
     return result
+@router.get("/table", response_model=List[PatientRead])
+def list_patients_table_route(
+    skip: int = 0,
+    limit: int = 100,
+    q: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    logger.info(f"=== GET /patients/table called ===")
+    logger.info(f"Raw params - skip: {skip} (type: {type(skip)})")
+    logger.info(f"Raw params - limit: {limit} (type: {type(limit)})")
+    logger.info(f"Raw params - q: '{q}' (type: {type(q)})")
 
+    try:
+        query = db.query(Patient).options(joinedload(Patient.doctor))
+        if q:
+            q_like = f"%{q}%"
+            query = query.filter(
+                or_(
+                    Patient.first_name.ilike(q_like),
+                    Patient.last_name.ilike(q_like),
+                    Patient.file_number.ilike(q_like),
+                    Patient.phone.ilike(q_like)
+                )
+            )
+        patients = query.order_by(Patient.created_at.desc()).offset(skip).limit(limit).all()
+        result = []
+        for p in patients:
+            data = p.__dict__.copy()
+            # Add doctor_name using the relationship
+            data['doctor_name'] = p.doctor.full_name if p.doctor else None
+            data['age'] = calculate_age(p.dob)
+            result.append(data)
+        logger.info(f"=== GET /patients/table completed successfully ===")
+        return result
+    except Exception as e:
+        logger.error(f"=== ERROR in list_patients_table_route ===")
+        logger.error(f"Exception type: {type(e)}")
+        logger.error(f"Exception message: {str(e)}")
+        logger.error(f"Exception details:", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    
 @router.get("/{patient_id}", response_model=PatientRead)  
 def get_patient_route(patient_id: int, db: Session = Depends(get_db)):  
     db_patient = crud.get_patient(db, patient_id)  

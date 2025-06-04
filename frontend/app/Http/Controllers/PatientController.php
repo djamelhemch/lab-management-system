@@ -18,15 +18,84 @@ class PatientController extends Controller
 
     public function index(Request $request)  
     {  
-        $query = $request->input('q');  
+        Log::info('Index method called', [  
+            'all_request_data' => $request->all(),  
+            'q' => $request->input('q'),  
+            'q_filled' => $request->filled('q')  
+        ]);  
+  
         $params = [];  
-        if ($query) {  
-            $params['q'] = $query;  
+        if ($request->filled('q')) {  
+            $params['q'] = $request->input('q');  
         }  
-        $response = $this->api->get('patients', $params);  
-        $patients = $response->successful() ? $response->json() : [];  
-        return view('patients.index', compact('patients', 'query'));  
+  
+        Log::info('Fetching patients from API', [  
+            'endpoint' => 'patients',  
+            'params' => $params  
+        ]);  
+  
+        $patientsResponse = $this->api->get('patients', $params);  
+  
+        Log::info('API Response received', [  
+            'status' => $patientsResponse->status(),  
+            'successful' => $patientsResponse->successful(),  
+            'headers' => $patientsResponse->headers(),  
+        ]);  
+  
+        if (!$patientsResponse->successful()) {  
+            Log::error('API patients fetch failed', [  
+                'status' => $patientsResponse->status(),  
+                'body' => $patientsResponse->body(),  
+                'json' => $patientsResponse->json()  
+            ]);  
+        }  
+  
+        $patients = $patientsResponse->successful() ? $patientsResponse->json() : [];  
+  
+        Log::info('Returning view', [  
+            'patients_count' => count($patients)  
+        ]);  
+  
+        return view('patients.index', compact('patients'));  
+    }  
+  
+    public function table(Request $request)
+    {
+        try {
+            $params = [];
+            if ($request->filled('q')) {
+                $params['q'] = $request->input('q');
+            }
+
+            $patientsResponse = $this->api->get('patients/table', $params);
+
+            if (!$patientsResponse->successful()) {
+                \Log::error('API patients fetch (table) failed', [
+                    'status' => $patientsResponse->status(),
+                    'body' => $patientsResponse->body(),
+                    'json' => $patientsResponse->json()
+                ]);
+                return response('Error fetching patients', 500);
+            }
+
+            $patients = $patientsResponse->json();
+
+            // Make sure $patients is an array
+            if (!is_array($patients)) {
+                \Log::error('API returned non-array for patients', ['patients' => $patients]);
+                $patients = [];
+            }
+
+            return view('patients.partials.table', compact('patients'));
+        } catch (\Throwable $e) {
+            \Log::error('Exception in PatientsController@table', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response('Internal Server Error', 500);
+        }
     }
+    
 
     public function create()  
     {  

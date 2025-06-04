@@ -7,7 +7,7 @@
 <div class="max-w-4xl mx-auto">
     <div class="mb-6 flex justify-between items-center">
         <div>
-            <h2 class="text-2xl font-semibold text-gray-800">{{ $analysis['name'] }}</h2>
+            <h2 class="text-2xl font-semibold text-gray-800">{{ $analysis['name'] ?? ($analysis->name ?? 'N/A') }}</h2>
             <p class="text-gray-600">Analysis Details</p>
         </div>
         <div class="flex space-x-2">
@@ -25,26 +25,29 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         {{-- Header --}}
         <div class="bg-gray-50 px-6 py-4 border-b">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900">{{ $analysis['name'] }}</h3>
-                    @if($analysis['code'])
-                        <p class="text-sm text-gray-500">Code: {{ $analysis['code'] }}</p>
-                    @endif
-                </div>
+            <div class="bg-gray-50 px-6 py-4 border-b">  
+                <div class="flex justify-between items-center">  
+                    <div>  
+                        <h3 class="text-lg font-medium text-gray-900">{{ is_string($analysis['name']) ? $analysis['name'] : 'N/A' }}</h3>  
+                        @if($analysis['code'])  
+                            <p class="text-sm text-gray-500">Code: {{ is_string($analysis['code']) ? $analysis['code'] : 'N/A' }}</p>  
+                        @endif  
+                    </div>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-green-600">${{ number_format($analysis['price'], 2) }}</div>
-                    @if($analysis['is_active'] ?? true)
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Active
-                        </span>
-                    @else
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Inactive
-                        </span>
-                    @endif
-                </div>
-            </div>
+                    <div class="text-2xl font-bold text-green-600">  
+                        {{ is_numeric($analysis['price']) ? number_format($analysis['price'], 2) : 'N/A' }}  DZD
+                    </div>
+                    @if($analysis['is_active'] ?? true)  
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">  
+                    Active  
+                </span>  
+                    @else  
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">  
+                            Inactive  
+                        </span>  
+                    @endif  
+                </div>  
+            </div>  
         </div>
 
         {{-- Details --}}
@@ -57,22 +60,35 @@
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Category</dt>
                             <dd class="text-sm text-gray-900">
-                                @if($analysis['category'])
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        {{ $analysis['category'] }}
-                                    </span>
-                                @else
-                                    <span class="text-gray-400">Not specified</span>
+                               @if(!empty($analysis['category_analyse']['name']))  
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">  
+                                        {{ $analysis['category_analyse']['name'] }}  
+                                    </span>  
+                                @else  
+                                    <span class="text-gray-400">Not specified</span>  
                                 @endif
                             </dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Unit</dt>
-                            <dd class="text-sm text-gray-900">{{ $analysis['unit'] ?? 'Not specified' }}</dd>
+                            <dd class="text-sm text-gray-900">  
+                                @php  
+                                    $unitName = $analysis['unit']['name'] ?? null;  
+                                @endphp  
+                                @if(is_array($unitName))  
+                                    {{ implode(', ', $unitName) }}  
+                                @elseif(is_string($unitName))  
+                                    {{ $unitName }}  
+                                @else  
+                                    Not specified  
+                                @endif  
+                            </dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Sample Type</dt>
-                            <dd class="text-sm text-gray-900">{{ $analysis['sample_type'] ?? 'Not specified' }}</dd>
+                            <dd class="text-sm text-gray-900">  
+                                {{ $analysis['sample_type']['name'] ?? 'Not specified' }}  
+                            </dd>
                         </div>
                     </dl>
                 </div>
@@ -131,32 +147,32 @@
             </div>
 
             {{-- Normal Range --}}
-            @if($analysis['normal_min'] || $analysis['normal_max'])
-                <div class="mt-6 pt-6 border-t">
-                    <h4 class="text-md font-medium text-gray-900 mb-3">Normal Range</h4>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Normal Values:</span>
-                            <span class="text-sm font-medium text-gray-900">
-                                {{ $analysis['normal_min'] ?? 'N/A' }} - {{ $analysis['normal_max'] ?? 'N/A' }}
-                                @if($analysis['unit'])
-                                    {{ $analysis['unit'] }}
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            @endif
+            @if($analysis['normal_min'] || $analysis['normal_max'])  
+            <div class="mt-6 pt-6 border-t">  
+                <h4 class="text-md font-medium text-gray-900 mb-3">Normal Range</h4>  
+                <div class="bg-gray-50 rounded-lg p-4">  
+                    <div class="flex items-center justify-between">  
+                        <span class="text-sm text-gray-600">Normal Values:</span>  
+                        <span class="text-sm font-medium text-gray-900">  
+                            {{ $analysis['normal_min'] ?? 'N/A' }} - {{ $analysis['normal_max'] ?? 'N/A' }}  
+                            @if(!empty($analysis['unit']['name']))  
+                                {{ $analysis['unit']['name'] }}  
+                            @endif  
+                        </span>  
+                    </div>  
+                </div>  
+            </div>  
+        @endif
 
             {{-- Formula --}}
-            @if($analysis['formula'])
-                <div class="mt-6 pt-6 border-t">
-                    <h4 class="text-md font-medium text-gray-900 mb-3">Calculation Formula</h4>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <code class="text-sm text-gray-800">{{ $analysis['formula'] }}</code>
-                    </div>
-                </div>
-            @endif
+            @if($analysis['formula'])  
+            <div class="mt-6 pt-6 border-t">  
+                <h4 class="text-md font-medium text-gray-900 mb-3">Calculation Formula</h4>  
+                <div class="bg-gray-50 rounded-lg p-4">  
+                    <code class="text-sm text-gray-800">{{ is_string($analysis['formula']) ? $analysis['formula'] : 'N/A' }}</code>  
+                </div>  
+            </div>  
+        @endif
         </div>
     </div>
 </div>

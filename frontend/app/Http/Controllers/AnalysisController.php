@@ -16,18 +16,110 @@ class AnalysisController extends Controller
         $this->api = $api;
     }
 
-    public function index(Request $request)
-    {
-        $params = $request->only(['category_analyse_id', 'q', 'limit']);
-        $response = $this->api->get('analyses', $params);
-        $analyses = $response->successful() ? $response->json() : [];
-
-        $categoriesResponse = $this->api->get('analyses/categories');
-        $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
-
-        return view('analyses.index', compact('analyses', 'categories'));
+    public function index(Request $request)  
+    {  
+        Log::info('Index method called', [  
+            'all_request_data' => $request->all(),  
+            'q' => $request->input('q'),  
+            'category_analyse_id' => $request->input('category_analyse_id'),  
+            'q_filled' => $request->filled('q'),  
+            'category_filled' => $request->filled('category_analyse_id')  
+        ]);  
+  
+        $params = [];  
+        if ($request->filled('q')) {  
+            $params['q'] = $request->input('q');  
+        }  
+        if ($request->filled('category_analyse_id')) {  
+            $params['category_analyse_id'] = (int) $request->input('category_analyse_id');  
+        }  
+  
+        Log::info('Fetching analyses from API', [  
+            'endpoint' => 'analyses',  
+            'params' => $params  
+        ]);  
+  
+        $analysesResponse = $this->api->get('analyses', $params);  
+  
+        Log::info('API Response received', [  
+            'status' => $analysesResponse->status(),  
+            'successful' => $analysesResponse->successful(),  
+            'headers' => $analysesResponse->headers(),  
+        ]);  
+  
+        if (!$analysesResponse->successful()) {  
+            Log::error('API analyses fetch failed', [  
+                'status' => $analysesResponse->status(),  
+                'body' => $analysesResponse->body(),  
+                'json' => $analysesResponse->json()  
+            ]);  
+        }  
+  
+        $analyses = $analysesResponse->successful() ? $analysesResponse->json() : [];  
+  
+        // Fetch categories  
+        Log::info('Fetching categories from API');  
+        $categoriesResponse = $this->api->get('analyses/category-analyse');  
+  
+        if (!$categoriesResponse->successful()) {  
+            Log::error('API categories fetch failed', [  
+                'status' => $categoriesResponse->status(),  
+                'body' => $categoriesResponse->body()  
+            ]);  
+        }  
+        $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];  
+  
+        Log::info('Returning view', [  
+            'analyses_count' => count($analyses),  
+            'categories_count' => count($categories)  
+        ]);  
+  
+        return view('analyses.index', compact('analyses', 'categories'));  
+    }
+    
+   public function table(Request $request)  
+    {  
+        Log::info('Table method called', [  
+            'all_request_data' => $request->all(),  
+            'q' => $request->input('q'),  
+            'category_analyse_id' => $request->input('category_analyse_id'),  
+            'q_filled' => $request->filled('q'),  
+            'category_filled' => $request->filled('category_analyse_id')  
+        ]);  
+  
+        $params = [];  
+        if ($request->filled('q')) {  
+            $params['q'] = $request->input('q');  
+        }  
+        if ($request->filled('category_analyse_id')) {  
+            $params['category_analyse_id'] = (int) $request->input('category_analyse_id');  
+        }  
+        
+        $analysesResponse = $this->api->get('analyses/table', $params); 
+  
+        Log::info('API Response received (table)', [  
+            'status' => $analysesResponse->status(),  
+            'successful' => $analysesResponse->successful(),  
+        ]);  
+  
+        if (!$analysesResponse->successful()) {  
+            Log::error('API analyses fetch (table) failed', [  
+                'status' => $analysesResponse->status(),  
+                'body' => $analysesResponse->body(),  
+                'json' => $analysesResponse->json()  
+            ]);  
+        }  
+  
+        $analyses = $analysesResponse->successful() ? $analysesResponse->json() : [];  
+  
+        Log::info('Returning table partial', [  
+            'analyses_count' => count($analyses)  
+        ]);  
+  
+        return view('analyses.partials.table', compact('analyses'))->render();  
     }
 
+   
     public function create()  
     {  
         $categories = $this->api->get('analyses/category-analyse')->json();  
@@ -37,53 +129,63 @@ class AnalysisController extends Controller
         return view('analyses.create', compact('categories', 'sampleTypes', 'units'));  
     }
 
-    public function store(Request $request)  
-    {  
-        $validator = Validator::make($request->all(), [  
-            'name' => 'required|string|max:100',  
-            'code' => 'nullable|string|max:20',  
-            'category_analyse_id' => 'nullable|integer',  
-            'unit_id' => 'nullable|integer',  
-            'sample_type_id' => 'nullable|integer',  
-            'sex_applicable' => 'in:M,F,All',  
-            'age_min' => 'nullable|integer',  
-            'age_max' => 'nullable|integer',  
-            'pregnant_applicable' => 'nullable|boolean',  
-            'normal_min' => 'nullable|numeric',  
-            'normal_max' => 'nullable|numeric',  
-            'formula' => 'nullable|string',  
-            'price' => 'required|numeric|min:0',  
-        ]);  
+    public function store(Request $request)    
+    {    
+        $validator = Validator::make($request->all(), [    
+            'name' => 'required|string|max:100',    
+            'code' => 'nullable|string|max:20',    
+            'category_analyse_id' => 'nullable|integer',    
+            'unit_id' => 'nullable|integer',    
+            'sample_type_id' => 'nullable|integer',    
+            'sex_applicable' => 'in:M,F,All',    
+            'age_min' => 'nullable|integer',    
+            'age_max' => 'nullable|integer',    
+            'pregnant_applicable' => 'nullable|boolean',    
+            'normal_min' => 'nullable|numeric',    
+            'normal_max' => 'nullable|numeric',    
+            'formula' => 'nullable|string',    
+            'price' => 'required|numeric|min:0',    
+        ]);    
     
-        if ($validator->fails()) {  
-            return redirect()->back()->withErrors($validator)->withInput();  
-        }  
+        if ($validator->fails()) {    
+            return redirect()->back()->withErrors($validator)->withInput();    
+        }    
     
-        $data = $request->only([  
-            'name', 'code', 'category_analyse_id', 'unit_id', 'sample_type_id',  
-            'sex_applicable', 'age_min', 'age_max', 'pregnant_applicable',  
-            'normal_min', 'normal_max', 'formula', 'price'  
-        ]);  
+        // Handle temporary categories, sample types, and units  
+        $categoryId = $this->handleTempCategory($request);  
+        $sampleTypeId = $this->handleTempSampleType($request);  
+        $unitId = $this->handleTempUnit($request);  
     
-        $response = $this->api->post('analyses', $data);  
+        $data = $request->only([    
+            'name', 'code', 'sex_applicable', 'age_min', 'age_max', 'pregnant_applicable',    
+            'normal_min', 'normal_max', 'formula', 'price'    
+        ]);    
     
-        if ($response->successful()) {  
-            return redirect()->route('analyses.index')->with('success', 'Analysis created successfully.');  
-        } else {  
-            return redirect()->back()->with('error', 'Failed to create analysis.')->withInput();  
-        }  
+        // Use the resolved IDs  
+        $data['category_analyse_id'] = $categoryId ?: $request->category_analyse_id;  
+        $data['sample_type_id'] = $sampleTypeId ?: $request->sample_type_id;  
+        $data['unit_id'] = $unitId ?: $request->unit_id;  
+    
+        $response = $this->api->post('analyses', $data);    
+    
+        if ($response->successful()) {    
+            return redirect()->route('analyses.index')->with('success', 'Analysis created successfully.');    
+        } else {    
+            return redirect()->back()->with('error', 'Failed to create analysis.')->withInput();    
+        }    
     }
 
-    public function show($id)
-    {
-        $response = $this->api->get("analyses/{$id}");
-        $analysis = $response->successful() ? $response->json() : null;
-
-        if (!$analysis) {
-            abort(404); // Or handle the error as you see fit
-        }
-
-        return view('analyses.show', compact('analysis'));
+   public function show($id)  
+    {  
+        $response = $this->api->get("analyses/{$id}");  
+        if (!$response->successful()) {  
+            abort(404, 'Analysis not found');  
+        }  
+        $analysis = $response->json();  
+        if (!is_array($analysis) || !isset($analysis['id'])) {  
+            abort(404, 'Analysis not found');  
+        }  
+        return view('analyses.show', compact('analysis'));  
     }
 
     public function edit($id)  
@@ -92,7 +194,10 @@ class AnalysisController extends Controller
         $categories = $this->api->get('analyses/category-analyse')->json();  
         $sampleTypes = $this->api->get('analyses/sample-types')->json();  
         $units = $this->api->get('analyses/units')->json();  
-    
+        if (!$analysis) {
+            abort(404); // Or handle the error as you see fit
+        }
+  
         return view('analyses.edit', compact('analysis', 'categories', 'sampleTypes', 'units'));  
     }
 
@@ -136,80 +241,62 @@ class AnalysisController extends Controller
             return redirect()->back()->with('error', 'Failed to update analysis.')->withInput();
         }
     }
-    public function storeCategory(Request $request)  
-{  
-    try {  
-        $validator = Validator::make($request->all(), [  
-            'name' => 'required|string|max:50|unique:category_analyse,name',  
-        ]);  
-  
-        if ($validator->fails()) {  
-            return response()->json(['errors' => $validator->errors()], 422);  
+    private function handleTempCategory($request)  
+    {  
+        if ($request->category_analyse_id < 0) { // Temporary category  
+            $tempCategories = $request->temp_categories ?? [];  
+            foreach ($tempCategories as $tempCategoryJson) {  
+                $tempCategory = json_decode($tempCategoryJson, true);  
+                if ($tempCategory['id'] == $request->category_analyse_id) {  
+                    // Create the category via API  
+                    $response = $this->api->post('analyses/category-analyse', ['name' => $tempCategory['name']]);  
+                    if ($response->successful()) {  
+                        $newCategory = $response->json();  
+                        return $newCategory['id'];  
+                    }  
+                }  
+            }  
         }  
-  
-        $category = $this->api->post('analyses/category-analyse', ['name' => $request->input('name')]);  
-  
-        if ($category->successful()) {  
-            return response()->json($category->json(), 201);  
-        } else {  
-            Log::error('Failed to create category: ' . $category->body());  
-            return response()->json(['message' => 'Failed to create category'], $category->status());  
-        }  
-    } catch (\Exception $e) {  
-        Log::error('Exception creating category: ' . $e->getMessage());  
-        return response()->json(['message' => 'Error creating category'], 500);  
+        return null;  
     }  
-}  
-  
-public function storeSampleType(Request $request)  
-{  
-    try {  
-        $validator = Validator::make($request->all(), [  
-            'name' => 'required|string|max:50|unique:sample_types,name',  
-        ]);  
-  
-        if ($validator->fails()) {  
-            return response()->json(['errors' => $validator->errors()], 422);  
+    
+    private function handleTempSampleType($request)  
+    {  
+        if ($request->sample_type_id < 0) { // Temporary sample type  
+            $tempSampleTypes = $request->temp_sample_types ?? [];  
+            foreach ($tempSampleTypes as $tempSampleTypeJson) {  
+                $tempSampleType = json_decode($tempSampleTypeJson, true);  
+                if ($tempSampleType['id'] == $request->sample_type_id) {  
+                    // Create the sample type via API  
+                    $response = $this->api->post('analyses/sample-types', ['name' => $tempSampleType['name']]);  
+                    if ($response->successful()) {  
+                        $newSampleType = $response->json();  
+                        return $newSampleType['id'];  
+                    }  
+                }  
+            }  
         }  
-  
-        $sampleType = $this->api->post('analyses/sample-types', ['name' => $request->input('name')]);  
-  
-        if ($sampleType->successful()) {  
-            return response()->json($sampleType->json(), 201);  
-        } else {  
-            Log::error('Failed to create sample type: ' . $sampleType->body());  
-            return response()->json(['message' => 'Failed to create sample type'], $sampleType->status());  
-        }  
-    } catch (\Exception $e) {  
-        Log::error('Exception creating sample type: ' . $e->getMessage());  
-        return response()->json(['message' => 'Error creating sample type'], 500);  
+        return null;  
     }  
-}  
-  
-public function storeUnit(Request $request)  
-{  
-    try {  
-        $validator = Validator::make($request->all(), [  
-            'name' => 'required|string|max:20|unique:units,name',  
-        ]);  
-  
-        if ($validator->fails()) {  
-            return response()->json(['errors' => $validator->errors()], 422);  
+    
+    private function handleTempUnit($request)  
+    {  
+        if ($request->unit_id < 0) { // Temporary unit  
+            $tempUnits = $request->temp_units ?? [];  
+            foreach ($tempUnits as $tempUnitJson) {  
+                $tempUnit = json_decode($tempUnitJson, true);  
+                if ($tempUnit['id'] == $request->unit_id) {  
+                    // Create the unit via API  
+                    $response = $this->api->post('analyses/units', ['name' => $tempUnit['name']]);  
+                    if ($response->successful()) {  
+                        $newUnit = $response->json();  
+                        return $newUnit['id'];  
+                    }  
+                }  
+            }  
         }  
-  
-        $unit = $this->api->post('analyses/units', ['name' => $request->input('name')]);  
-  
-        if ($unit->successful()) {  
-            return response()->json($unit->json(), 201);  
-        } else {  
-            Log::error('Failed to create unit: ' . $unit->body());  
-            return response()->json(['message' => 'Failed to create unit'], $unit->status());  
-        }  
-    } catch (\Exception $e) {  
-        Log::error('Exception creating unit: ' . $e->getMessage());  
-        return response()->json(['message' => 'Error creating unit'], 500);  
-    }  
-}
+        return null;  
+    }
     public function destroy($id)
     {
         $response = $this->api->delete("analyses/{$id}");

@@ -279,145 +279,189 @@
     </div>  
 </div>
 
-<script>
-// Category Modal Functions
-function openCategoryModal() {
-    document.getElementById('categoryModal').classList.remove('hidden');
-}
-
-function closeCategoryModal() {
-    document.getElementById('categoryModal').classList.add('hidden');
-    document.getElementById('categoryName').value = '';
-}
-
-// Sample Type Modal Functions
-function openSampleTypeModal() {
-    document.getElementById('sampleTypeModal').classList.remove('hidden');
-}
-
-function closeSampleTypeModal() {
-    document.getElementById('sampleTypeModal').classList.add('hidden');
-    document.getElementById('sampleTypeName').value = '';
-}
-
-// Unit Modal Functions
-function openUnitModal() {
-    document.getElementById('unitModal').classList.remove('hidden');
-}
-
-function closeUnitModal() {
-    document.getElementById('unitModal').classList.add('hidden');
-    document.getElementById('unitName').value = '';
-}
-
-// Form Submissions
-document.getElementById('categoryForm').addEventListener('submit', async function(e) {  
+<script>  
+// Temporary storage for new items  
+let tempCategories = [];  
+let tempSampleTypes = [];  
+let tempUnits = [];  
+let tempIdCounter = -1; // Use negative IDs for temporary items  
+  
+// Category Modal Functions  
+function openCategoryModal() {  
+    document.getElementById('categoryModal').classList.remove('hidden');  
+}  
+  
+function closeCategoryModal() {  
+    document.getElementById('categoryModal').classList.add('hidden');  
+    document.getElementById('categoryName').value = '';  
+    document.getElementById('categoryError').textContent = '';  
+}  
+  
+// Sample Type Modal Functions  
+function openSampleTypeModal() {  
+    document.getElementById('sampleTypeModal').classList.remove('hidden');  
+}  
+  
+function closeSampleTypeModal() {  
+    document.getElementById('sampleTypeModal').classList.add('hidden');  
+    document.getElementById('sampleTypeName').value = '';  
+    document.getElementById('sampleTypeError').textContent = '';  
+}  
+  
+// Unit Modal Functions  
+function openUnitModal() {  
+    document.getElementById('unitModal').classList.remove('hidden');  
+}  
+  
+function closeUnitModal() {  
+    document.getElementById('unitModal').classList.add('hidden');  
+    document.getElementById('unitName').value = '';  
+    document.getElementById('unitError').textContent = '';  
+}  
+  
+// Form Submissions - Create temporary options  
+document.getElementById('categoryForm').addEventListener('submit', function(e) {  
     e.preventDefault();  
-    const name = document.getElementById('categoryName').value;  
+    const name = document.getElementById('categoryName').value.trim();  
     const errorDiv = document.getElementById('categoryError');  
-    errorDiv.textContent = '';  
-  
-    try {  
-        const response = await fetch('/analyses/category-analyse', { // Updated route  
-            method: 'POST',  
-            headers: {  
-                'Content-Type': 'application/json',  
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')  
-            },  
-            body: JSON.stringify({ name: name })  
-        });  
-  
-        if (response.ok) {  
-            const newCategory = await response.json();  
-            const select = document.getElementById('category_analyse_id');  
-            const option = new Option(newCategory.name, newCategory.id, true, true);  
-            select.add(option);  
-            closeCategoryModal();  
-        } else {  
-            const errorData = await response.json();  
-            errorDiv.textContent = errorData.message || 'Failed to create category';  
-            console.error('API error:', errorData);  
-        }  
-    } catch (error) {  
-        errorDiv.textContent = error.message || 'Error creating category';  
-        console.error('JS error:', error);  
+      
+    if (!name) {  
+        errorDiv.textContent = 'Category name is required';  
+        return;  
     }  
+      
+    // Check for duplicates  
+    const select = document.getElementById('category_analyse_id');  
+    const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());  
+    if (existingOptions.includes(name.toLowerCase())) {  
+        errorDiv.textContent = 'Category already exists';  
+        return;  
+    }  
+      
+    // Create temporary category  
+    const tempCategory = {  
+        id: tempIdCounter--,  
+        name: name,  
+        isTemp: true  
+    };  
+      
+    tempCategories.push(tempCategory);  
+      
+    // Add to select dropdown  
+    const option = new Option(name, tempCategory.id, true, true);  
+    option.style.fontStyle = 'italic';  
+    option.style.color = '#059669'; // Green color to indicate it's new  
+    select.add(option);  
+      
+    closeCategoryModal();  
 });  
   
-// Sample Type Form Submission  
-document.getElementById('sampleTypeForm').addEventListener('submit', async function(e) {  
+document.getElementById('sampleTypeForm').addEventListener('submit', function(e) {  
     e.preventDefault();  
-    const name = document.getElementById('sampleTypeName').value;  
+    const name = document.getElementById('sampleTypeName').value.trim();  
     const errorDiv = document.getElementById('sampleTypeError');  
-    errorDiv.textContent = '';  
-  
-    try {  
-        const response = await fetch('/analyses/sample-types', { // Updated route  
-            method: 'POST',  
-            headers: {  
-                'Content-Type': 'application/json',  
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')  
-            },  
-            body: JSON.stringify({ name: name })  
-        });  
-  
-        if (response.ok) {  
-            const newSampleType = await response.json();  
-            const select = document.getElementById('sample_type_id');  
-            const option = new Option(newSampleType.name, newSampleType.id, true, true);  
-            select.add(option);  
-            closeSampleTypeModal();  
-        } else {  
-            const errorData = await response.json();  
-            errorDiv.textContent = errorData.message || 'Failed to create sample type';  
-            console.error('API error:', errorData);  
-        }  
-    } catch (error) {  
-        errorDiv.textContent = error.message || 'Error creating sample type';  
-        console.error('JS error:', error);  
+      
+    if (!name) {  
+        errorDiv.textContent = 'Sample type name is required';  
+        return;  
     }  
+      
+    // Check for duplicates  
+    const select = document.getElementById('sample_type_id');  
+    const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());  
+    if (existingOptions.includes(name.toLowerCase())) {  
+        errorDiv.textContent = 'Sample type already exists';  
+        return;  
+    }  
+      
+    // Create temporary sample type  
+    const tempSampleType = {  
+        id: tempIdCounter--,  
+        name: name,  
+        isTemp: true  
+    };  
+      
+    tempSampleTypes.push(tempSampleType);  
+      
+    // Add to select dropdown  
+    const option = new Option(name, tempSampleType.id, true, true);  
+    option.style.fontStyle = 'italic';  
+    option.style.color = '#059669'; // Green color to indicate it's new  
+    select.add(option);  
+      
+    closeSampleTypeModal();  
 });  
   
-// Unit Form Submission  
-document.getElementById('unitForm').addEventListener('submit', async function(e) {  
+document.getElementById('unitForm').addEventListener('submit', function(e) {  
     e.preventDefault();  
-    const name = document.getElementById('unitName').value;  
+    const name = document.getElementById('unitName').value.trim();  
     const errorDiv = document.getElementById('unitError');  
-    errorDiv.textContent = '';  
-  
-    try {  
-        const response = await fetch('/analyses/units', { // Updated route  
-            method: 'POST',  
-            headers: {  
-                'Content-Type': 'application/json',  
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')  
-            },  
-            body: JSON.stringify({ name: name })  
-        });  
-  
-        if (response.ok) {  
-            const newUnit = await response.json();  
-            const select = document.getElementById('unit_id');  
-            const option = new Option(newUnit.name, newUnit.id, true, true);  
-            select.add(option);  
-            closeUnitModal();  
-        } else {  
-            const errorData = await response.json();  
-            errorDiv.textContent = errorData.message || 'Failed to create unit';  
-            console.error('API error:', errorData);  
-        }  
-    } catch (error) {  
-        errorDiv.textContent = error.message || 'Error creating unit';  
-        console.error('JS error:', error);  
+      
+    if (!name) {  
+        errorDiv.textContent = 'Unit name is required';  
+        return;  
     }  
-});
-
-// Close modals when clicking outside
-document.addEventListener('click', function(e) {
-    if (e.target.id === 'categoryModal') closeCategoryModal();
-    if (e.target.id === 'sampleTypeModal') closeSampleTypeModal();
-    if (e.target.id === 'unitModal') closeUnitModal();
-});
+      
+    // Check for duplicates  
+    const select = document.getElementById('unit_id');  
+    const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());  
+    if (existingOptions.includes(name.toLowerCase())) {  
+        errorDiv.textContent = 'Unit already exists';  
+        return;  
+    }  
+      
+    // Create temporary unit  
+    const tempUnit = {  
+        id: tempIdCounter--,  
+        name: name,  
+        isTemp: true  
+    };  
+      
+    tempUnits.push(tempUnit);  
+      
+    // Add to select dropdown  
+    const option = new Option(name, tempUnit.id, true, true);  
+    option.style.fontStyle = 'italic';  
+    option.style.color = '#059669'; // Green color to indicate it's new  
+    select.add(option);  
+      
+    closeUnitModal();  
+});  
+  
+// Modify main form submission to include temporary items  
+document.querySelector('form[action="{{ route('analyses.store') }}"]').addEventListener('submit', function(e) {  
+    // Add hidden inputs for temporary items  
+    tempCategories.forEach(category => {  
+        const input = document.createElement('input');  
+        input.type = 'hidden';  
+        input.name = 'temp_categories[]';  
+        input.value = JSON.stringify(category);  
+        this.appendChild(input);  
+    });  
+      
+    tempSampleTypes.forEach(sampleType => {  
+        const input = document.createElement('input');  
+        input.type = 'hidden';  
+        input.name = 'temp_sample_types[]';  
+        input.value = JSON.stringify(sampleType);  
+        this.appendChild(input);  
+    });  
+      
+    tempUnits.forEach(unit => {  
+        const input = document.createElement('input');  
+        input.type = 'hidden';  
+        input.name = 'temp_units[]';  
+        input.value = JSON.stringify(unit);  
+        this.appendChild(input);  
+    });  
+});  
+  
+// Close modals when clicking outside  
+document.addEventListener('click', function(e) {  
+    if (e.target.id === 'categoryModal') closeCategoryModal();  
+    if (e.target.id === 'sampleTypeModal') closeSampleTypeModal();  
+    if (e.target.id === 'unitModal') closeUnitModal();  
+});  
 </script>
 @endsection
 
