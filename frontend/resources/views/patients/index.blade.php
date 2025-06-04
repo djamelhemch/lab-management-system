@@ -19,6 +19,7 @@
         category-label=""
         form-id="patients-search-form"
         :table-route="route('patients.table')"
+        container-id="analyses-table-container"
     />
 
     <div id="analyses-table-container">

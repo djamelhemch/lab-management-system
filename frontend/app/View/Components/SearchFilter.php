@@ -15,7 +15,8 @@ class SearchFilter extends Component
     public $categoryName;  
     public $categoryLabel;  
     public $formId;  
-    public $tableRoute;  
+    public $tableRoute;
+    public $containerId; // Add this property
   
     public function __construct(  
         $searchPlaceholder = 'Search...',  
@@ -25,7 +26,8 @@ class SearchFilter extends Component
         $categoryName = 'category_id',  
         $categoryLabel = 'Category',  
         $formId = 'search-form',  
-        $tableRoute = ''  
+        $tableRoute = '',
+        $containerId = 'table-container' // Add this parameter
     ) {  
         $this->searchPlaceholder = $searchPlaceholder;  
         $this->searchValue = $searchValue;  
@@ -34,7 +36,8 @@ class SearchFilter extends Component
         $this->categoryName = $categoryName;  
         $this->categoryLabel = $categoryLabel;  
         $this->formId = $formId;  
-        $this->tableRoute = $tableRoute;  
+        $this->tableRoute = $tableRoute;
+        $this->containerId = $containerId; // Add this line
     }  
   
     public function render()  

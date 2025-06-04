@@ -93,7 +93,7 @@ class DoctorController extends Controller
         if ($response->successful()) {  
             return redirect()->route('doctors.index')->with('success', 'Doctor updated successfully.');  
         } else {  
-            return redirect()->back()->with('error', 'Failed to update doctor.')->withInput();  
+            return redirect()->back()->with('error', 'Failed toupdate doctor.')->withInput();  
         }  
     }
 
@@ -128,4 +128,21 @@ class DoctorController extends Controller
         return view('doctors.show', compact('doctor', 'patients'));  
     }
 
+    public function patientsTable(Request $request, $doctorId)
+    {
+        $params = [];
+        if ($request->filled('q')) {
+            $params['q'] = $request->input('q');
+        }
+
+        $patientsResponse = $this->api->get("doctors/{$doctorId}/patients/table", $params);
+
+        if (!$patientsResponse->successful()) {
+            return response('Error fetching patients', 500);
+        }
+
+        $patients = $patientsResponse->json();
+
+        return view('doctors.partials.patients_table', compact('patients'));
+    }
 }

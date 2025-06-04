@@ -69,12 +69,11 @@ def list_patients_route(
     result = []  
     for p in patients:  
         data = p.__dict__.copy()  
-        # Add doctor_name using the relationship  
         data['doctor_name'] = p.doctor.full_name if p.doctor else None  
-        data = p.__dict__.copy()  
         data['age'] = calculate_age(p.dob)  
-        result.append(data)  
+        result.append(data) 
     return result
+    
 @router.get("/table", response_model=List[PatientRead])
 def list_patients_table_route(
     skip: int = 0,

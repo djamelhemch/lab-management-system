@@ -13,6 +13,7 @@
         category-label="Category"
         form-id="analysis-search-form"
         :table-route="route('analyses.table')"
+        container-id="analyses-table-container"
     />
 
     <div id="analyses-table-container">

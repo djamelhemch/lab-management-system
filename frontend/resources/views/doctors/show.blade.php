@@ -80,53 +80,21 @@
                 </a>
             </div>
 
-            @if (empty($patients))
-                <div class="text-center text-gray-600 py-8">
-                    <p>No patients assigned to this doctor.</p>
-                    <a href="#" class="mt-2 inline-block px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
-                        Assign First Patient
-                    </a>
-                </div>
-            @else
-                <!-- Search Box -->
-                <div class="mb-4">
-                    <input type="text" id="patient-search" placeholder="Search patients..."
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
-                </div>
-
-                <!-- Patients Dropdown/List -->
-                <div class="space-y-2 max-h-64 overflow-y-auto" id="patients-list">
-                    @foreach ($patients as $patient)
-                        <div class="patient-item p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
-                            data-patient-name="{{ strtolower($patient['full_name'] ?? '') }}"
-                            data-file-number="{{ strtolower($patient['file_number'] ?? '') }}">
-                            <div class="flex justify-between items-center">
-                                <div class="flex-1">
-                                    <p class="font-medium text-gray-800">{{ $patient['full_name'] ?? 'N/A' }}</p>
-                                    <div class="flex flex-wrap gap-2 text-sm text-gray-600 mt-1">
-                                        <span>File: {{ $patient['file_number'] ?? 'N/A' }}</span>
-                                        <span>•</span>
-                                        <span>{{ $patient['phone'] ?? 'No phone' }}</span>
-                                        @if($patient['age'])
-                                            <span>•</span>
-                                            <span>Age: {{ $patient['age'] }}</span>
-                                        @endif
-                                        @if($patient['blood_type'])
-                                            <span>•</span>
-                                            <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">{{ $patient['blood_type'] }}</span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <a href="{{ route('patients.show', $patient['id']) }}" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
-                                        View Patient
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
+            <x-search-filter  
+                search-placeholder="Search patients..."  
+                :search-value="request('q') ?? ''"  
+                :categories="[]"  
+                :category-value="null"  
+                category-name=""  
+                category-label=""  
+                form-id="doctor-patients-search-form"  
+                :table-route="route('doctors.patients.table', $doctor['id'])"  
+                container-id="doctor-patients-table-container"  
+            />  
+            
+            <div id="doctor-patients-table-container">  
+                @include('doctors.partials.patients_table', ['patients' => $patients])  
+            </div>
         </div>
         <!-- Selected Patient Info (Optional) -->
         <div id="selected-patient-info" class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 hidden">
@@ -135,23 +103,4 @@
         </div>
     </div>
 </div>
-
-<script>
-// Enhanced search functionality
-document.getElementById('patient-search').addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const patientItems = document.querySelectorAll('.patient-item');
-
-    patientItems.forEach(function(item) {
-        const patientName = item.getAttribute('data-patient-name');
-        const fileNumber = item.getAttribute('data-file-number');
-
-        if (patientName.includes(searchTerm) || fileNumber.includes(searchTerm)) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-});
-</script>
 @endsection

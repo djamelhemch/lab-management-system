@@ -122,23 +122,23 @@ function fetchTable() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);  
         return response.text();  
     })  
-    .then(html => {  
-        document.getElementById('analyses-table-container').innerHTML = html;  
-        hideLoading();  
-        currentRequest = null;  
-    })  
-    .catch(error => {  
-        if (error.name !== 'AbortError') {  
-            document.getElementById('analyses-table-container').innerHTML = `  
-                <div class="text-center text-red-600 bg-white p-8 rounded-lg shadow">  
-                    <h3 class="text-lg font-medium text-red-900 mb-2">Error loading data</h3>  
-                    <p class="text-sm">Please try again or refresh the page.</p>  
-                </div>  
-            `;  
-        }  
-        hideLoading();  
-        currentRequest = null;  
-    });  
+    .then(html => {    
+    document.getElementById('{{ $containerId }}').innerHTML = html;    
+    hideLoading();    
+    currentRequest = null;    
+    })    
+    .catch(error => {    
+        if (error.name !== 'AbortError') {    
+            document.getElementById('{{ $containerId }}').innerHTML = `    
+                <div class="text-center text-red-600 bg-white p-8 rounded-lg shadow">    
+                    <h3 class="text-lg font-medium text-red-900 mb-2">Error loading data</h3>    
+                    <p class="text-sm">Please try again or refresh the page.</p>    
+                </div>    
+            `;    
+        }    
+        hideLoading();    
+        currentRequest = null;    
+    }); 
 }
 
 searchInput.addEventListener('input', function() {
