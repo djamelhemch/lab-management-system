@@ -39,7 +39,7 @@
     />
 
     <div id="quotations-table-container">
-        @include('quotations.partials.quotations_table', ['quotations' => $quotations])
+        @include('quotations.partials.table', ['quotations' => $quotations])
     </div>
 </div>
 @endsection

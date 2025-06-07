@@ -26,7 +26,10 @@ class Patient(Base):
     samples = relationship("Sample", back_populates="patient")
     # Add back the doctor_id FK
     doctor_id = Column(Integer, ForeignKey('doctors.id'), nullable=True)
-
+    
+    agreements = relationship("Agreement", back_populates="patient")
+    
+    quotations = relationship("Quotation", back_populates="patient")
     # Add the relationship
     doctor = relationship("Doctor", back_populates="patients")
 

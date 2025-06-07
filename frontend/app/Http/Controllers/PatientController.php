@@ -154,7 +154,7 @@ class PatientController extends Controller
 
         return view('patients.show', compact('patient'));
     }
-
+    
     public function edit($id)  
     {  
         $response = $this->api->get("patients/{$id}");  

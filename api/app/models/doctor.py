@@ -18,5 +18,6 @@ class Doctor(Base):
     created_at = Column(DateTime, default=func.now(), nullable=False)  # Add this  
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
+    agreements = relationship("Agreement", back_populates="doctor")
     patients = relationship("Patient", back_populates="doctor")
     samples = relationship("Sample", back_populates="doctor")

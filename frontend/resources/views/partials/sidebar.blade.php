@@ -5,24 +5,37 @@
             <i class="fas fa-times text-xl"></i>
         </button>
     </div>
-    <nav class="flex flex-col gap-1 mt-6">
-        <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }} {{ request()->routeIs('dashboard') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-            <i class="fas fa-tachometer-alt"></i> <span class="ml-2">Dashboard</span>
+   <nav class="flex flex-col gap-1 mt-6">
+    <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }} {{ request()->routeIs('dashboard') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-tachometer-alt"></i> <span class="ml-2">Dashboard</span>
+    </a>
+    <a href="{{ route('patients.index') }}" class="sidebar-link {{ request()->routeIs('patients.*') ? 'active' : '' }} {{ request()->routeIs('patients.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-user-injured"></i> <span class="ml-2">Patients</span>
+    </a>
+    <a href="{{ route('doctors.index') }}" class="sidebar-link {{ request()->routeIs('doctors.*') ? 'active' : '' }} {{ request()->routeIs('doctors.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-user-md"></i> <span class="ml-2">Doctors</span>
+    </a>
+    <a href="{{ route('samples.index') }}" class="sidebar-link {{ request()->routeIs('samples.*') ? 'active' : '' }} {{ request()->routeIs('samples.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-vial"></i> <span class="ml-2">Samples</span>
+    </a>
+    <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }} {{ request()->routeIs('reports.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-file-medical"></i> <span class="ml-2">Reports</span>
+    </a>
+    <a href="{{ route('analyses.index') }}" class="sidebar-link {{ request()->routeIs('analyses.*') ? 'active' : '' }} {{ request()->routeIs('analyses.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">  
+        <i class="fas fa-flask"></i> <span class="ml-2">Analyses</span>  
+    </a>
+    
+    {{-- NEW LINKS --}}
+    <a href="{{ route('quotations.index') }}" class="sidebar-link {{ request()->routeIs('quotations.*') ? 'active' : '' }} {{ request()->routeIs('quotations.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-file-invoice"></i> <span class="ml-2">Quotations</span>
+    </a>
+    @if(auth()->check() && auth()->user()->role === 'admin')
+        <a href="{{ route('admin.users.index') }}"
+        class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
+        flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-users-cog"></i> <span class="ml-2">Users</span>
         </a>
-        <a href="{{ route('patients.index') }}" class="sidebar-link {{ request()->routeIs('patients.*') ? 'active' : '' }} {{ request()->routeIs('patients.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-            <i class="fas fa-user-injured"></i> <span class="ml-2">Patients</span>
-        </a>
-        <a href="{{ route('doctors.index') }}" class="sidebar-link {{ request()->routeIs('doctors.*') ? 'active' : '' }} {{ request()->routeIs('doctors.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-            <i class="fas fa-user-md"></i> <span class="ml-2">Doctors</span>
-        </a>
-        <a href="{{ route('samples.index') }}" class="sidebar-link {{ request()->routeIs('samples.*') ? 'active' : '' }} {{ request()->routeIs('samples.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-            <i class="fas fa-vial"></i> <span class="ml-2">Samples</span>
-        </a>
-        <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }} {{ request()->routeIs('reports.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-            <i class="fas fa-file-medical"></i> <span class="ml-2">Reports</span>
-        </a>
-        <a href="{{ route('analyses.index') }}" class="sidebar-link {{ request()->routeIs('analyses.*') ? 'active' : '' }} {{ request()->routeIs('analyses.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">  
-            <i class="fas fa-flask"></i> <span class="ml-2">Analyses</span>  
-        </a>
-    </nav>
+    @endif
+</nav>
+
 </div>
