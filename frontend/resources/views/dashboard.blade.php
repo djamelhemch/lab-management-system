@@ -77,7 +77,28 @@
         </div>
     </a>
 </div>
+{{-- Total Quotations --}}
 
+<a href="{{ route('quotations.index') }}" class="block">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform transform hover:scale-105 duration-300 border-l-8 border-indigo-500">
+        <div class="p-4 flex items-center justify-between">
+            <div>
+                <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Quotations</p>
+                <p class="text-3xl font-extrabold text-indigo-700" id="quotationsCount"> {{ $quotationsCount ?? 0 }}</p>
+                <p>Quotation count raw: {{ json_encode($quotationsCount) }}</p>
+            </div>
+            <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center shadow-inner">
+                <i class="fas fa-file-invoice-dollar text-indigo-600 text-2xl"></i>
+            </div>
+        </div>
+        <div class="bg-indigo-50 text-indigo-700 text-sm py-2 px-4">
+            <span class="font-medium">Updated:</span> <span id="quotationsUpdated">Just now</span>
+        </div>
+    </div>
+</a>
+
+<br />
+{{-- Recent Activities and Patients --}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Activity Feed -->
     <div class="bg-white rounded-xl shadow p-6 col-span-1">
@@ -161,8 +182,8 @@ function fetchDashboardMetrics() {
             document.getElementById('doctorsCount').textContent = data.doctors_count;  
             document.getElementById('samplesToday').textContent = data.samples_today;  
             document.getElementById('pendingReports').textContent = data.pending_reports;  
+            document.getElementById('quotationsCount').textContent = data.quotations_count;  
               
-            // Update "Updated" times with better formatting  
             const formatTime = (dateString) => {  
                 if (!dateString) return 'N/A';  
                 const date = new Date(dateString);  
@@ -177,15 +198,15 @@ function fetchDashboardMetrics() {
             document.getElementById('patientsUpdated').textContent = formatTime(data.last_patient);  
             document.getElementById('doctorsUpdated').textContent = formatTime(data.last_doctor);  
             document.getElementById('samplesUpdated').textContent = formatTime(data.last_sample);  
+            document.getElementById('pendingReportsUpdated').textContent = formatTime(data.last_report);  
+            document.getElementById('quotationsUpdated').textContent = formatTime(data.last_quotation);  
         })  
-        .catch(error => {  
-            console.error('Error fetching dashboard metrics:', error);  
+        .catch(error => {
+            console.error('Dashboard metrics fetch failed:', error);
         });  
 }  
   
-// Poll every 30 seconds  
-setInterval(fetchDashboardMetrics, 30000);  
-// Initial load  
+// Auto-fetch on page load
 document.addEventListener('DOMContentLoaded', fetchDashboardMetrics);  
 </script>  
 @endpush

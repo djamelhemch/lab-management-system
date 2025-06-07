@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_serializer
 from typing import Optional
 from enum import Enum
+from datetime import datetime
 
 class Role(str, Enum):
     admin = "admin"
@@ -23,9 +24,19 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class UserOut(UserBase):
+class UserOut(BaseModel):
     id: int
-    created_at: str
-
+    username: str
+    full_name: str
+    email: str
+    role: Role
+    status: Status
+    created_at: datetime  # let FastAPI serialize this
+    
+    @property
+    def name(self):
+        return self.full_name
     class Config:
         orm_mode = True
+        from_attributes = True
+        use_enum_values = True

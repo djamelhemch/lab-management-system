@@ -11,7 +11,7 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        $this->apiBaseUrl = env('FASTAPI_BASE_URL', 'http://localhost:8000');
+        $this->apiBaseUrl = env('FASTAPI_URL', 'http://localhost:8000');
     }
 
     public function showLoginForm()
@@ -33,16 +33,37 @@ class AuthController extends Controller
 
         if ($response->ok()) {
             $data = $response->json();
-            Session::put('token', $data['access_token']);
-            return redirect()->route('dashboard');
+            $token = $data['access_token'];
+
+            // ✅ Store token
+            Session::put('token', $token);
+
+            // ✅ Fetch user info from /users/me using token
+            $userResponse = Http::withToken($token)->get($this->apiBaseUrl . '/users/me');
+
+            if ($userResponse->ok()) {
+                $user = $userResponse->json();
+
+                // ✅ Store user info in session
+                Session::put('user', $user);
+                Session::put('role', $user['role']); // for convenience
+
+                return redirect()->route('dashboard');
+            }
+
+            // If token works but /users/me fails (very rare)
+            return redirect()->route('login')->withErrors(['username' => 'Login succeeded, but user info failed']);
         }
 
         return back()->withErrors(['username' => 'Invalid credentials']);
     }
-
     public function logout()
     {
         Session::forget('token');
+        Session::forget('user');
+        Session::forget('role');
+
         return redirect()->route('login');
     }
+
 }

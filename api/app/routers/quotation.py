@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.crud import quotation as crud_quotation
@@ -68,3 +68,13 @@ def create_quotation(quotation_in: QuotationCreate, db: Session = Depends(get_db
             "file_number": db_quotation.patient.file_number if db_quotation.patient else None
         }
     }
+
+@router.delete("/{quotation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_quotation(quotation_id: int, db: Session = Depends(get_db)):
+    quotation = crud_quotation.get_quotation(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+
+    db.delete(quotation)
+    db.commit()
+    return

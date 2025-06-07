@@ -10,41 +10,55 @@ from app.database import get_db
 from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.models.sample import Sample
-
+from app.models.quotation import Quotation  
+from app.models.queue import Queue, QueueType
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
-@router.get("/metrics")  
-def get_dashboard_metrics(db: Session = Depends(get_db)):  
-    now = datetime.now(timezone.utc)  
-    patients_count = db.query(func.count(Patient.id)).scalar()  
-    doctors_count = db.query(func.count(Doctor.id)).scalar()  
-    samples_today = db.query(func.count()).select_from(Sample).filter(  
-        func.date(Sample.collection_date) == date.today()  
-    ).scalar()  
-    pending_reports = 0  # Placeholder  
 
-    # Get last created/updated times with null checks  
-    last_patient = db.query(Patient).order_by(desc(Patient.created_at)).first()  
 
-    # Handle doctors that might not have created_at yet  
-    try:  
-        last_doctor = db.query(Doctor).filter(Doctor.created_at.isnot(None)).order_by(desc(Doctor.created_at)).first()  
-    except:  
-        last_doctor = None  
+@router.get("/metrics")
+def get_dashboard_metrics(db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+    
+    patients_count = db.query(func.count(Patient.id)).scalar()
+    doctors_count = db.query(func.count(Doctor.id)).scalar()
+    samples_today = db.query(func.count()).select_from(Sample).filter(
+        func.date(Sample.collection_date) == date.today()
+    ).scalar()
+    pending_reports = 0  # Placeholder
+    quotations_count = db.query(func.count(Quotation.id)).scalar()
 
-    last_sample = db.query(Sample).order_by(desc(Sample.collection_date)).first()  
+    # Updated queue counts using your single Queue table with type filter
+    reception_queue_count = db.query(func.count(Queue.id)).filter(
+        Queue.type == QueueType.reception,
+        Queue.status == "waiting"
+    ).scalar()
 
-    return {  
-        "patients_count": patients_count,  
-        "doctors_count": doctors_count,  
-        "samples_today": samples_today,  
-        "pending_reports": pending_reports,  
-        "last_patient": last_patient.created_at.isoformat() if last_patient else None,  
-        "last_doctor": last_doctor.created_at.isoformat() if last_doctor and hasattr(last_doctor, 'created_at') else None,  
-        "last_sample": last_sample.collection_date.isoformat() if last_sample else None,  
-        "now": now.isoformat(),  
+    blood_draw_queue_count = db.query(func.count(Queue.id)).filter(
+        Queue.type == QueueType.blood_draw,
+        Queue.status == "waiting"
+    ).scalar()
+
+    last_patient = db.query(Patient).order_by(desc(Patient.created_at)).first()
+    try:
+        last_doctor = db.query(Doctor).filter(Doctor.created_at.isnot(None)).order_by(desc(Doctor.created_at)).first()
+    except Exception:
+        last_doctor = None
+    last_sample = db.query(Sample).order_by(desc(Sample.collection_date)).first()
+
+    return {
+        "patients_count": patients_count,
+        "doctors_count": doctors_count,
+        "samples_today": samples_today,
+        "pending_reports": pending_reports,
+        "quotations_count": quotations_count,
+        "reception_queue_count": reception_queue_count,
+        "blood_draw_queue_count": blood_draw_queue_count,
+        "last_patient": last_patient.created_at.isoformat() if last_patient else None,
+        "last_doctor": last_doctor.created_at.isoformat() if last_doctor and hasattr(last_doctor, 'created_at') else None,
+        "last_sample": last_sample.collection_date.isoformat() if last_sample else None,
+        "now": now.isoformat(),
     }
-
 @router.get("/recent-activities")  
 def get_recent_activities(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:  
     activities = []  

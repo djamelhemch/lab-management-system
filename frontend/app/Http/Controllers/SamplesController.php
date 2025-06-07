@@ -12,7 +12,7 @@ class SamplesController extends Controller
 
     public function __construct()
     {
-        $this->apiBaseUrl = env('FASTAPI_BASE_URL', 'http://localhost:8000');
+        $this->apiBaseUrl = env('FASTAPI_URL', 'http://localhost:8000');
     }
 
     // List all samples

@@ -9,12 +9,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
-        if (auth()->check() && auth()->user()->role === 'admin') {
+        $user = $request->get('authUser');
+
+        if ($user && isset($user['role']) && $user['role'] === 'admin') {
             return $next($request);
         }
 
-        abort(403, 'Unauthorized'); // Or redirect to login
+        abort(403, 'Unauthorized');
     }
 }

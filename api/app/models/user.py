@@ -1,19 +1,21 @@
 from sqlalchemy import Column, String, Enum, Text, BigInteger, TIMESTAMP
 from sqlalchemy.sql import func
 from app.database import Base
-import enum
+from enum import Enum as PyEnum
+from sqlalchemy import Enum as SQLEnum
 from passlib.context import CryptContext
-
+from app.schemas.user import Role, Status  # ✅ Import shared enums
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class UserRole(enum.Enum):
+
+class Role(str, PyEnum):
     admin = "admin"
     biologist = "biologist"
     technician = "technician"
     secretary = "secretary"
     intern = "intern"
 
-class UserStatus(enum.Enum):
+class Status(str, PyEnum):
     active = "active"
     inactive = "inactive"
 
@@ -25,8 +27,8 @@ class User(Base):
     full_name = Column(String(100))
     email = Column(String(100))
     password_hash = Column(Text)
-    role = Column(Enum(UserRole))
-    status = Column(Enum(UserStatus))
+    role = Column(SQLEnum(Role), nullable=False)
+    status = Column(SQLEnum(Status), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     def verify_password(self, plain_password: str) -> bool:

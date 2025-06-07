@@ -6,8 +6,13 @@
         <h1 class="text-2xl font-bold text-red-600 tracking-tight">Dashboard</h1>
     </div>
     <div class="flex items-center space-x-4">
-        <span class="text-gray-600">Welcome, User</span>
+        @if(isset($authUser))
+            <p>Welcome, {{ $authUser['username'] }} ({{ $authUser['role'] }})</p>
+        @endif
         <img src="https://placehold.co/32x32" alt="Avatar" class="rounded-full border border-gray-200 shadow-sm">
-        <a href="" class="text-sm text-gray-500 hover:text-red-600 transition">Logout</a>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="text-sm text-gray-500 hover:text-red-600 transition">Logout</button>
+        </form>
     </div>
 </header>

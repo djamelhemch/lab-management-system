@@ -9,7 +9,9 @@ use App\Http\Controllers\{
     SamplesController,
     QuotationController,
     AuthController,
-    Admin\UserController
+    Admin\UserController,
+    AgreementController,
+    QueueController
 };
 
 // Authentication routes
@@ -51,6 +53,12 @@ Route::middleware(['auth.api'])->group(function () {
     Route::get('/quotations/table', [QuotationController::class, 'table'])->name('quotations.table');
     Route::post('/quotations', [QuotationController::class, 'store'])->name('quotations.store');
 
+    //Queue mangement
+    Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
+    Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
+    Route::delete('/queues/{id}', [QueueController::class, 'destroy'])->name('queues.destroy');
+    Route::post('/queues/move-next', [QueueController::class, 'moveNext'])->name('queues.moveNext');
+
     // Agreements
     Route::resource('agreements', AgreementController::class);
 
@@ -61,4 +69,7 @@ Route::middleware(['auth.api'])->group(function () {
 // Routes only for ADMIN users
 Route::middleware(['auth.api', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', UserController::class);
+    Route::get('admin/users/{id}', [UserController::class, 'show'])->name('admin.users.show');
+    Route::get('admin/users/{id}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
+
 });

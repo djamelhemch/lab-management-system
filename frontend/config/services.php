@@ -33,6 +33,9 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    'fastapi' => [
+            'url' => env('FASTAPI_URL', 'http://127.0.0.1:8000'), // or the actual IP/port of your FastAPI backend
+        ],
     ],
 
 ];

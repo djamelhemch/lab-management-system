@@ -5,6 +5,7 @@
             <i class="fas fa-times text-xl"></i>
         </button>
     </div>
+
    <nav class="flex flex-col gap-1 mt-6">
     <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }} {{ request()->routeIs('dashboard') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
         <i class="fas fa-tachometer-alt"></i> <span class="ml-2">Dashboard</span>
@@ -29,13 +30,18 @@
     <a href="{{ route('quotations.index') }}" class="sidebar-link {{ request()->routeIs('quotations.*') ? 'active' : '' }} {{ request()->routeIs('quotations.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
         <i class="fas fa-file-invoice"></i> <span class="ml-2">Quotations</span>
     </a>
-    @if(auth()->check() && auth()->user()->role === 'admin')
+     <a href="{{ route('queues.index') }}" 
+       class="sidebar-link {{ request()->routeIs('queues.*') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+      <i class="fas fa-list"></i></i> <span class="ml-2">File d'attente</span>
+    </a>
+    @if(isset($authUser) && $authUser['role'] === 'admin')
         <a href="{{ route('admin.users.index') }}"
         class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
         flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
         <i class="fas fa-users-cog"></i> <span class="ml-2">Users</span>
         </a>
     @endif
+    
 </nav>
 
 </div>
