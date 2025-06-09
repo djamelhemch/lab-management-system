@@ -31,8 +31,12 @@
         <i class="fas fa-file-invoice"></i> <span class="ml-2">Quotations</span>
     </a>
      <a href="{{ route('queues.index') }}" 
-       class="sidebar-link {{ request()->routeIs('queues.*') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+       class="sidebar-link {{ request()->routeIs('queues.index') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
       <i class="fas fa-list"></i></i> <span class="ml-2">File d'attente</span>
+    </a>
+    <a href="{{ route('queues.show') }}" 
+       class="sidebar-link {{ request()->routeIs('queues.show') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+      <i class="fas fa-list"></i></i> <span class="ml-2">Salle d'attente</span>
     </a>
     @if(isset($authUser) && $authUser['role'] === 'admin')
         <a href="{{ route('admin.users.index') }}"

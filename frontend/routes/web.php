@@ -60,6 +60,7 @@ Route::middleware(['auth.api'])->group(function () {
     Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
     Route::delete('/queues/{id}', [QueueController::class, 'destroy'])->name('queues.destroy');
     Route::post('/queues/move-next', [QueueController::class, 'moveNext'])->name('queues.moveNext');
+    Route::get('/queues/display', [QueueController::class, 'show'])->name('queues.show');
 
     // Agreements
     Route::resource('agreements', AgreementController::class);

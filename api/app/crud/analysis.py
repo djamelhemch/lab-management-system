@@ -8,6 +8,7 @@ from app.models.analysis import CategoryAnalyse
 from app.models.analysis import AnalysisCatalog as Analysis  # Import the Analysis model
 
 class AnalysisCRUD:
+    
     def create(self, db: Session, analysis_data: AnalysisCreate) -> AnalysisCatalog:
         db_analysis = AnalysisCatalog(**analysis_data.dict())
         db.add(db_analysis)
