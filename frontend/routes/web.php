@@ -22,7 +22,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Routes for authenticated users (admin + user)
 Route::middleware(['auth.api'])->group(function () {
+    
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
 
     // Patients
     Route::get('/patients/table', [PatientController::class, 'table'])->name('patients.table');

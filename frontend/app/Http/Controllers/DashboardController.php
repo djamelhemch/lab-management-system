@@ -85,4 +85,18 @@ class DashboardController extends Controller
             ]
         ];
     }
+
+    public function getStats()
+    {
+        return response()->json([
+            'patientsCount' => Patient::count(),
+            'doctorsCount' => Doctor::count(),
+            'samplesToday' => Sample::whereDate('created_at', today())->count(),
+            'pendingReports' => Report::where('status', 'pending')->count(),
+            'receptionQueueCount' => Queue::where('type', 'reception')->count(),
+            'bloodDrawQueueCount' => Queue::where('type', 'blood_draw')->count(),
+            'quotationsCount' => Quotation::count(),
+        ]);
+    }
+
 }
