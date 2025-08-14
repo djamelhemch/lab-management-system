@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import auth, agreement, patient, doctor, dashboard, sample,analysis, quotation,queue
+from app.routers import auth, agreement, patient, doctor, dashboard, sample,analysis, quotation,queue,leave_request, profile
 from fastapi.middleware.cors import CORSMiddleware
 import time
 
@@ -33,6 +33,8 @@ app.include_router(quotation.router)
 app.include_router(queue.router)
 app.include_router(agreement.router)
 app.include_router(auth.router)
+app.include_router(leave_request.router)
+app.include_router(profile.router)
 
 @app.get("/")
 def root():

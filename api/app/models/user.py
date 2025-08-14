@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Enum, Text, BigInteger, TIMESTAMP
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 from enum import Enum as PyEnum
 from sqlalchemy import Enum as SQLEnum
@@ -30,6 +31,13 @@ class User(Base):
     role = Column(SQLEnum(Role), nullable=False)
     status = Column(SQLEnum(Status), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
+    # One-to-one relationship with Profile
+    profile = relationship(
+        "Profile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete"
+    )
 
     def verify_password(self, plain_password: str) -> bool:
         return pwd_context.verify(plain_password, self.password_hash)
