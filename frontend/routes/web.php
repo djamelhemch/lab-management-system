@@ -31,7 +31,7 @@ Route::middleware(['auth.api'])->group(function () {
      // Profile page
     Route::get('/profile/{userId}', [ProfileController::class, 'show'])->name('profiles.show');
     Route::put('/profile/{userId}', [ProfileController::class, 'update'])->name('profiles.update');
-
+    
     // Leave Requests
     Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leave-requests.store');
     Route::delete('/leave-requests/{id}', [LeaveRequestController::class, 'destroy'])->name('leave-requests.destroy');

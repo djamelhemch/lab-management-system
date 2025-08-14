@@ -35,8 +35,9 @@ class ProfileController extends Controller
             // Log the photo field specifically
             Log::info("Profile photo URL", ['photo' => $profile['photo_url'] ?? null]);
         }
+        $theme = session('theme', $profile['theme'] ?? 'light');
 
-        return view('profiles.show', compact('profile', 'leaveRequests'));
+        return view('profiles.show', compact('profile', 'leaveRequests', 'theme'));
     }
 
 public function update(Request $request, $userId)
@@ -99,7 +100,9 @@ public function update(Request $request, $userId)
     if (!empty($request->checklist)) {
         $data['checklist'] = array_map('trim', explode(',', $request->checklist));
     }
-
+    if (isset($data['theme'])) {
+        session(['theme' => $data['theme']]);
+    }
     // Send update to API
     $updateResponse = $this->api->put("/profiles/{$userId}", $data);
     Log::info("Profile update API response", ['userId' => $userId, 'response' => $updateResponse->body()]);
