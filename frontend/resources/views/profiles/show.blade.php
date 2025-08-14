@@ -23,7 +23,7 @@
                     <input id="photo_input" type="file" name="photo_file" class="hidden" accept="image/*">
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold">{{ $profile['name'] ?? 'User Name' }}</h1>
+                    <h1 class="text-3xl font-bold">{{ $name }}</h1>
                     <p class="text-gray-500">{{ $profile['email'] ?? '' }}</p>
                 </div>
             </div>

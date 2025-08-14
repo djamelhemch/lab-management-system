@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Facades\Log;
 class QueueController extends Controller
 {
     protected $apiBase;
@@ -36,7 +36,7 @@ class QueueController extends Controller
         foreach ($patientsData as $patient) {
             $patients[$patient['id']] = $patient['full_name'] ?? ($patient['first_name'] . ' ' . $patient['last_name']);
         }
-
+        Log::info("User full name", ['full_name' => $profile['user']['full_name'] ?? null]);
         return view('queues.index', [
             'receptionQueue' => $queues['reception'] ?? [],
             'bloodDrawQueue' => $queues['blood_draw'] ?? [],

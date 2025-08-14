@@ -21,7 +21,10 @@ class ProfileController extends Controller
     {
         $profileResponse = $this->api->get("/profiles/{$userId}");
         Log::info("Profile API response", ['userId' => $userId, 'response' => $profileResponse->body()]);
-        
+        $userResponse = $this->api->get("/users/{$userId}");
+        $user = $userResponse->successful() ? $userResponse->json() : null;
+
+        $name = $user['full_name'] ?? 'User Name';
         $profile = $profileResponse->successful() ? $profileResponse->json() : null;
 
         $leaveResponse = $this->api->get("/leave-requests");
@@ -37,7 +40,7 @@ class ProfileController extends Controller
         }
         $theme = session('theme', $profile['theme'] ?? 'light');
 
-        return view('profiles.show', compact('profile', 'leaveRequests', 'theme'));
+        return view('profiles.show', compact('profile', 'leaveRequests', 'theme', 'name'));
     }
 
 public function update(Request $request, $userId)
