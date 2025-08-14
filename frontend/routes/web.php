@@ -11,7 +11,9 @@ use App\Http\Controllers\{
     AuthController,
     Admin\UserController,
     AgreementController,
-    QueueController
+    QueueController,
+    ProfileController,
+    LeaveRequestController
 };
 
 // Authentication routes
@@ -25,6 +27,14 @@ Route::middleware(['auth.api'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
+
+     // Profile page
+    Route::get('/profile/{userId}', [ProfileController::class, 'show'])->name('profiles.show');
+    Route::put('/profile/{userId}', [ProfileController::class, 'update'])->name('profiles.update');
+
+    // Leave Requests
+    Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leave-requests.store');
+    Route::delete('/leave-requests/{id}', [LeaveRequestController::class, 'destroy'])->name('leave-requests.destroy');
 
     // Patients
     Route::get('/patients/table', [PatientController::class, 'table'])->name('patients.table');

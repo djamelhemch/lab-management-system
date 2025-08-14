@@ -27,6 +27,7 @@ class QuotationController extends Controller
 
         return view('quotations.index', compact('quotations'));
     }
+    
     public function table(Request $request)
     {
         // Get filtered/ paginated quotations as per request inputs

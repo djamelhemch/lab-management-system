@@ -50,7 +50,10 @@ class AuthController extends Controller
 
                 return redirect()->route('dashboard');
             }
-
+            if ($response->status() === 401) {
+                Session::forget(['token', 'user', 'role']);
+                return redirect()->route('login')->withErrors(['session' => 'Session expired, please log in again.']);
+            }
             // If token works but /users/me fails (very rare)
             return redirect()->route('login')->withErrors(['username' => 'Login succeeded, but user info failed']);
         }

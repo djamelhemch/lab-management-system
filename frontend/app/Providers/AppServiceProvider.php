@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-       View::composer('*', function ($view) {
+        View::composer('*', function ($view) {
         $authUser = null;
         $token = Session::get('token');
 
@@ -30,9 +30,22 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $response = Http::withToken($token)
                     ->get(env('FASTAPI_URL') . '/users/me');
-                
+
                 if ($response->ok()) {
-                    $authUser = $response->json();
+                    $user = $response->json();
+
+                    // Fetch the profile for this user
+                    $profileResponse = Http::withToken($token)
+                        ->get(env('FASTAPI_URL') . '/profiles/' . $user['id']);
+
+                    if ($profileResponse->ok()) {
+                        $profile = $profileResponse->json();
+                        $user['photo_url'] = $profile['photo_url'] ?? null;
+                    } else {
+                        $user['photo_url'] = null;
+                    }
+
+                    $authUser = $user;
                 }
             } catch (\Exception $e) {
                 \Log::error('Error fetching auth user: ' . $e->getMessage());  
@@ -40,6 +53,8 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $view->with('authUser', $authUser);
-        });
+    });
+
     }
+
 }

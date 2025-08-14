@@ -50,4 +50,14 @@ class ApiService
     {
         return $this->client()->delete($endpoint);
     }
+    public function postMultipart($url, $multipart)
+    {
+        return $this->client->post($url, [
+            'multipart' => $multipart,
+            // Include auth token if needed
+            'headers' => [
+                'Authorization' => 'Bearer ' . session('fastapi_token')
+            ]
+        ]);
+    }
 }

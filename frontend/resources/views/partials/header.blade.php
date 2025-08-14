@@ -9,7 +9,12 @@
         @if(isset($authUser))
             <p>Welcome, {{ $authUser['username'] }} ({{ $authUser['role'] }})</p>
         @endif
-        <img src="https://placehold.co/32x32" alt="Avatar" class="rounded-full border border-gray-200 shadow-sm">
+
+        {{-- Use the uploaded photo or fallback to placeholder --}}
+<img src="{{ $authUser['photo_url'] ?? 'https://placehold.co/32x32' }}" 
+     alt="Avatar" 
+     class="rounded-full border border-gray-200 shadow-sm w-8 h-8 object-cover">
+
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="text-sm text-gray-500 hover:text-red-600 transition">Logout</button>
