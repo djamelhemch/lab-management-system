@@ -3,64 +3,89 @@
 @section('content')
 <div class="container mx-auto px-6 py-8 min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white select-none">
 
-    <header class="w-full max-w-5xl flex justify-between items-center mb-10">
-        <h1 class="text-5xl font-extrabold tracking-wide">Queue Overview</h1>
-        <button id="openFullscreenBtn" 
-                class="bg-red-600 hover:bg-red-700 px-5 py-3 rounded-md text-lg font-semibold transition">
-            Show Fullscreen
+    <header class="w-full max-w-5xl flex justify-between items-center mb-10 bg-gray-900 text-white p-4 rounded-md">
+        <h1 class="text-5xl font-extrabold tracking-wide">Voir la fille d'attente</h1>
+        <button id="openFullscreenBtn" class="bg-red-600 hover:bg-red-700 px-5 py-3 rounded-md text-lg font-semibold transition">
+            Plein écran
         </button>
     </header>
 
     {{-- Main page summary (optional, you can customize or remove) --}}
     <p class="max-w-3xl text-center text-gray-300 text-lg mb-16">
-        Tap "Show Fullscreen" to view the detailed queue status for patients waiting.
+        Clicker sur "Plein écran" pour voir l'écran de file d'attente.
     </p>
 
-    {{-- Fullscreen Overlay --}}
-    <div id="fullscreenOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-95 backdrop-blur-md z-50 hidden flex flex-col">
-        <div class="flex justify-between items-center px-10 py-6 border-b border-red-700">
-            <h2 class="text-6xl font-extrabold uppercase tracking-wide">File D'attente</h2>
-            <button id="closeFullscreenBtn" 
-                    class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-md text-xl font-semibold">
-                Fermer
-            </button>
+   <div id="fullscreenOverlay" class="fixed inset-0 bg-white z-50 hidden flex flex-col text-gray-900 select-none">
+
+    {{-- Header --}}
+    <div class="flex justify-between items-start px-10 pt-8">
+        <div>
+            <div class="logo-container">
+                <img src="/images/logo_lab.PNG" alt="Abdelatif Lab" class="logo-img">
+            </div>
+            <div class="doctor-info">
+                <p class="doctor-name">
+                    Dr N.HAKIKI <span class="doctor-subname">ep.BOUACHRIA</span>
+                </p>
+                <p class="doctor-specialty">Médecin spécialiste en Hématologie</p>
+            </div>
         </div>
-
-        <div class="flex-grow px-12 py-10 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-24">
-
-            @foreach(['Reception' => 'reception', 'Prélèvement' => 'bloodDraw'] as $title => $queueKey)
-            <section class="bg-gray-800 rounded-lg shadow-lg p-12 flex flex-col items-center space-y-12">
-                <header class="border-b border-red-600 pb-4 w-full text-center">
-                    <h3 class="text-5xl font-bold tracking-wide uppercase">{{ $title }}</h3>
-                </header>
-
-                <div class="w-full grid grid-cols-3 gap-12 text-center">
-
-                    <div class="bg-red-700 rounded-lg py-12 px-8 flex flex-col justify-center items-center">
-                        <h4 class="text-2xl font-semibold mb-4">Actuel</h4>
-                        <p id="{{ $queueKey }}Current" class="text-8xl font-extrabold">-</p>
-                        <p id="{{ $queueKey }}CurrentWait" class="mt-3 text-lg italic text-red-200"></p>
-                        <p class="mt-1 text-sm text-red-300">Temps moyen: ~<span id="{{ $queueKey }}AvgWait">-</span> min</p>
-                    </div>
-
-                    <div class="bg-red-500 rounded-lg py-12 px-8 flex flex-col justify-center items-center">
-                        <h4 class="text-2xl font-semibold mb-4">Suivant</h4>
-                        <p id="{{ $queueKey }}Next" class="text-7xl font-extrabold">-</p>
-                        <p id="{{ $queueKey }}NextWait" class="mt-3 text-lg italic text-red-100"></p>
-                    </div>
-
-                    <div class="bg-red-900 rounded-lg py-12 px-8 flex flex-col justify-center items-center">
-                        <h4 class="text-2xl font-semibold mb-4">En Attente</h4>
-                        <p id="{{ $queueKey }}Total" class="text-7xl font-extrabold">-</p>
-                        <p id="{{ $queueKey }}EstWait" class="mt-3 text-lg italic text-red-200"></p>
-                    </div>
-
-                </div>
-            </section>
-            @endforeach
-
+        
+        <div class="flex flex-col items-center mb-8">
+            <!-- Date -->
+            <p id="currentDate" class="text-3xl font-light nexa-light text-gray-900">Mercredi 15 Mai 2024</p>
+            <!-- Time -->
+            <p id="currentTime" class="text-5xl font-extrabold nexa-bold text-black text-center">12:00</p>
         </div>
     </div>
+
+    {{-- Main Content --}}
+    <div class="flex-grow flex items-center px-10 py-6 gap-16">
+        
+        {{-- Left: Video --}}
+        <div class="flex-grow mr-16 max-w-[1380px]">
+            <video autoplay loop muted playsinline class="lab-video">
+                <source src="/videos/lab_video.mp4" type="video/mp4">
+                Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+        </div>
+
+        {{-- Right: Ticket display --}}
+       <div class="flex flex-col gap-14">
+            <!-- Poste 01 -->
+            <div class="ticket-display flex items-center justify-center">
+                <!-- Inner Circle -->
+                <div class="ticket-inner-circle flex flex-col items-center justify-center">
+                    <p class="ticket-title nexa-bold">Réception</p>
+                    <p class="ticket-label nexa-light">Ticket</p>
+                    <p id="receptionCurrent" class="ticket-number nexa-bold"></p>
+                </div>
+            </div>
+
+            <!-- Poste 02 -->
+            <div class="ticket-display flex items-center justify-center">
+                <!-- Inner Circle -->
+                <div class="ticket-inner-circle flex flex-col items-center justify-center">
+                    <p class="ticket-title nexa-bold">Prise de sang</p>
+                    <p class="ticket-label nexa-light">Ticket</p>
+                    <p id="bloodDrawCurrent" class="ticket-number nexa-bold"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Footer --}}
+    <div class="marquee-container bg-red-500 text-white py-4">
+        <div class="marquee-content text-xl font-semibold whitespace-nowrap">
+           L'ÉTABLISSEMENT "ABDELATIF LAB" LABORATOIRE D'ANALYSES DE SANG CONVENTIONNÉ AVEC LE LABORATOIRE CERBA EN FRANCE VOUS SOUHAITE LA BIENVENUE, LE LABORATOIRE EST OUVERT DU SAMEDI AU JEUDI DE 7H30 à 16H30. 
+        </div>
+    </div>
+    
+    {{-- Close Button --}}
+    <button id="closeFullscreenBtn" class="fullscreen-close-btn">
+        <span class="close_btn">×</span>
+    </button>
+</div>
 </div>
 
 <script>
@@ -69,108 +94,230 @@
     const closeBtn = document.getElementById('closeFullscreenBtn');
     const overlay = document.getElementById('fullscreenOverlay');
 
+    // Open fullscreen
     openBtn.addEventListener('click', () => {
         overlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden'; // prevent background scroll
+        document.body.style.overflow = 'hidden';
     });
 
+    // Close fullscreen
     closeBtn.addEventListener('click', () => {
         overlay.classList.add('hidden');
         document.body.style.overflow = 'auto';
     });
 
+    // Escape key closes fullscreen
     document.addEventListener('keydown', (e) => {
         if (e.key === "Escape" && !overlay.classList.contains('hidden')) {
             closeBtn.click();
         }
     });
 
+    // Update date & time
+    function updateDateTime() {
+        const now = new Date();
+        document.getElementById('currentDate').textContent =
+            now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('currentTime').textContent =
+            now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Fetch queue data
     async function fetchQueueData() {
         try {
-            const response = await fetch(`${fastApiBase}/queues/status`);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
+            const res = await fetch(`${fastApiBase}/queues/status`);
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+        document.getElementById('receptionCurrent').textContent =
+            data.reception?.current != null ? `N°${String(data.reception.current).padStart(2, '0')}` : '-';
 
-            document.getElementById('receptionCurrent').textContent = data.reception?.current ?? '-';
-            document.getElementById('receptionNext').textContent = data.reception?.next ?? '-';
-            document.getElementById('receptionTotal').textContent = data.reception?.total ?? '-';
-            document.getElementById('receptionAvgWait').textContent = data.reception?.avg_wait_time ?? '-';
-            document.getElementById('receptionEstWait').textContent = data.reception?.estimated_wait_time ?? '-';
-
-            document.getElementById('bloodDrawCurrent').textContent = data.blood_draw?.current ?? '-';
-            document.getElementById('bloodDrawNext').textContent = data.blood_draw?.next ?? '-';
-            document.getElementById('bloodDrawTotal').textContent = data.blood_draw?.total ?? '-';
-            document.getElementById('bloodDrawAvgWait').textContent = data.blood_draw?.avg_wait_time ?? '-';
-            document.getElementById('bloodDrawEstWait').textContent = data.blood_draw?.estimated_wait_time ?? '-';
-
-        } catch (error) {
-            console.error('Failed to fetch queue data:', error);
+        document.getElementById('bloodDrawCurrent').textContent =
+            data.blood_draw?.current != null ? `N°${String(data.blood_draw.current).padStart(2, '0')}` : '-';
+        } catch (err) {
+            console.error(err);
         }
     }
+
+    // Intervals for updates
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
 
     fetchQueueData();
     setInterval(fetchQueueData, 2500);
 </script>
 
 <style>
-  /* Improve font smoothing and base font */
-  body, #fullscreenOverlay {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
 
-  /* Headers: consistent letter spacing and line height */
-  header h1,
-  #fullscreenOverlay h2,
-  #fullscreenOverlay h3,
-  #fullscreenOverlay h4 {
-    letter-spacing: 0.05em;
-    line-height: 1.2;
-  }
+  /* Logo container */
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* center on small screens */
+}
 
-  /* Paragraphs: improve readability */
-  #fullscreenOverlay p {
-    line-height: 1.6;
-    font-weight: 500;
-  }
+@media (min-width: 768px) {
+    .logo-container {
+        justify-content: flex-start; /* align left on medium+ screens */
+    }
+}
 
-  /* Large numbers: use a more readable font weight and line height */
-  #fullscreenOverlay p.text-8xl,
-  #fullscreenOverlay p.text-7xl {
-    font-weight: 900;
-    line-height: 1;
-    font-feature-settings: "tnum";
-    font-variant-numeric: tabular-nums;
-  }
+/* Logo image */
+.logo-img {
+    height: 4.5rem; /* 80px */
+    width: auto;  /* maintain aspect ratio */
+}
 
-  /* Button fonts */
-  #openFullscreenBtn,
-  #closeFullscreenBtn {
-    font-family: 'Inter', system-ui, sans-serif;
-    font-weight: 600;
-  }
+/* Doctor name */
+.doctor-name {
+    font-family: 'Nexa', sans-serif;
+    font-weight: 900;        /* extra bold */
+    margin-bottom: 0.25rem;
+    font-size: 2rem;  
+    color: #000;             /* dark color */
+}
 
-  /* Fix overlay visibility transition */
-  #fullscreenOverlay {
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-    opacity: 0;
-    visibility: hidden;
-  }
-  #fullscreenOverlay.flex {
-    opacity: 1;
-    visibility: visible;
-  }
- #fullscreenOverlay .grid > div {  
-    text-align: center; /* Override parent */  
-  }
-  /* Fine-tune vertical alignment of text */  
-  #fullscreenOverlay #bloodDrawNext {  
-    margin-top: -0.25em; /* Fine-tune vertical position */  
-    display: block; /* Ensure it respects margin */  
-  } 
-  #fullscreenOverlay .bg-red-500 h4 {  
-    margin-bottom: 0.6em; /* Adjust spacing */  
-  }
+/* Subname (ep.BOUACHRIA) */
+.doctor-subname {
+    font-family: 'Nexa', sans-serif;
+    font-weight: 700;        /* normal weight */
+    font-size: 1.85rem;  
+    color: #000;     /* slightly smaller */
+}
+
+/* Specialty */
+.doctor-specialty {
+    font-family: 'Nexa', sans-serif;
+    font-size: 1.25rem;      /* larger than default */
+    color: #0e0d0dff;             /* gray */
+    font-weight: 600; /* semi-bold */
+}
+
+.lab-video {
+    border: 6px solid #A61731; /* existing border */
+    border-radius: 1rem; /* matches rounded-2xl */
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2); /* shadow-xl */
+    object-fit: cover;
+    width: 100%;
+    max-height: 628px;
+    }
+
+.ticket-display {
+    width: 288px; /* approx 72 x 4rem */
+    height: 288px; /* same as above */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 4px solid #A61731;
+    background-color: #fff;
+    
+}
+
+.ticket-title {
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: -38px;
+    color: white; /* Updated color */
+}
+
+.ticket-label {
+    font-size: 24px;
+    margin-bottom: -31px;
+    margin-top: 44px; /* Adjust vertical alignment */
+    color: white; /* Updated color */
+}
+
+.ticket-number {
+    font-size: 70px;
+    font-weight: 800;
+    margin-bottom: -8px;
+    color: white; /* Updated color */
+}
+
+/* Optional: if you want a gradient background inside the inner circle */
+.ticket-inner-circle {
+    width: 240px; /* approx 60 x 4rem */ 
+    height: 240px; 
+    display:  flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(-230deg, rgba(255,255,255,1) 0%, rgba(226,69,102,1) 50%);
+    color: white; 
+}
+@font-face {
+  font-family: 'Nexa';
+  src: url('/fonts/NexaLight.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Nexa';
+  src: url('/fonts/NexaBold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+.marquee-container {
+    overflow: hidden;       /* hide overflowing text */
+    position: relative;
+}
+
+.marquee-content {
+    display: inline-block;
+    padding-left: 100%;     /* start offscreen */
+    animation: marquee 25s linear infinite; /* adjust duration for speed */
+}
+
+@keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+/* Utility classes */
+.nexa-light {
+  font-family: 'Nexa', sans-serif;
+  font-weight: 300;
+}
+
+.nexa-bold {
+  font-family: 'Nexa', sans-serif;
+  font-weight: 700;
+}
+
+.fullscreen-close-btn {
+    position: fixed;
+    bottom: 56rem; /* bottom-6 */
+    right: 0.8rem; /* right-6 */
+    width: 1.5rem; /* w-10 */
+    height: 1.5rem; /* h-10 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.3); /* bg-white/30 */
+    color: rgba(55, 65, 81, 1); /* text-gray-700 */
+    backdrop-filter: blur(8px); /* backdrop-blur-sm */
+    border-radius: 9999px; /* rounded-full */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* shadow-sm */
+    border: 1px solid rgba(156, 163, 175, 0.5); /* border-gray-300/50 */
+    transition: all 0.2s ease; /* transition-all duration-200 */
+    z-index: 50;
+    cursor: pointer;
+    font-size: 1.25rem; /* text-xl */
+    line-height: 1; /* leading-none */
+}
+
+.fullscreen-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.4); /* hover:bg-white/40 */
+    color: rgba(31, 41, 55, 1); /* hover:text-gray-900 */
+    border-color: rgba(156, 163, 175, 0.8); /* hover:border-gray-400/50 */
+}
+.fullscreen-close-btn .close_btn {
+    position: relative; /* allow offset */
+    top: -3px;   /* move up */
+    font-size: 1.5rem; /* optional: make it bigger */
+}
 </style>
 @endsection

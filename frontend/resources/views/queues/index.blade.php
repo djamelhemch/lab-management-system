@@ -10,15 +10,15 @@
         <section class="bg-white rounded-lg shadow-lg flex flex-col">
             <header class="sticky top-0 bg-white border-b border-gray-200 px-6 py-5 flex flex-col sm:flex-row justify-between items-center z-10">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">Reception Queue</h2>
-                    <p class="text-sm text-gray-600 mt-1">Waiting: {{ count($receptionQueue) }}</p>
+                    <h2 class="text-2xl font-bold text-gray-900">Réception</h2>
+                    <p class="text-sm text-gray-600 mt-1">En attente: {{ count($receptionQueue) }}</p>
                 </div>
                 <form id="moveNextForm" method="POST" action="{{ route('queues.moveNext') }}" class="mt-4 sm:mt-0">
                     @csrf
                     <button type="submit" id="moveNextBtn"
                         class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-12 rounded-lg shadow-lg transition transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
                         {{ count($receptionQueue) === 0 ? 'disabled' : '' }}>
-                        Move Next &#8594;
+                        Au Suivant &#8594;
                     </button>
                 </form>
                 <audio id="notification-sound" src="/audio/notify.mp3" preload="auto"></audio>
@@ -34,7 +34,7 @@
                             <div>
                                 <h3 class="text-md font-medium text-gray-900 select-text">{{ $patients[$item['patient_id']] ?? 'Patient #'.$item['patient_id'] }}</h3>
                                 @if($item['quotation_id'])
-                                    <p class="text-xs text-gray-500 select-text">Quotation: <span class="font-semibold">#{{ $item['quotation_id'] }}</span></p>
+                                    <p class="text-xs text-gray-500 select-text">Devis: <span class="font-semibold">#{{ $item['quotation_id'] }}</span></p>
                                 @endif
                             </div>
                         </div>
@@ -48,7 +48,7 @@
                 @empty
                     <li class="py-20 text-center text-gray-400 select-none">
                         <i class="fas fa-clock fa-3x mb-4"></i>
-                        <p class="text-lg">No patients in reception queue.</p>
+                        <p class="text-lg">Aucun patient en file d'attente.</p>
                     </li>
                 @endforelse
             </ul>
@@ -57,8 +57,8 @@
         {{-- Blood Draw Queue --}}
         <section class="bg-white rounded-lg shadow-lg flex flex-col">
             <header class="sticky top-0 bg-white border-b border-gray-200 px-6 py-5 z-10">
-                <h2 class="text-2xl font-bold text-gray-900">Blood Draw Queue</h2>
-                <p class="text-sm text-gray-600 mt-1">Waiting: {{ count($bloodDrawQueue) }}</p>
+                <h2 class="text-2xl font-bold text-gray-900">Prise de sang</h2>
+                <p class="text-sm text-gray-600 mt-1">En attente: {{ count($bloodDrawQueue) }}</p>
             </header>
 
             <ul class="divide-y divide-gray-200 max-h-[36rem] overflow-y-auto px-6 py-4">
@@ -71,7 +71,7 @@
                             <div>
                                 <h3 class="text-md font-medium text-gray-900 select-text">{{ $patients[$item['patient_id']] ?? 'Patient #'.$item['patient_id'] }}</h3>
                                 @if($item['quotation_id'])
-                                    <p class="text-xs text-gray-500 select-text">Quotation: <span class="font-semibold">#{{ $item['quotation_id'] }}</span></p>
+                                    <p class="text-xs text-gray-500 select-text">Devis: <span class="font-semibold">#{{ $item['quotation_id'] }}</span></p>
                                 @endif
                             </div>
                         </div>
@@ -85,7 +85,7 @@
                 @empty
                     <li class="py-20 text-center text-gray-400 select-none">
                         <i class="fas fa-clock fa-3x mb-4"></i>
-                        <p class="text-lg">No patients in blood draw queue.</p>
+                        <p class="text-lg">Aucun patient en file d'attente.</p>
                     </li>
                 @endforelse
             </ul>
@@ -94,36 +94,36 @@
 
     {{-- Right: Add to Queue Form --}}
     <aside class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg sticky top-10 self-start">
-        <h2 class="text-3xl font-bold text-gray-900 mb-6">Add Patient to Queue</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-6">Ajoute patient a la file</h2>
         <form method="POST" action="{{ route('queues.store') }}" class="space-y-6">
             @csrf
             <div>
                 <label for="patient_id" class="block text-sm font-medium text-gray-700 mb-2">Patient</label>
                 <select name="patient_id" id="patient_id" required
                     class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 px-4 py-3">
-                    <option value="">Select Patient</option>
+                    <option value="">Selectionner patient</option>
                     @foreach($patients as $id => $name)
                         <option value="{{ $id }}" {{ old('patient_id')==$id?'selected':'' }}>{{ $name }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label for="quotation_id" class="block text-sm font-medium text-gray-700 mb-2">Quotation (optional)</label>
+                <label for="quotation_id" class="block text-sm font-medium text-gray-700 mb-2">Devis (optionnel)</label>
                 <input type="number" name="quotation_id" id="quotation_id" value="{{ old('quotation_id') }}" placeholder="#ID"
                     class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 px-4 py-3" />
             </div>
             <div>
-                <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Queue Type</label>
+                <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Type de file d'attente</label>
                 <select name="type" id="type" required
                     class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 px-4 py-3">
-                    <option value="">Select Type</option>
+                    <option value="">Choisir une file</option>
                     <option value="reception" {{ old('type')=='reception'?'selected':'' }}>Reception</option>
                     <option value="blood_draw" {{ old('type')=='blood_draw'?'selected':'' }}>Blood Draw</option>
                 </select>
             </div>
             <button type="submit"
                 class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-lg shadow-lg transition focus:outline-none focus:ring-4 focus:ring-red-400">
-                <i class="fas fa-plus mr-2"></i> Add to Queue
+                <i class="fas fa-plus mr-2"></i> Ajouter à la file
             </button>
         </form>
     </aside>

@@ -15,6 +15,6 @@
     </div>
     <p class="text-xs text-gray-400 mt-3 flex items-center space-x-1" id="{{ $updatedId }}">
         <i class="fas fa-sync-alt animate-spin hidden" id="{{ $updatedId }}-spinner"></i>
-        <span>Updated just now</span>
+        <span>Actualisé récemment</span>
     </p>
 </a>

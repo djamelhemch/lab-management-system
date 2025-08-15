@@ -11,7 +11,7 @@
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         @include('partials.dashboard-card', [
-            'title' => 'Total Patients',
+            'title' => 'Nombre de patients',
             'count' => $patientsCount,
             'color' => 'blue',
             'icon' => 'users',
@@ -19,7 +19,7 @@
             'updatedId' => 'patientsUpdated'
         ])
         @include('partials.dashboard-card', [
-            'title' => 'Doctors',
+            'title' => 'Médecins',
             'count' => $doctorsCount,
             'color' => 'green',
             'icon' => 'user-md',
@@ -27,7 +27,7 @@
             'updatedId' => 'doctorsUpdated'
         ])
         @include('partials.dashboard-card', [
-            'title' => 'Samples Today',
+            'title' => 'Échantillons aujourd\'hui',
             'count' => $samplesToday,
             'color' => 'yellow',
             'icon' => 'vial',
@@ -35,7 +35,7 @@
             'updatedId' => 'samplesUpdated'
         ])
         @include('partials.dashboard-card', [
-            'title' => 'Pending Reports',
+            'title' => 'Rapports en attente',
             'count' => $pendingReports,
             'color' => 'red',
             'icon' => 'file-medical',
@@ -48,11 +48,11 @@
 <!-- Section: Queues -->
 <section class="mb-10">
     <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-        🕐 Queues
+        🕐 Files d'attentes
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         @include('partials.dashboard-card', [
-            'title' => 'Reception Queue',
+            'title' => 'File d\'attente de réception',
             'count' => $receptionQueueCount ?? 0,
             'color' => 'purple',
             'icon' => 'concierge-bell',
@@ -60,7 +60,7 @@
             'updatedId' => 'receptionQueueUpdated'
         ])
         @include('partials.dashboard-card', [
-            'title' => 'Blood Draw Queue',
+            'title' => 'File d\'attente de prélèvement sanguin',
             'count' => $bloodDrawQueueCount ?? 0,
             'color' => 'pink',
             'icon' => 'syringe',
@@ -73,11 +73,11 @@
 <!-- Section: Quotations -->
 <section class="mb-10">
     <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-        📄 Quotations
+        📄 Devis et Factures
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         @include('partials.dashboard-card', [
-            'title' => 'Total Quotations',
+            'title' => 'Devis Total',
             'count' => $quotationsCount ?? 0,
             'color' => 'indigo',
             'icon' => 'file-invoice-dollar',
@@ -90,13 +90,13 @@
 <!-- Section: Recent Activity and Patients -->
 <section>
     <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-        📋 Activity & Patients
+        📋 Activités & Patients
     </h2>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Activity Feed -->
         <div class="bg-white rounded-xl shadow p-6 col-span-1">
             <h3 class="text-lg font-bold mb-4 text-gray-700 flex items-center">
-                <i class="fas fa-bolt text-yellow-400 mr-2"></i> Recent Activity
+                <i class="fas fa-bolt text-yellow-400 mr-2"></i> Activités récentes
             </h3>
             <ul class="space-y-4">
                 @forelse($recentActivities as $activity)
@@ -108,7 +108,7 @@
                         </div>
                     </li>
                 @empty
-                    <li class="text-gray-400 text-sm">No recent activity.</li>
+                    <li class="text-gray-400 text-sm">Aucune activités récentes.</li>
                 @endforelse
             </ul>
         </div>
@@ -116,14 +116,14 @@
         <!-- Recent Patients Table -->
         <div class="bg-white rounded-xl shadow p-6 col-span-2 overflow-x-auto">
             <h3 class="text-lg font-bold mb-4 text-gray-700 flex items-center">
-                <i class="fas fa-user-injured text-blue-400 mr-2"></i> Recent Patients
+                <i class="fas fa-user-injured text-blue-400 mr-2"></i> Patients récents
             </h3>
             <table class="min-w-full text-sm whitespace-nowrap">
                 <thead>
                     <tr class="text-gray-600 bg-gray-50">
                         <th class="px-4 py-2 text-left">Dossier N°</th>
-                        <th class="px-4 py-2 text-left">Name</th>
-                        <th class="px-4 py-2 text-left">Doctor</th>
+                        <th class="px-4 py-2 text-left">Nom Prénom</th>
+                        <th class="px-4 py-2 text-left">Médecin Traitant</th>
                         <th class="px-4 py-2 text-left">Status</th>
                     </tr>
                 </thead>
@@ -141,7 +141,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="text-center text-gray-400 py-4">No recent patients.</td></tr>
+                        <tr><td colspan="4" class="text-center text-gray-400 py-4">Aucun patient récent.</td></tr>
                     @endforelse
                 </tbody>
             </table>

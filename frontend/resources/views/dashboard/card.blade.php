@@ -10,7 +10,7 @@
             </div>
         </div>
         <div class="bg-{{ $color }}-50 text-{{ $color }}-700 text-sm py-2 px-4">
-            <span class="font-medium">Updated:</span> <span id="{{ $updatedId }}">Just now</span>
+            <span class="font-medium">Dernière mise a jour:</span> <span id="{{ $updatedId }}">maintenant</span>
         </div>
     </div>
 </a>

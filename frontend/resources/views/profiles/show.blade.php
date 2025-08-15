@@ -18,7 +18,7 @@
                 <div class="relative w-28 h-28">
                     <label for="photo_input" class="cursor-pointer block w-full h-full rounded-full overflow-hidden border-4 border-gray-200 shadow hover:border-blue-500 transition duration-200">
                         <img id="profile_preview" src="{{ $profile['photo_url'] ?? 'https://via.placeholder.com/150' }}" alt="Profile Photo" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black bg-opacity-30 opacity-0 hover:opacity-100 flex items-center justify-center text-white text-sm">Change</div>
+                        <div class="absolute inset-0 bg-black bg-opacity-30 opacity-0 hover:opacity-100 flex items-center justify-center text-white text-sm">Changer</div>
                     </label>
                     <input id="photo_input" type="file" name="photo_file" class="hidden" accept="image/*">
                 </div>
@@ -31,39 +31,39 @@
         <div>
             <label class="block font-medium mb-1">Theme</label>
             <select name="theme" class="border p-2 w-full rounded">
-                <option value="light" {{ isset($profile['theme']) && $profile['theme'] == 'light' ? 'selected' : '' }}>Light</option>
-                <option value="dark" {{ isset($profile['theme']) && $profile['theme'] == 'dark' ? 'selected' : '' }}>Dark</option>
+                <option value="light" {{ isset($profile['theme']) && $profile['theme'] == 'light' ? 'selected' : '' }}>Claire</option>
+                <option value="dark" {{ isset($profile['theme']) && $profile['theme'] == 'dark' ? 'selected' : '' }}>Sombre</option>
             </select>
         </div>
 
         {{-- Goals --}}
         <div>
-            <label class="block font-medium mb-1">Goals (comma separated)</label>
+            <label class="block font-medium mb-1">Objectifs (séparer par virgule)</label>
             <textarea name="goals" class="border p-2 w-full rounded">{{ implode(', ', $profile['goals'] ?? []) }}</textarea>
         </div>
 
         {{-- Checklist --}}
         <div>
-            <label class="block font-medium mb-1">Checklist (comma separated)</label>
+            <label class="block font-medium mb-1">Checklist (séparer par virgule)</label>
             <textarea name="checklist" class="border p-2 w-full rounded">{{ implode(', ', $profile['checklist'] ?? []) }}</textarea>
         </div>
 
         <div class="col-span-1 md:col-span-2">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow transition">Update Profile</button>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow transition">Mettre à jour le profile</button>
         </div>
     </form>
 
     <hr class="my-8">
 
     {{-- Leave Requests --}}
-    <h2 class="text-2xl font-bold mb-4">My Leave Requests</h2>
+    <h2 class="text-2xl font-bold mb-4">Mes demandes d'absence</h2>
 
     <div class="overflow-x-auto mb-6">
         <table class="w-full border rounded-lg overflow-hidden">
             <thead>
                 <tr class="bg-gray-100">
                     <th class="border p-3 text-left">Type</th>
-                    <th class="border p-3 text-left">Reason</th>
+                    <th class="border p-3 text-left">Raison</th>
                     <th class="border p-3 text-left">Status</th>
                     <th class="border p-3 text-center">Actions</th>
                 </tr>
@@ -83,13 +83,13 @@
                         <form method="POST" action="{{ route('leave-requests.destroy', $leave['id']) }}">
                             @csrf
                             @method('DELETE')
-                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded shadow text-sm">Delete</button>
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded shadow text-sm">Supprimer</button>
                         </form>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="4" class="text-center p-4 text-gray-500">No leave requests found.</td>
+                    <td colspan="4" class="text-center p-4 text-gray-500">Aucune demande d'absence.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -97,23 +97,23 @@
     </div>
 
     {{-- Create New Leave Request --}}
-    <h3 class="text-lg font-bold mb-3">Create New Leave Request</h3>
+    <h3 class="text-lg font-bold mb-3">Créer une nouvelle demande d'absence</h3>
     <form method="POST" action="{{ route('leave-requests.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @csrf
         <div>
             <label class="block mb-1">Type</label>
             <select name="type" class="border p-2 w-full rounded">
-                <option value="leave">Leave</option>
-                <option value="certificate">Certificate</option>
-                <option value="certificate_of_employment">Certificate of Employment</option>
+                <option value="leave">Absence</option>
+                <option value="certificate">Document</option>
+                <option value="certificate_of_employment">Cértificat de travail</option>
             </select>
         </div>
         <div>
-            <label class="block mb-1">Reason</label>
+            <label class="block mb-1">Raison</label>
             <textarea name="reason" class="border p-2 w-full rounded"></textarea>
         </div>
         <div class="col-span-1 md:col-span-2">
-            <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow transition">Submit</button>
+            <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow transition">Envoyer</button>
         </div>
     </form>
 </div>
