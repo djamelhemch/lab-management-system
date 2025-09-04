@@ -129,50 +129,54 @@ class AnalysisController extends Controller
         return view('analyses.create', compact('categories', 'sampleTypes', 'units'));  
     }
 
-    public function store(Request $request)    
-    {    
-        $validator = Validator::make($request->all(), [    
-            'name' => 'required|string|max:100',    
-            'code' => 'nullable|string|max:20',    
-            'category_analyse_id' => 'nullable|integer',    
-            'unit_id' => 'nullable|integer',    
-            'sample_type_id' => 'nullable|integer',    
-            'sex_applicable' => 'in:M,F,All',    
-            'age_min' => 'nullable|integer',    
-            'age_max' => 'nullable|integer',    
-            'pregnant_applicable' => 'nullable|boolean',    
-            'normal_min' => 'nullable|numeric',    
-            'normal_max' => 'nullable|numeric',    
-            'formula' => 'nullable|string',    
-            'price' => 'required|numeric|min:0',    
-        ]);    
-    
-        if ($validator->fails()) {    
-            return redirect()->back()->withErrors($validator)->withInput();    
-        }    
-    
-        // Handle temporary categories, sample types, and units  
-        $categoryId = $this->handleTempCategory($request);  
-        $sampleTypeId = $this->handleTempSampleType($request);  
-        $unitId = $this->handleTempUnit($request);  
-    
-        $data = $request->only([    
-            'name', 'code', 'sex_applicable', 'age_min', 'age_max', 'pregnant_applicable',    
-            'normal_min', 'normal_max', 'formula', 'price'    
-        ]);    
-    
-        // Use the resolved IDs  
-        $data['category_analyse_id'] = $categoryId ?: $request->category_analyse_id;  
-        $data['sample_type_id'] = $sampleTypeId ?: $request->sample_type_id;  
-        $data['unit_id'] = $unitId ?: $request->unit_id;  
-    
-        $response = $this->api->post('analyses', $data);    
-    
-        if ($response->successful()) {    
-            return redirect()->route('analyses.index')->with('success', 'Analysis created successfully.');    
-        } else {    
-            return redirect()->back()->with('error', 'Failed to create analysis.')->withInput();    
-        }    
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+            'code' => 'nullable|string|max:20',
+            'category_analyse_id' => 'nullable|integer',
+            'unit_id' => 'nullable|integer',
+            'sample_type_id' => 'nullable|integer',
+            'normal_min' => 'nullable|numeric',
+            'normal_max' => 'nullable|numeric',
+            'formula' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'normal_ranges' => 'array',
+            'normal_ranges.*.sex_applicable' => 'required|in:M,F,All',
+            'normal_ranges.*.age_min' => 'nullable|integer',
+            'normal_ranges.*.age_max' => 'nullable|integer',
+            'normal_ranges.*.normal_min' => 'nullable|numeric',
+            'normal_ranges.*.normal_max' => 'nullable|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Handle temporary categories, sample types, and units
+        $categoryId = $this->handleTempCategory($request);
+        $sampleTypeId = $this->handleTempSampleType($request);
+        $unitId = $this->handleTempUnit($request);
+
+        $data = $request->only([
+        'name', 'code', 'formula', 'price',
+            'category_analyse_id', 'sample_type_id', 'unit_id', 'is_active'
+        ]);
+
+        $data['category_analyse_id'] = $categoryId ?: $request->category_analyse_id;
+        $data['sample_type_id'] = $sampleTypeId ?: $request->sample_type_id;
+        $data['unit_id'] = $unitId ?: $request->unit_id;
+
+        // Attach normal ranges if provided
+        $data['normal_ranges'] = $request->input('normal_ranges', []);
+
+        $response = $this->api->post('analyses', $data);
+
+        if ($response->successful()) {
+            return redirect()->route('analyses.index')->with('success', 'Analysis created successfully.');
+        } else {
+            return redirect()->back()->with('error', 'Failed to create analysis.')->withInput();
+        }
     }
 
    public function show($id)  
@@ -201,37 +205,40 @@ class AnalysisController extends Controller
         return view('analyses.edit', compact('analysis', 'categories', 'sampleTypes', 'units'));  
     }
 
-    public function update(Request $request, $id)
+   public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'code' => 'nullable|string|max:20',
-            'category_analyse_id' => 'required|integer|exists:category_analyse,id',
-            'unit_id' => 'required|integer|exists:units,id',
-            'sex_applicable' => 'in:M,F,All',
-            'age_min' => 'nullable|integer',
-            'age_max' => 'nullable|integer',
+            'category_analyse_id' => 'required|integer',
+            'unit_id' => 'required|integer',
+            'sample_type_id' => 'required|integer',
             'pregnant_applicable' => 'nullable|boolean',
-            'sample_type_id' => 'required|integer|exists:sample_types,id',
-            'normal_min' => 'nullable|numeric',
-            'normal_max' => 'nullable|numeric',
             'formula' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'is_active' => 'nullable|boolean',
+
+            // Normal ranges validation
+            'normal_ranges' => 'array',
+            'normal_ranges.*.sex_applicable' => 'required|in:M,F,All',
+            'normal_ranges.*.age_min' => 'nullable|integer',
+            'normal_ranges.*.age_max' => 'nullable|integer',
+            'normal_ranges.*.pregnant_applicable' => 'nullable|boolean',
+            'normal_ranges.*.normal_min' => 'nullable|numeric',
+            'normal_ranges.*.normal_max' => 'nullable|numeric',
         ]);
 
         if ($validator->fails()) {
-            return redirect()
-                ->back()
-                ->withErrors($validator)
-                ->withInput();
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         $data = $request->only([
-            'name', 'code', 'category_analyse_id', 'unit_id', 'sex_applicable',
-            'age_min', 'age_max', 'pregnant_applicable', 'sample_type_id',
-            'normal_min', 'normal_max', 'formula', 'price', 'is_active'
+            'name', 'code', 'formula', 'price',
+            'category_analyse_id', 'sample_type_id', 'unit_id', 'is_active'
         ]);
+
+        // Attach the normal ranges (array)
+        $data['normal_ranges'] = $request->input('normal_ranges', []);
 
         $response = $this->api->put("analyses/{$id}", $data);
 

@@ -289,7 +289,7 @@
 
 .fullscreen-close-btn {
     position: fixed;
-    bottom: 56rem; /* bottom-6 */
+    top: calc(100vh - 58rem); /* bottom-6 */
     right: 0.8rem; /* right-6 */
     width: 1.5rem; /* w-10 */
     height: 1.5rem; /* h-10 */
@@ -308,14 +308,18 @@
     font-size: 1.25rem; /* text-xl */
     line-height: 1; /* leading-none */
 }
-
+@supports (-ms-ime-align:auto) { /* Edge hack if needed */
+    .fullscreen-close-btn {
+        bottom: 23rem; /* tweak for Edge toolbar */
+    }
+}
 .fullscreen-close-btn:hover {
     background-color: rgba(255, 255, 255, 0.4); /* hover:bg-white/40 */
     color: rgba(31, 41, 55, 1); /* hover:text-gray-900 */
     border-color: rgba(156, 163, 175, 0.8); /* hover:border-gray-400/50 */
 }
 .fullscreen-close-btn .close_btn {
-    position: relative; /* allow offset */
+    position: fixed; /* allow offset */
     top: -3px;   /* move up */
     font-size: 1.5rem; /* optional: make it bigger */
 }

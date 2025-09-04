@@ -93,76 +93,69 @@
                     </dl>
                 </div>
 
-                {{-- Specifications --}}
-                <div>
-                    <h4 class="text-md font-medium text-gray-900 mb-3">Specifications</h4>
-                    <dl class="space-y-2">
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Sex Applicable</dt>
-                            <dd class="text-sm text-gray-900">
-                                @switch($analysis['sex_applicable'])
+               
+         {{-- Normal Ranges --}}
+@if(!empty($analysis['normal_ranges']) && count($analysis['normal_ranges']) > 0)
+    <div class="mt-6 pt-8 border-t">
+        <h4 class="text-lg font-semibold text-gray-900 mb-4">Normal Ranges</h4>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full border border-gray-200 rounded-lg shadow-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800">Sex</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800">Age Range</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800">Pregnancy</th>
+                        <th class="px-6 py-3 text-center text-sm font-semibold text-gray-800">Normal Range</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach($analysis['normal_ranges'] as $range)
+                        <tr class="hover:bg-gray-50 transition">
+                            {{-- Sex --}}
+                            <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                                @switch($range['sex_applicable'])
                                     @case('M')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            Male Only
-                                        </span>
+                                        <span class="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs">Male</span>
                                         @break
                                     @case('F')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                                            Female Only
-                                        </span>
+                                        <span class="px-2 py-1 rounded bg-pink-100 text-pink-800 text-xs">Female</span>
                                         @break
                                     @default
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            All
-                                        </span>
+                                        <span class="px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs">All</span>
                                 @endswitch
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Age Range</dt>
-                            <dd class="text-sm text-gray-900">
-                                @if($analysis['age_min'] || $analysis['age_max'])
-                                    {{ $analysis['age_min'] ?? 0 }} - {{ $analysis['age_max'] ?? '∞' }} years
+                            </td>
+
+                            {{-- Age --}}
+                            <td class="px-6 py-3 text-sm text-gray-700">
+                                @if($range['age_min'] || $range['age_max'])
+                                    {{ $range['age_min'] ?? 0 }} – {{ $range['age_max'] ?? '∞' }} yrs
                                 @else
                                     All ages
                                 @endif
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Pregnancy Applicable</dt>
-                            <dd class="text-sm text-gray-900">
-                                @if($analysis['pregnant_applicable'])
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Yes
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        No
-                                    </span>
-                                @endif
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-            </div>
+                            </td>
 
-            {{-- Normal Range --}}
-            @if($analysis['normal_min'] || $analysis['normal_max'])  
-            <div class="mt-6 pt-6 border-t">  
-                <h4 class="text-md font-medium text-gray-900 mb-3">Normal Range</h4>  
-                <div class="bg-gray-50 rounded-lg p-4">  
-                    <div class="flex items-center justify-between">  
-                        <span class="text-sm text-gray-600">Normal Values:</span>  
-                        <span class="text-sm font-medium text-gray-900">  
-                            {{ $analysis['normal_min'] ?? 'N/A' }} - {{ $analysis['normal_max'] ?? 'N/A' }}  
-                            @if(!empty($analysis['unit']['name']))  
-                                {{ $analysis['unit']['name'] }}  
-                            @endif  
-                        </span>  
-                    </div>  
-                </div>  
-            </div>  
-        @endif
+                            {{-- Pregnancy --}}
+                            <td class="px-6 py-3 text-sm">
+                                @if($range['pregnant_applicable'])
+                                    <span class="px-2 py-1 rounded bg-green-100 text-green-800 text-xs">Yes</span>
+                                @else
+                                    <span class="px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs">No</span>
+                                @endif
+                            </td>
+
+                            {{-- Normal Range --}}
+                            <td class="px-6 py-3 text-center text-base font-bold text-green-700">
+                                {{ $range['normal_min'] ?? 'N/A' }} – {{ $range['normal_max'] ?? 'N/A' }}
+                            </td>      
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+@endif
+
 
             {{-- Formula --}}
             @if($analysis['formula'])  

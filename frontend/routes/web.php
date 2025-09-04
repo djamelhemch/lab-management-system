@@ -64,6 +64,8 @@ Route::middleware(['auth.api'])->group(function () {
     Route::resource('quotations', QuotationController::class);
     Route::get('/quotations/table', [QuotationController::class, 'table'])->name('quotations.table');
     Route::post('/quotations', [QuotationController::class, 'store'])->name('quotations.store');
+    Route::put('quotations/{id}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
+    Route::get('quotations/{id}/download', [QuotationController::class, 'download'])->name('quotations.download');
 
     //Queue mangement
     Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
@@ -71,7 +73,7 @@ Route::middleware(['auth.api'])->group(function () {
     Route::delete('/queues/{id}', [QueueController::class, 'destroy'])->name('queues.destroy');
     Route::post('/queues/move-next', [QueueController::class, 'moveNext'])->name('queues.moveNext');
     Route::get('/queues/display', [QueueController::class, 'show'])->name('queues.show');
-
+   
     // Agreements
     Route::resource('agreements', AgreementController::class);
 

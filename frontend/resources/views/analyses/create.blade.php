@@ -60,14 +60,17 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Price *</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-2 text-gray-500">DZD</span>
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">DA</span>
                             <input type="number" name="price" value="{{ old('price') }}" 
-                                   step="0.01" min="0" 
-                                   class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500" 
-                                   required>
+                                step="0.01" min="0" 
+                                class="w-full pl-12 pr-3 py-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500" 
+                                required>
                         </div>
-                        @error('price')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
+                        @error('price')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
                     </div>
+
 
                     {{-- Unit with Create New --}}
                     <div>
@@ -93,34 +96,120 @@
             {{-- Specifications --}}
             <div class="border-b border-gray-200 pb-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Specifications</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Sex Applicable</label>
-                        <select name="sex_applicable" class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                            <option value="All" {{ old('sex_applicable') == 'All' ? 'selected' : '' }}>All</option>
-                            <option value="M" {{ old('sex_applicable') == 'M' ? 'selected' : '' }}>Male Only</option>
-                            <option value="F" {{ old('sex_applicable') == 'F' ? 'selected' : '' }}>Female Only</option>
-                        </select>
-                        @error('sex_applicable')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
-                    </div>
+              {{-- Normal Ranges --}}
+<div class="border-b border-gray-200 pb-6">
+    <div id="normalRangesContainer" class="space-y-6"></div>
+    
+    <button type="button" onclick="addNormalRange()" 
+        class="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm">
+        + Add Range
+    </button>
+</div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Age Min</label>
-                        <input type="number" name="age_min" value="{{ old('age_min') }}" 
-                               class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500" 
-                               placeholder="0">
-                        @error('age_min')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
-                    </div>
+<script>
+let rangeCounter = 0;
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Age Max</label>
-                        <input type="number" name="age_max" value="{{ old('age_max') }}" 
-                               class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500" 
-                               placeholder="120">
-                        @error('age_max')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
-                    </div>
-                </div>
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('normalRangesContainer');
+    // initialize counter from existing server-rendered items
+    rangeCounter = container.querySelectorAll('.normal-range-item').length;
+
+    // attach sex->pregnancy toggles for any existing items
+    container.querySelectorAll('.normal-range-item').forEach(item => {
+        const sexSelect = item.querySelector('.sex-select');
+        const pregWrapper = item.querySelector('.pregnancy-wrapper');
+        if (!sexSelect || !pregWrapper) return;
+
+        // set initial visibility
+        if (sexSelect.value === 'F') pregWrapper.classList.remove('hidden');
+        else pregWrapper.classList.add('hidden');
+
+        sexSelect.addEventListener('change', () => {
+            if (sexSelect.value === 'F') {
+                pregWrapper.classList.remove('hidden');
+            } else {
+                pregWrapper.classList.add('hidden');
+                const chk = pregWrapper.querySelector('input[type="checkbox"]');
+                if (chk) chk.checked = false;
+            }
+        });
+    });
+});
+
+function addNormalRange(data = {}) {
+    const container = document.getElementById('normalRangesContainer');
+    const index = rangeCounter++;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'normal-range-item border p-4 rounded bg-gray-50 space-y-4';
+
+    wrapper.innerHTML = `
+        <div class="grid grid-cols-2 gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium">Sex</label>
+                <select name="normal_ranges[${index}][sex_applicable]" class="w-full p-2 border rounded sex-select">
+                    <option value="All" ${data.sex_applicable === 'All' ? 'selected' : ''}>All</option>
+                    <option value="M" ${data.sex_applicable === 'M' ? 'selected' : ''}>Male</option>
+                    <option value="F" ${data.sex_applicable === 'F' ? 'selected' : ''}>Female</option>
+                </select>
+            </div>
+            <div class="pregnancy-wrapper ${data.sex_applicable === 'F' ? '' : 'hidden'}">
+                <label class="block text-sm font-medium">Pregnant</label>
+                <input type="checkbox" name="normal_ranges[${index}][pregnant_applicable]" value="1" ${data.pregnant_applicable ? 'checked' : ''} class="h-5 w-5 mt-2">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium">Age Min</label>
+                <input type="number" name="normal_ranges[${index}][age_min]" value="${data.age_min ?? ''}" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Age Max</label>
+                <input type="number" name="normal_ranges[${index}][age_max]" value="${data.age_max ?? ''}" class="w-full p-2 border rounded">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium">Normal Min</label>
+                <input type="number" step="0.01" name="normal_ranges[${index}][normal_min]" value="${data.normal_min ?? ''}" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Normal Max</label>
+                <input type="number" step="0.01" name="normal_ranges[${index}][normal_max]" value="${data.normal_max ?? ''}" class="w-full p-2 border rounded">
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="button" onclick="if (confirm('Are you sure you want to remove this normal range?')) this.closest('.normal-range-item').remove()" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
+                Remove
+            </button>
+        </div>
+    `;
+
+    container.appendChild(wrapper);
+
+    // attach toggling on the freshly-added element
+    const sexSelect = wrapper.querySelector('.sex-select');
+    const pregWrapper = wrapper.querySelector('.pregnancy-wrapper');
+    if (sexSelect && pregWrapper) {
+        sexSelect.addEventListener('change', () => {
+            if (sexSelect.value === 'F') {
+                pregWrapper.classList.remove('hidden');
+            } else {
+                pregWrapper.classList.add('hidden');
+                const chk = pregWrapper.querySelector('input[type="checkbox"]');
+                if (chk) chk.checked = false;
+            }
+        });
+        // ensure initial visibility matches provided data
+        if (sexSelect.value === 'F') pregWrapper.classList.remove('hidden');
+        else pregWrapper.classList.add('hidden');
+    }
+}
+</script>
+
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     {{-- Sample Type with Create New --}}
@@ -141,38 +230,10 @@
                         </div>
                         @error('sample_type_id')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
                     </div>
-
-                    <div class="flex items-center">
-                        <input type="checkbox" name="pregnant_applicable" value="1" 
-                               {{ old('pregnant_applicable') ? 'checked' : '' }}
-                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                        <label class="ml-2 block text-sm text-gray-900">Applicable during pregnancy</label>
-                    </div>
                 </div>
             </div>
 
-            {{-- Normal Range --}}
-            <div class="border-b border-gray-200 pb-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Normal Range</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Normal Min</label>
-                        <input type="number" name="normal_min" value="{{ old('normal_min') }}" 
-                               step="0.01" 
-                               class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                        @error('normal_min')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Normal Max</label>
-                        <input type="number" name="normal_max" value="{{ old('normal_max') }}" 
-                               step="0.01" 
-                               class="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
-                        @error('normal_max')<span class="text-red-500 text-sm">{{ $message }}</span>@enderror
-                    </div>
-                </div>
-            </div>
+           
 
             {{-- Formula --}}
             <div>

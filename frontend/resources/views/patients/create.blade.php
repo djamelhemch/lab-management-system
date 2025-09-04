@@ -4,7 +4,7 @@
 <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
     <h2 class="text-3xl font-extrabold text-gray-800 mb-8">Ajouter un Patient</h2>
 
-    <form method="POST" action="{{ route('patients.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form id="patientForm" method="POST" action="{{ route('patients.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @csrf
 
         {{-- First Name --}}
@@ -69,8 +69,8 @@
 
         {{-- Blood Type --}}
         <div>
-            <label for="blood_type" class="block mb-1 font-semibold text-gray-700">Groupe Sanguin</label>
-            <select id="blood_type" name="blood_type"
+            <label for="blood_type" class="block mb-1 font-semibold text-gray-700">Groupe Sanguin <span class="text-red-500">*</span></label>
+            <select id="blood_type" name="blood_type" required
                 class="p-3 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-red-200 focus:border-red-400 transition">
                 <option value="" disabled {{ old('blood_type') ? '' : 'selected' }}>Sélectionnez un groupe sanguin</option>
                 <option value="A+" {{ old('blood_type') == 'A+' ? 'selected' : '' }}>A+</option>
@@ -140,7 +140,27 @@
         </div>
     </form>
 </div>
+
+<!-- Popup Modal -->
+<div id="phonePopup" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-xl shadow-lg max-w-sm text-center">
+        <h3 class="text-lg font-bold mb-4 text-gray-800">⚠️ Pas de numéro de téléphone !</h3>
+        <p class="text-gray-600 mb-6">Vous pouvez l'ajouter si nécessaire.</p>
+        <div class="flex justify-center gap-4">
+            <button id="ignoreBtn" type="button"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                Ignorer et continuer
+            </button>
+            <button id="addBtn" type="button"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+                Ajouter numéro
+            </button>
+        </div>
+    </div>
+</div>
+
 @endsection
+
 
 @push('scripts')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
@@ -161,3 +181,33 @@
     });
 </script>
 @endpush
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById('patientForm');
+    const phone = document.getElementById('phone');
+    const popup = document.getElementById('phonePopup');
+    const ignoreBtn = document.getElementById('ignoreBtn');
+    const addBtn = document.getElementById('addBtn');
+
+    form.addEventListener('submit', function (e) {
+        const requiredFields = ['first_name', 'last_name', 'dob', 'gender'];
+        let allFilled = requiredFields.every(id => document.getElementById(id).value.trim() !== "");
+
+        if (allFilled && phone.value.trim() === "") {
+            e.preventDefault(); // stop submission
+            popup.classList.remove('hidden');
+        }
+    });
+
+    ignoreBtn.addEventListener('click', function () {
+        popup.classList.add('hidden');
+        form.submit(); // submit normally
+    });
+
+    addBtn.addEventListener('click', function () {
+        popup.classList.add('hidden');
+        phone.focus();
+    });
+});
+</script>
