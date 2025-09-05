@@ -38,6 +38,8 @@ class User(Base):
         uselist=False,
         cascade="all, delete"
     )
-
+    payments = relationship("Payment", back_populates="user")
+    logs = relationship("Log", back_populates="user")
+    
     def verify_password(self, plain_password: str) -> bool:
         return pwd_context.verify(plain_password, self.password_hash)

@@ -11,7 +11,7 @@ DB_URL = (
     f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 )
 
-print("Connecting to:", DB_URL)
+print("Connecting to: database")
 
 engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -24,3 +24,7 @@ def get_db():
         yield db
     finally:
         db.close()
+if get_db:
+    print("Database connection established")
+else:
+    print("Failed to connect to the database")

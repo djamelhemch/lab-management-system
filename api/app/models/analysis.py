@@ -49,17 +49,30 @@ class AnalysisCatalog(Base):
     name = Column(String(100))
     category_analyse_id = Column(Integer, ForeignKey("category_analyse.id"))
     unit_id = Column(Integer, ForeignKey("units.id"))
-    sex_applicable = Column(Enum(SexApplicableEnum))
-    age_min = Column(Integer)
-    age_max = Column(Integer)
-    pregnant_applicable = Column(Boolean, default=False)
     sample_type_id = Column(Integer, ForeignKey("sample_types.id"))
-    normal_min = Column(Float)
-    normal_max = Column(Float)
     formula = Column(Text)
     price = Column(Float, default=0.0)
-
+    
     # Relationships
     category_analyse = relationship("CategoryAnalyse", back_populates="analyses")
     unit = relationship("Unit", back_populates="analyses")
     sample_type = relationship("SampleType", back_populates="analyses")
+    normal_ranges = relationship("NormalRange", back_populates="analysis", cascade="all, delete-orphan")
+  
+    analysis_items = relationship("QuotationItem", back_populates="analysis")
+
+class NormalRange(Base):
+    __tablename__ = "normal_ranges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    analysis_id = Column(Integer, ForeignKey("analysis_catalog.id", ondelete="CASCADE"))
+    sex_applicable = Column(Enum(SexApplicableEnum), default=SexApplicableEnum.All)
+    age_min = Column(Integer, nullable=True)
+    age_max = Column(Integer, nullable=True)
+    normal_min = Column(Float, nullable=True)
+    normal_max = Column(Float, nullable=True)
+    pregnant_applicable = Column(Boolean, default=False)
+    # Relationship
+    analysis = relationship("AnalysisCatalog", back_populates="normal_ranges")
+
+# in AnalysisCatalog

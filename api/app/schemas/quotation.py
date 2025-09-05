@@ -3,11 +3,28 @@ from typing import List, Optional
 from datetime import datetime
 import enum
 from .quotation_item import QuotationItem, QuotationItemCreate
-
-from pydantic import BaseModel
+from app.schemas.payment import PaymentCreate, PaymentSchema, NestedPaymentCreate
+from pydantic import BaseModel, computed_field, Field
 from typing import List, Optional
 from datetime import datetime
 import enum
+
+class AnalysisBase(BaseModel):
+    id: int
+    code: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
+class AgreementSummary(BaseModel):
+    id: int
+    discount_type: Optional[str] = None
+    discount_value: Optional[float] = 0.0
+
+    class Config:
+        orm_mode = True
 
 class QuotationStatusEnum(str, enum.Enum):
     draft = 'draft'
@@ -20,7 +37,9 @@ class QuotationItemBase(BaseModel):
 
 class QuotationItemSchema(QuotationItemBase):
     id: int
-
+    analysis_id: int
+    price: float
+    analysis: Optional[AnalysisBase]
     class Config:
         orm_mode = True
 
@@ -29,9 +48,20 @@ class QuotationBase(BaseModel):
     status: QuotationStatusEnum
     total: Optional[float] = None
     agreement_id: Optional[int] = None # Optional field for linking to an agreement
+    analysis_items: List[QuotationItemCreate]
+    payment: Optional[NestedPaymentCreate] = None
+    agreement: Optional[AgreementSummary] = None
 
-class QuotationCreate(QuotationBase):
-    items: List[QuotationItemBase]
+class QuotationCreate(BaseModel):
+    patient_id: int
+    status: str 
+    agreement_id: Optional[int] = None
+    analysis_items: List[QuotationItemBase] = Field(..., alias="items")  
+    payment: Optional[NestedPaymentCreate] = None  
+    agreement: Optional[AgreementSummary] = None
+
+    class Config:
+        allow_population_by_field_name = True
 
 class QuotationSchema(QuotationBase):
     id: int
@@ -39,15 +69,41 @@ class QuotationSchema(QuotationBase):
     net_total: Optional[float] = 0.0         
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
-    items: List[QuotationItemSchema]
-
+    analysis_items: List[QuotationItemSchema]
+    payments: List[PaymentSchema] = []  
+    agreement: Optional[AgreementSummary] = None
     class Config:
         orm_mode = True
 
 # Optional: if you want nested patient details
 class PatientSummary(BaseModel):
-    full_name: str
+    first_name: str
+    last_name: str
     file_number: str
 
-class QuotationWithPatientSchema(QuotationSchema):
+    @computed_field
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+    class Config:
+        orm_mode = True
+
+class QuotationWithPatientSchema(BaseModel):
+    id: int
+    patient_id: int
+    status: str
+    total: float
+    discount_applied: float
+    net_total: float
+    total_paid: Optional[float] = 0.0
+    outstanding: Optional[float] = 0.0
+    created_at: datetime
+    updated_at: Optional[datetime]
+    analysis_items: List[QuotationItemSchema]
     patient: PatientSummary
+    payments: List[PaymentSchema] = []
+    agreement: Optional[AgreementSummary] = None
+    
+    class Config:
+        orm_mode = True

@@ -28,8 +28,13 @@ class Quotation(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     patient = relationship("Patient", back_populates="quotations")
-    items = relationship("QuotationItem", back_populates="quotation", cascade="all, delete-orphan")
+    analysis_items = relationship(
+        "QuotationItem", 
+        back_populates="quotation", 
+        cascade="all, delete-orphan"
+    )
     agreement = relationship("Agreement")
+    payments = relationship("Payment", back_populates="quotation", cascade="all, delete-orphan")
 
 class QuotationItem(Base):
     __tablename__ = 'quotation_items'
@@ -39,4 +44,5 @@ class QuotationItem(Base):
     analysis_id = Column(Integer, ForeignKey("analysis_catalog.id"))
     price = Column(Float)
 
-    quotation = relationship("Quotation", back_populates="items")
+    quotation = relationship("Quotation", back_populates="analysis_items")
+    analysis = relationship("AnalysisCatalog", back_populates="analysis_items")

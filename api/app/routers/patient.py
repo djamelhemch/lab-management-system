@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session,joinedload
 from sqlalchemy import func, or_  
 from typing import List 
@@ -12,7 +12,10 @@ from datetime import datetime
 from sqlalchemy import desc
 from datetime import date
 from typing import Optional
+from app.routers.auth import get_current_user
 import logging
+from app.utils.logging import log_action, log_route
+
 logger = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
@@ -23,7 +26,8 @@ def calculate_age(date_of_birth):
     return age
 
 @router.post("/", response_model=PatientRead)  
-def create_patient_route(patient: PatientBase, db: Session = Depends(get_db)):  
+@log_route("create_patient")
+def create_patient_route(patient: PatientBase,current_user=Depends(get_current_user), request: Request = None, db: Session = Depends(get_db)):  
     try:  
         # Get the last file_number  
         last_patient = db.query(Patient).filter(Patient.file_number != None).order_by(desc(Patient.id)).first()  
@@ -42,6 +46,7 @@ def create_patient_route(patient: PatientBase, db: Session = Depends(get_db)):
         patient_data['file_number'] = file_number  
 
         result = crud.create_patient(db, PatientCreate(**patient_data))  
+
         return result  
     except Exception as e:  
         print("Other error:", str(e))  
@@ -128,21 +133,28 @@ def get_patient_route(patient_id: int, db: Session = Depends(get_db)):
     return PatientRead(**patient_data)
 
 @router.put("/{patient_id}", response_model=PatientRead)  
+@log_route("update_patient")
 def update_patient_route(  
     patient_id: int,  
     patient: PatientUpdate,  
-    db: Session = Depends(get_db)  
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    request: Request = None
 ):  
     db_patient = crud.get_patient(db, patient_id)  
     if not db_patient:  
         raise HTTPException(status_code=404, detail="Patient not found")  
+
     return crud.update_patient(db, db_patient, patient)
 
 @router.delete("/{patient_id}", status_code=204)  
-def delete_patient_route(patient_id: int, db: Session = Depends(get_db)):  
+@log_route("delete_patient")
+def delete_patient_route(patient_id: int, db: Session = Depends(get_db),current_user=Depends(get_current_user),
+    request: Request = None):  
     db_patient = crud.get_patient(db, patient_id)  
     if not db_patient:  
         raise HTTPException(status_code=404, detail="Patient not found")  
+
     db.delete(db_patient)  
     db.commit()  
     return {"detail": "Patient deleted successfully"}  # Return a success message

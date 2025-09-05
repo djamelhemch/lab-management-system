@@ -44,14 +44,14 @@ class PatientRead(BaseModel):
     last_name: str
     dob: date
     gender: str
-    address: str
-    phone: str
-    email: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
     blood_type: str
-    weight: float
-    allergies: str
-    medical_history: str
-    chronic_conditions: str
+    weight: Optional[float] = None
+    allergies: Optional[str] = None
+    medical_history: Optional[str] = None
+    chronic_conditions: Optional[str] = None
     created_at: datetime  # Read only
     age: Optional[int] = None
     

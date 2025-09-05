@@ -10,7 +10,10 @@ from app.schemas.user import UserCreate, UserOut
 from fastapi import APIRouter
 from sqlalchemy.orm import Session
 from app.database import get_db
-
+from fastapi import Request
+from app.utils.logging import _insert_log,log_route    # Ensure this path is correct
+import logging
+logger = logging.getLogger("uvicorn.error")
 
 SECRET_KEY = "test"
 ALGORITHM = "HS256"
@@ -65,21 +68,63 @@ async def get_current_user(
 
 # Add these routes to your FastAPI app
 @router.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    # pass role.value here to store string in token
-    access_token = create_access_token(
-        data={"sub": user.username, "role": user.role.value}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+async def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    """
+    Authenticate user and return access token.
+    Logs every attempt (success or failure).
+    """
+    try:
+        user = authenticate_user(db, form_data.username, form_data.password)
+        if not user:
+            # Log failed login
+            _insert_log(
+                db,
+                user_id=0,
+                action_type="login",
+                description=f"Login failed (username: {form_data.username})",
+                request=request
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
+        # Log successful login
+        _insert_log(
+            db,
+            user_id=user.id,
+            action_type="login",
+            description=f"Login success (username: {user.username})",
+            request=request
+        )
+
+        # Generate token
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.username, "role": user.role.value},
+            expires_delta=access_token_expires
+        )
+
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    except HTTPException as auth_exc:
+        raise auth_exc  # Already logged above if failed auth
+    except Exception as e:
+        # Log unexpected error
+        _insert_log(
+            db,
+            user_id=0,
+            action_type="login",
+            description=f"Login error: {str(e)} (username: {form_data.username})",
+            request=request
+        )
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
 @router.get("/users/me", response_model=UserOut)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
@@ -99,10 +144,12 @@ async def get_users(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/users")
+@log_route("create_user")
 async def create_user(
     user: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    request: Request = None
 ):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create users")
@@ -114,7 +161,7 @@ async def create_user(
     # Check if email exists
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
-    
+
     return add_user(db, user)
 
 @router.get("/users/{user_id}")
@@ -125,7 +172,8 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return user
 
 @router.put("/users/{user_id}")
-def update_user(user_id: int, user_data: UserCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@log_route("update_user")
+def update_user(user_id: int, user_data: UserCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user), request: Request = None):
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -135,15 +183,17 @@ def update_user(user_id: int, user_data: UserCreate, db: Session = Depends(get_d
 
     db.commit()
     db.refresh(db_user)
+
     return db_user
 
 @router.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@log_route("delete_user")
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user), request: Request = None):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can delete users")
     db.delete(user)
     db.commit()
     return {"detail": "User deleted successfully"}
-
-# Add similar endpoints for update/delete
