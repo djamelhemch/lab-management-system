@@ -10,6 +10,7 @@ use App\Http\Controllers\{
     QuotationController,
     AuthController,
     Admin\UserController,
+    Admin\LogsController,
     AgreementController,
     QueueController,
     ProfileController,
@@ -82,9 +83,18 @@ Route::middleware(['auth.api'])->group(function () {
 });
 
 // Routes only for ADMIN users
-Route::middleware(['auth.api', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('users', UserController::class);
-    Route::get('admin/users/{id}', [UserController::class, 'show'])->name('admin.users.show');
-    Route::get('admin/users/{id}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
+Route::middleware(['auth.api', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-});
+        // Users resource
+        Route::resource('users', UserController::class);
+
+        // You don’t need to repeat 'admin/' here
+        Route::get('users/{id}', [UserController::class, 'show'])->name('users.show');
+        Route::get('users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+
+        // Logs
+        Route::get('logs', [LogsController::class, 'index'])->name('logs');
+    });

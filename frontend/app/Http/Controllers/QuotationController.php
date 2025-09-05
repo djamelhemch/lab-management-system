@@ -239,14 +239,16 @@ class QuotationController extends Controller
     public function download($id)
     {
         $response = $this->api->get("quotations/{$id}");
-
         if (!$response->successful()) {
-            return back()->with('error', 'Failed to fetch quotation for PDF.');
+            return redirect()->route('quotations.index')->with('error', 'Quotation not found.');
         }
 
         $quotation = $response->json();
 
         $pdf = Pdf::loadView('quotations.pdf', compact('quotation'));
-        return $pdf->download("quotation_{$id}.pdf");
+
+        $fileName = "Facture N° {$quotation['id']} - Dossier {$quotation['patient']['file_number']}.pdf";
+        
+        return $pdf->download($fileName);
     }
 }

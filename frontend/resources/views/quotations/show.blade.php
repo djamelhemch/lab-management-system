@@ -2,159 +2,194 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
+<div class="container mx-auto px-6 py-8">
 
     {{-- Header --}}
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Quotation #{{ $quotation['id'] }}</h1>
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">
+            🧾 Quotation <span class="text-indigo-600">#{{ $quotation['id'] }}</span>
+        </h1>
         <a href="{{ route('quotations.index') }}" 
-           class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
-            Back
+           class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition">
+            ← Back to List
         </a>
     </div>
 
     {{-- Quotation Summary --}}
-    <div class="bg-white rounded shadow p-6 mb-6">
-        <div class="mb-2">
-            <strong>Patient:</strong>
-            {{ $quotation['patient']['full_name'] ?? 'N/A' }}
-            @if(!empty($quotation['patient']['file_number']))
-                <span class="text-gray-500">({{ $quotation['patient']['file_number'] }})</span>
-            @endif
-        </div>
-
-        <div class="mb-2"><strong>Status:</strong> 
-            <span class="capitalize">{{ $quotation['status'] }}</span>
-        </div>
-
-        <div class="mb-2"><strong>Total:</strong> 
-            ${{ number_format($quotation['total'], 2) }}
-        </div>
-
-        <div class="mb-2"><strong>Net Total:</strong> 
-            ${{ number_format($quotation['net_total'], 2) }}
-        </div>
-
-        <div class="mb-2"><strong>Discount:</strong> 
-            {{ $quotation['discount_applied'] ?? 0 }}%
-        </div>
-
-        <div class="mb-2"><strong>Created:</strong> 
-            {{ \Carbon\Carbon::parse($quotation['created_at'])->format('Y-m-d H:i') }}
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-3">Summary</h2>
+        <div class="grid md:grid-cols-2 gap-4 text-gray-700">
+            <div>
+                <strong>Patient:</strong> 
+                @if(!empty($quotation['patient']))
+                    <a href="{{ route('patients.show', $quotation['patient_id']) }}" 
+                    class="text-blue-600 hover:underline font-medium">
+                        {{ $quotation['patient']['full_name'] }}
+                    
+                    @if(!empty($quotation['patient']['file_number']))
+                        <span class="text-gray-500 text-sm">
+                            ({{ $quotation['patient']['file_number'] }})
+                        </span>
+                    @endif
+                    </a>
+                @else
+                    N/A
+                @endif
+            </div>
+            <div><strong>Status:</strong> 
+                <span class="capitalize px-2 py-1 rounded text-sm 
+                    {{ $quotation['status'] === 'draft' ? 'bg-yellow-100 text-yellow-700' : 
+                       ($quotation['status'] === 'validated' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600') }}">
+                    {{ $quotation['status'] }}
+                </span>
+            </div>
+            <div><strong>Total:</strong> <span class="font-semibold">{{ number_format($quotation['total'], 2) }} DA</span></div>
+            <div><strong>Net Total:</strong> <span class="font-semibold">{{ number_format($quotation['net_total'], 2) }} DA</span></div>
+            <div>
+                <strong>Remise:</strong>
+                @if(!empty($quotation['agreement']))
+                    {{ $quotation['agreement']['discount_value'] ?? 0 }}
+                    @if(($quotation['agreement']['discount_type'] ?? '') === 'percentage')
+                        %
+                    @endif
+                    ({{ number_format($quotation['discount_applied'] ?? 0, 2) }} DA)
+                @else
+                    0% (0 DA)
+                @endif
+            </div>
+            <div><strong>Created:</strong> {{ \Carbon\Carbon::parse($quotation['created_at'])->format('Y-m-d H:i') }}</div>
         </div>
     </div>
 
     {{-- Analyses Table --}}
-    <div class="bg-white rounded shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Analyses</h2>
-        <table class="min-w-full border">
-            <thead>
-                <tr class="bg-gray-100 text-left">
-                    <th class="px-4 py-2 border">Name</th>
-                    <th class="px-4 py-2 border">Code</th>
-                    <th class="px-4 py-2 border">Created</th>
-                    <th class="px-4 py-2 border">Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($quotation['analysis_items'] as $item)
-                    <tr>
-                        <td class="px-4 py-2 border">
-                            {{ $item['analysis']['name'] ?? "Analysis #" . $item['analysis_id'] }}
-                        </td>
-                        <td class="px-4 py-2 border">
-                            {{ $item['analysis']['code'] ?? 'N/A' }}
-                        </td>
-                        <td class="px-4 py-2 border">
-                            {{ !empty($item['analysis']['created_at']) 
-                                ? \Carbon\Carbon::parse($item['analysis']['created_at'])->format('Y-m-d') 
-                                : 'N/A' }}
-                        </td>
-                        <td class="px-4 py-2 border">
-                            ${{ number_format($item['price'], 2) }}
-                        </td>
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-3">Analyses</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left border border-gray-200 rounded-lg">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-700 uppercase text-xs">
+                        <th class="px-4 py-3 border">Name</th>
+                        <th class="px-4 py-3 border">Code</th>
+                        <th class="px-4 py-3 border">Created</th>
+                        <th class="px-4 py-3 border text-right">Price</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="px-4 py-2 text-center text-gray-500">
-                            No analyses found for this quotation.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y">
+                    @forelse ($quotation['analysis_items'] as $item)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2">{{ $item['analysis']['name'] ?? "Analysis #" . $item['analysis_id'] }}</td>
+                            <td class="px-4 py-2">{{ $item['analysis']['code'] ?? 'N/A' }}</td>
+                            <td class="px-4 py-2">
+                                {{ !empty($item['analysis']['created_at']) 
+                                    ? \Carbon\Carbon::parse($item['analysis']['created_at'])->format('Y-m-d') 
+                                    : 'N/A' }}
+                            </td>
+                            <td class="px-4 py-2 text-right font-medium">${{ number_format($item['price'], 2) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-4 py-4 text-center text-gray-500 italic">
+                                No analyses found for this quotation.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     {{-- Payment Summary --}}
     @if(!empty($quotation['payments']))
-    <div class="bg-gray-50 rounded shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Payment Summary</h2>
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-3">Resumer de paiment</h2>
 
         {{-- Totals --}}
-        <div class="flex justify-between font-medium mb-3 border-b pb-2">
-            <span>Total Paid:</span>
-            <span class="text-green-600">${{ number_format($quotation['total_paid'], 2) }}</span>
-        </div>
-        <div class="flex justify-between font-medium mb-4">
-            <span>Outstanding:</span>
-            <span class="text-red-600">
-                @if($quotation['outstanding'] > 0)
-                    ${{ number_format($quotation['outstanding'], 2) }}
-                @else
-                    <span class="text-green-600 font-semibold">Fully Paid</span>
-                @endif
-            </span>
+        <div class="grid grid-cols-3 md:grid-cols-4 gap-6 mb-6">
+            <div class="p-4 rounded-lg bg-green-50 text-green-700 text-center">
+                @foreach($quotation['payments'] as $payment)
+                <div class="text-sm">Total Facturé</div>
+                <div class="text-lg font-bold">{{ number_format($payment['amount'], 2) }} DA</div>
+            </div>
+            <div class="p-4 rounded-lg {{ $quotation['outstanding'] > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700' }} text-center">
+                <div class="text-sm">Restant</div>
+                <div class="text-lg font-bold">
+                    @if($quotation['outstanding'] > 0)
+                        ${{ number_format($quotation['outstanding'], 2) }}
+                    @else
+                        Entièrement payé
+                    @endif
+                </div>
+                
+            </div>
+            <div class="p-4 rounded-lg bg-green-50 text-green-700 text-center">
+                
+                    <div class="text-sm">Encaisser par</div>
+                <div class="text-lg font-bold">{{ $payment['user']['full_name'] ?? 'N/A' }}</div>
+            </div>
+            <div class="p-4 rounded-lg bg-green-50 text-green-700 text-center">
+                <div class="text-sm">Méthode de payment</div>
+                <div class="text-lg font-bold">{{ ucfirst($payment['method'] ?? 'N/A') }}</div>
+            </div>
+            @endforeach  
         </div>
 
         {{-- Individual Payments --}}
+        <div class="space-y-6">
         @foreach($quotation['payments'] as $payment)
-        <div class="mb-2 border-b pb-2">
-            <div class="flex justify-between">
-                <span>Method:</span>
-                <span>{{ ucfirst($payment['method'] ?? 'N/A') }}</span>
+            <div class="p-6 rounded-xl bg-white border shadow-sm hover:shadow-md transition">
+                
+                {{-- Amount Paid --}}
+                <div class="flex justify-between items-center text-lg font-semibold mb-3">
+                    <span class="text-gray-700">Montant Facturé:</span>
+                    <span class="text-green-600 text-xl font-bold">
+                        {{ number_format($payment['amount'], 2) }} DA
+                    </span>
+                </div>
+
+                {{-- Cash-specific fields --}}
+                @if($payment['method'] === 'cash')
+                    <div class="flex justify-between text-base mb-2">
+                        <span class="text-gray-600">Montant Reçu:</span>
+                        <span class="text-gray-900 font-medium">
+                            {{ number_format($payment['amount_received'] ?? 0, 2) }} DA
+                        </span>
+                    </div>
+                    <div class="flex justify-between text-base mb-2">
+                        <span class="text-gray-600">Monnaie rendu:</span>
+                        <span class="text-gray-900 font-medium">
+                            {{ number_format($payment['change_given'] ?? 0, 2) }} DA
+                        </span>
+                    </div>
+                @endif
+                {{-- Paid At --}}
+                <div class="flex justify-between text-base">
+                    <span class="text-gray-600">Date d'encaissement:</span>
+                    <span class="text-gray-900">
+                        {{ \Carbon\Carbon::parse($payment['paid_at'])->format('Y-m-d H:i') }}
+                    </span>
+                </div>
             </div>
-            <div class="flex justify-between">
-                <span>Amount Paid:</span>
-                <span class="text-green-600">${{ number_format($payment['amount'], 2) }}</span>
-            </div>
-            @if($payment['method'] === 'cash')
-            <div class="flex justify-between">
-                <span>Amount Received:</span>
-                <span>${{ number_format($payment['amount_received'] ?? 0, 2) }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span>Change Given:</span>
-                <span>${{ number_format($payment['change_given'] ?? 0, 2) }}</span>
-            </div>
-            @endif
-            <div class="flex justify-between text-sm">
-                <span>Cashier:</span>
-                <span>{{ $payment['user']['full_name'] ?? 'N/A' }}</span> 
-            </div>
-            <div class="flex justify-between">
-                <span>Paid At:</span>
-                <span>{{ \Carbon\Carbon::parse($payment['paid_at'])->format('Y-m-d H:i') }}</span>
-            </div>
-        </div>
         @endforeach
+    </div>
     </div>
     @endif
 
     {{-- Footer Actions --}}
-    <div class="flex justify-end space-x-3">
+    <div class="flex justify-end space-x-4 mt-6">
         {{-- Convert to Visit --}}
         <form action="{{ route('quotations.convert', $quotation['id']) }}" method="POST">
             @csrf
             @method('PUT')
-            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <button type="submit" 
+                class="px-5 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition">
                 Convert to Visit
             </button>
         </form>
 
         {{-- Download PDF --}}
         <a href="{{ route('quotations.download', $quotation['id']) }}" 
-           class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            Download PDF
+           class="px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
+            Télécharger en PDF
         </a>
     </div>
 </div>

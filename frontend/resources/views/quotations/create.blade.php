@@ -141,7 +141,8 @@
                     <span>Monnaie:</span>
                     <span id="change-display" class="text-gray-900 font-medium">DZD 0.00</span>
                 </div>
-                <div class="flex justify-between text-base font-semibold border-t pt-2 mt-2"> <span>Restant:</span> 
+                <div class="flex justify-between text-base font-semibold border-t pt-2 mt-2"> 
+                    <span>Restant:</span> 
                     <span id="outstanding-display" class="text-red-600">DZD 0.00</span> 
                 </div>
             </div>

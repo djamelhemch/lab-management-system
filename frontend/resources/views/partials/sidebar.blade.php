@@ -58,9 +58,14 @@
 
     @if(isset($authUser) && $authUser['role'] === 'admin')
         <a href="{{ route('admin.users.index') }}"
-        class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
-        flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-        <i class="fas fa-users-cog"></i> <span class="ml-2">Personnels</span>
+            class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
+            flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+            <i class="fas fa-users-cog"></i> <span class="ml-2">Personnels</span>
+        </a>
+        <a href="{{ route('admin.logs') }}"
+            class="sidebar-link {{ request()->routeIs('admin.logs') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
+            flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+            <i class="fas fa-clipboard-list"></i> <span class="ml-2">Logs</span>
         </a>
     @endif
     
