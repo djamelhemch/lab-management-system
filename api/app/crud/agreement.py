@@ -20,3 +20,6 @@ def get_agreements_by_patient(db: Session, patient_id: int):
 
 def get_agreements_by_doctor(db: Session, doctor_id: int):
     return db.query(Agreement).filter(Agreement.doctor_id == doctor_id).all()
+def get_all_agreements(db: Session):
+    """Return all agreements, regardless of status"""
+    return db.query(Agreement).all()

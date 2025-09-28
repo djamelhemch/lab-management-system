@@ -1,9 +1,22 @@
 from sqlalchemy.orm import Session
 from app.models.profile import Profile
 from app.schemas.profile import ProfileCreate, ProfileUpdate
-
+from app.models.user import User
 def get_profile(db: Session, user_id: int):
-    return db.query(Profile).filter(Profile.user_id == user_id).first()
+    result = (
+        db.query(Profile, User.email)
+        .join(User, User.id == Profile.user_id)
+        .filter(Profile.user_id == user_id)
+        .first()
+    )
+
+    if not result:
+        return None
+
+    profile, email = result
+    profile_dict = profile.__dict__.copy()
+    profile_dict["email"] = email
+    return profile_dict
 
 def create_profile(db: Session, profile: ProfileCreate):
     # Only pass fields that exist in the Profile model

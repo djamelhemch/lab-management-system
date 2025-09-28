@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, BigInteger, Enum, ForeignKey, DateTime, DECIMAL, Float, String
+from sqlalchemy import Column, Integer, BigInteger, Enum, ForeignKey, DateTime, DECIMAL, Float, String, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -26,7 +26,7 @@ class Quotation(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
+    outstanding = Column(Numeric(12, 2), default=0.0)
     patient = relationship("Patient", back_populates="quotations")
     analysis_items = relationship(
         "QuotationItem", 

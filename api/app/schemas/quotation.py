@@ -59,7 +59,11 @@ class QuotationCreate(BaseModel):
     analysis_items: List[QuotationItemBase] = Field(..., alias="items")  
     payment: Optional[NestedPaymentCreate] = None  
     agreement: Optional[AgreementSummary] = None
-
+    
+    total: float
+    discount_applied: Optional[float] = 0.0
+    net_total: float
+    outstanding: float
     class Config:
         allow_population_by_field_name = True
 

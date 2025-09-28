@@ -40,6 +40,7 @@ class User(Base):
     )
     payments = relationship("Payment", back_populates="user")
     logs = relationship("Log", back_populates="user")
-    
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
+
     def verify_password(self, plain_password: str) -> bool:
         return pwd_context.verify(plain_password, self.password_hash)

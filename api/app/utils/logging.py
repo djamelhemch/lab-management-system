@@ -5,6 +5,7 @@ from functools import wraps
 from datetime import datetime
 import inspect
 from sqlalchemy import text
+from typing import Optional
 
 def log_action(
     db: Session,
@@ -130,8 +131,7 @@ async def _handle_log(func, args, kwargs, action_type, is_async: bool):
 
     return result
 
-
-def _insert_log(db: Session, user_id: int, action_type: str, description: str, request: Request = None):
+def _insert_log(db: Session, user_id: Optional[int], action_type: str, description: str, request: Request = None):
     ip_address = request.client.host if request else None
     user_agent = request.headers.get("user-agent") if request else None
 
@@ -141,7 +141,7 @@ def _insert_log(db: Session, user_id: int, action_type: str, description: str, r
             "VALUES (:user_id, :action_type, :description, :ip_address, :user_agent, :created_at)"
         ),
         {
-            "user_id": user_id,
+            "user_id": user_id,  # This can now be None and insert as NULL in DB
             "action_type": action_type,
             "description": description,
             "ip_address": ip_address,

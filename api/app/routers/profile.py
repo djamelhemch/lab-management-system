@@ -7,6 +7,7 @@ from app.crud import profile as crud_profile
 from app.database import get_db
 from app.routers.auth import get_current_user  # Add this import (adjust path if needed)
 from app.models.profile import Profile  # Add this import (adjust path if needed)
+from app.models.user import User  # Add this import (adjust path if needed)
 from app.utils.logging import log_route 
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
 
@@ -14,12 +15,16 @@ UPLOAD_DIR = "uploads/profile_photos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/{user_id}", response_model=ProfileResponse)
-def read_profile(user_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user), request: Request = None):
+def read_profile(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     profile = crud_profile.get_profile(db, user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
-
+    
 @router.post("/", response_model=ProfileResponse)
 @log_route("create_profile")
 def create_profile(profile_in: ProfileCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user), request: Request = None):

@@ -11,44 +11,30 @@ from fastapi import HTTPException
 from datetime import datetime, timezone
 import logging
 from sqlalchemy.orm import joinedload
+from decimal import Decimal, ROUND_HALF_UP
 
+    
 def create_quotation(db: Session, quotation_in: QuotationCreate):
-
-
     logging.info(f"Quotation payload: {quotation_in.dict()}")
 
     # --- 1. Prepare Quotation Items ---
     items_data = []
-    total = 0.0
-    for item in quotation_in.analysis_items:   # ✅ must match Pydantic field
+    for item in quotation_in.analysis_items:
         analysis = db.query(AnalysisCatalog).filter(AnalysisCatalog.id == item.analysis_id).first()
         if not analysis:
             raise HTTPException(status_code=404, detail=f"Analysis ID {item.analysis_id} not found")
-        price = float(item.price or analysis.price)
-        total += price
+        price = Decimal(str(item.price or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         items_data.append(QuotationItem(analysis_id=analysis.id, price=price))
 
-    # --- 2. Discount Logic ---
-    discount = 0.0
-    net_total = total
-    if quotation_in.agreement_id:
-        agreement = db.query(Agreement).filter(Agreement.id == quotation_in.agreement_id).first()
-        if not agreement:
-            raise HTTPException(status_code=404, detail="Agreement not found")
-        if agreement.discount_type == "percentage":
-            discount = (total * float(agreement.discount_value)) / 100
-        elif agreement.discount_type == "fixed":
-            discount = float(agreement.discount_value)
-        net_total = total - discount
-
-    # --- 3. Create Quotation ---
+    # --- 2. Create Quotation using frontend-calculated values ---
     quotation = Quotation(
         patient_id=quotation_in.patient_id,
         status=quotation_in.status,
-        total=total,
+        total=Decimal(str(quotation_in.total)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         agreement_id=quotation_in.agreement_id,
-        discount_applied=discount,
-        net_total=net_total,
+        discount_applied=Decimal(str(quotation_in.discount_applied or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        net_total=Decimal(str(quotation_in.net_total)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        outstanding=Decimal(str(quotation_in.outstanding)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         analysis_items=items_data
     )
     db.add(quotation)
@@ -56,7 +42,7 @@ def create_quotation(db: Session, quotation_in: QuotationCreate):
     db.refresh(quotation)
     logging.info(f"Created quotation ID: {quotation.id}")
 
-    # --- 4. Create Payment if Provided ---
+    # --- 3. Handle Initial Payment ---
     if quotation_in.payment:
         payment_data = quotation_in.payment
         payment = Payment(
@@ -65,44 +51,23 @@ def create_quotation(db: Session, quotation_in: QuotationCreate):
             method=payment_data.method,
             notes=payment_data.notes,
             user_id=payment_data.user_id,
-            amount_received=float(payment_data.amount_received) if payment_data.amount_received else None,
-            change_given=float(payment_data.change_given) if payment_data.change_given else None,
+            amount_received=float(payment_data.amount_received or 0.0),
+            change_given=float(payment_data.change_given or 0.0),
         )
         db.add(payment)
         db.commit()
         db.refresh(payment)
         logging.info(f"Created payment ID: {payment.id}")
 
-    # --- 5. Queue Entry ---
-    last_queue = db.query(Queue).order_by(Queue.position.desc()).first()
-    next_queue_number = 1 if not last_queue else last_queue.position + 1
+        # Update quotation outstanding if necessary
+        db.refresh(quotation)
+        quotation.outstanding = Decimal(str(quotation_in.outstanding)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        db.commit()
+        db.refresh(quotation)
+        logging.info(f"Updated quotation outstanding: {quotation.outstanding}")
 
-    queue_entry = Queue(
-        patient_id=quotation_in.patient_id,
-        quotation_id=quotation.id,
-        type=QueueType.reception,
-        position=next_queue_number,
-        status="waiting",
-        created_at=datetime.now(timezone.utc)
-    )
-    db.add(queue_entry)
-    db.commit()
-    db.refresh(queue_entry)
-    logging.info(f"Added to queue position: {queue_entry.position}")
-
-    # --- 6. Return Quotation with Payments ---
-    quotation = (
-        db.query(Quotation)
-        .options(
-            joinedload(Quotation.analysis_items).joinedload(QuotationItem.analysis),
-            joinedload(Quotation.patient),
-            joinedload(Quotation.payments) 
-        )
-        .filter(Quotation.id == quotation.id)
-        .first()
-    )
     return quotation
-
+    
 def get_quotation(db: Session, quotation_id: int):
     return (
         db.query(Quotation)

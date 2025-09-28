@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from app.crud.user import get_user, get_all_users, add_user
 from app.models.user import User
+from app.models.user_session import UserSession  # Ensure this path is correct
 from app.schemas.user import UserCreate, UserOut
 from fastapi import APIRouter
 from sqlalchemy.orm import Session
@@ -41,6 +42,33 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def insert_active_session(db: Session, user_id: int, token: str, created_at: datetime, expires_at: datetime):
+    session_record = UserSession(
+        user_id=user_id,
+        token=token,
+        created_at=created_at,
+        expires_at=expires_at,
+        is_connected=True 
+    )
+    db.add(session_record)
+    db.commit()
+
+def delete_active_session(db: Session, token: str):
+    session_record = db.query(UserSession).filter(UserSession.token == token).first()
+    if session_record:
+        # Mark session as disconnected instead of deleting
+        session_record.is_connected = False
+        db.commit()
+
+def fetch_active_user_ids(db: Session) -> list[int]:
+    now = datetime.utcnow()
+    # Only fetch sessions that are connected and unexpired
+    active_sessions = db.query(UserSession).filter(
+        UserSession.expires_at > now,
+        UserSession.is_connected == True
+    ).all()
+    return list(set(session.user_id for session in active_sessions))
+
 async def get_current_user(
     token: str = Depends(oauth2_scheme), 
     db: Session = Depends(get_db)
@@ -73,52 +101,45 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    """
-    Authenticate user and return access token.
-    Logs every attempt (success or failure).
-    """
+    logger.info(f"Login attempt for username: {form_data.username} from {request.client.host}")
     try:
         user = authenticate_user(db, form_data.username, form_data.password)
         if not user:
-            # Log failed login
+            logger.warning(f"Failed login attempt: username={form_data.username} from ip={request.client.host}")
             _insert_log(
                 db,
-                user_id=0,
+                user_id=None,
                 action_type="login",
-                description=f"Login failed (username: {form_data.username})",
+                description=f"Failed login attempt (username: {form_data.username})",
                 request=request
             )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-        # Log successful login
-        _insert_log(
-            db,
-            user_id=user.id,
-            action_type="login",
-            description=f"Login success (username: {user.username})",
-            request=request
-        )
+        logger.info(f"User {user.username} authenticated successfully")
+        _insert_log(db, user_id=user.id, action_type="login", description="Successful login", request=request)
 
-        # Generate token
+        # Create token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": user.username, "role": user.role.value},
             expires_delta=access_token_expires
         )
 
+        # Save active session info
+        logger.debug(f"Inserting active session for user_id={user.id}")
+        insert_active_session(db, user.id, access_token, datetime.utcnow(), expires_at=datetime.utcnow() + access_token_expires)
+
+        logger.info(f"Login successful for user: {user.username}")
         return {"access_token": access_token, "token_type": "bearer"}
 
     except HTTPException as auth_exc:
+        logger.error(f"Authentication HTTPException: {auth_exc.detail} for username={form_data.username}")
         raise auth_exc  # Already logged above if failed auth
     except Exception as e:
-        # Log unexpected error
+        logger.exception(f"Unexpected error during login for username={form_data.username}: {str(e)}")
         _insert_log(
             db,
-            user_id=0,
+            user_id=None,
             action_type="login",
             description=f"Login error: {str(e)} (username: {form_data.username})",
             request=request
@@ -128,6 +149,19 @@ async def login(
 @router.get("/users/me", response_model=UserOut)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.get("/users/online-status")
+async def online_status(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    # Query user sessions where session is active and not expired
+    active_sessions = db.query(UserSession).filter(
+        UserSession.is_connected == True,
+        UserSession.expires_at > now
+    ).all()
+
+    # Collect unique user IDs from active sessions
+    online_user_ids = list({session.user_id for session in active_sessions})
+    return {"online_user_ids": online_user_ids}
 
 # User management endpoints
 @router.get("/users", response_model=list[UserOut])
@@ -142,6 +176,12 @@ async def get_users(
         return users
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/logout")
+async def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    # Remove the session for this token from DB/Cache
+    delete_active_session(db, token)
+    return {"message": "Logged out successfully"}
 
 @router.post("/users")
 @log_route("create_user")
