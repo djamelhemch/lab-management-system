@@ -18,117 +18,150 @@ class QuotationController extends Controller
     {
         $this->api = $api;
     }
-    public function patient()
-    {
-        return $this->belongsTo(\App\Models\Patient::class);
-    }
-    public function index()
-    {
-        $response = $this->api->get('quotations');
-        $quotations = $response->successful() ? $response->json() : [];
 
+    public function index(Request $request)
+    {
+        $params = [
+            'q'      => $request->get('q'),
+            'status' => $request->get('status'),
+        ];
+
+        $response = $this->api->get('/quotations', array_filter($params));
+        $quotations = $response->ok() ? $response->json() : [];
+
+        // full page
         return view('quotations.index', compact('quotations'));
     }
-    
+
     public function table(Request $request)
     {
-        // Get filtered/ paginated quotations as per request inputs
-        $quotations = Quotation::query();
+        $params = [
+            'q'      => $request->get('q'),
+            'status' => $request->get('status'),
+        ];
 
-        if ($request->filled('q')) {
-            $q = $request->input('q');
-            $quotations->where('id', 'like', "%$q%");
-            // add other filters if needed
-        }
+        $response = $this->api->get('/quotations', array_filter($params));
+        $quotations = $response->ok() ? $response->json() : [];
 
-        if ($request->filled('status')) {
-            $quotations->where('status', $request->input('status'));
-        }
-
-        $quotations = $quotations->paginate(10);
-
+        // only table partial, NO layout
         return view('quotations.partials.table', compact('quotations'));
     }
+
     public function create()
-        {
-            $patients = $this->api->get('patients')->json();
-            $analyses = $this->api->get('analyses')->json();
-            $agreements = $this->api->get('agreements', ['status' => 'active'])->json();
+    {
+        $patients   = $this->api->get('patients')->json();
+        $analyses   = $this->api->get('analyses')->json();
+        $agreements = $this->api->get('agreements', ['status' => 'active'])->json();
+        $doctors    = $this->api->get('doctors')->json() ?? [];
 
-            return view('quotations.create', [
-                'patients' => $patients,
-                'analyses' => $analyses,
-                'agreements' => $agreements,
-            ]);
+        return view('quotations.create', compact('patients', 'analyses', 'agreements', 'doctors'));
+    }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'patient_id'              => 'required|integer',
+            'items'                   => 'required|array|min:1',
+            'items.*.analysis_id'     => 'required|integer',
+            'items.*.price'           => 'required|numeric|min:0',
+            'payment.amount'          => 'nullable|numeric|min:0',
+            'payment.method'          => 'nullable|string|max:50',
+            'payment.notes'           => 'nullable|string|max:255',
+            'payment.amount_received' => 'nullable|numeric|min:0',
+            'payment.change_given'    => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
         }
-        public function store(Request $request)
-        {
-            // --- 1. Validation ---
-            $validator = Validator::make($request->all(), [
-                    'patient_id' => 'required|integer',
-                    'items' => 'required|array|min:1',
-                    'items.*.analysis_id' => 'required|integer',
-                    'items.*.price' => 'required|numeric|min:0',
-                    'payment.amount' => 'nullable|numeric|min:0',
-                    'payment.method' => 'nullable|string|max:50',
-                    'payment.notes'  => 'nullable|string|max:255',
-                    'payment.amount_received' => 'nullable|numeric|min:0',
-                ]);
 
-            if ($validator->fails()) {
-                return back()->withErrors($validator)->withInput();
-            }
+        $user = Session::get('user');
+        if (!$user || !isset($user['id'])) {
+            return back()->with('error', 'User session expired, please log in again.');
+        }
 
-            $user = Session::get('user'); // ✅ already stored at login
-            if (!$user || !isset($user['id'])) {
-                \Log::error("❌ No FastAPI user found in session.");
-                return back()->with('error', 'User session expired, please log in again.');
-            }
+        // --- Compute totals ---
+        $total = collect($request->items)->sum(fn ($item) => (float) $item['price']);
+        $discount = $request->input('discount_applied', 0.0);
+        $netTotal = $total - $discount;
+        $outstanding = $request->input('payment.amount_received')
+            ? $netTotal - (float) $request->input('payment.amount_received')
+            : $netTotal;
 
-            // --- 2. Prepare quotation payload ---
-            $quotationData = [
-                'patient_id' => (int) $request->patient_id,
-                'status' => 'draft',
-                'agreement_id' => $request->agreement_id ? (int) $request->agreement_id : null,
-                'items' => array_values(array_map(function($item) {
-                    return [
-                        'analysis_id' => (int) $item['analysis_id'],
-                        'price' => (float) $item['price'],
-                    ];
-                }, $request->items)),
+        // --- Build quotation payload ---
+        $quotationData = [
+            'patient_id'       => (int) $request->patient_id,
+            'status'           => 'draft',
+            'agreement_id'     => $request->agreement_id ? (int) $request->agreement_id : null,
+            'items'            => collect($request->items)->map(fn ($item) => [
+                'analysis_id' => (int) $item['analysis_id'],
+                'price'       => (float) $item['price'],
+            ])->values()->all(),
+            'total'            => $total,
+            'discount_applied' => (float) $discount,
+            'net_total'        => $netTotal,
+            'outstanding'      => $outstanding,
+        ];
+
+        if ($request->filled('payment.method')) {
+            $quotationData['payment'] = [
+                'amount'          => (float) $request->input('payment.amount'),
+                'method'          => $request->input('payment.method'),
+                'notes'           => $request->input('payment.notes'),
+                'amount_received' => $request->input('payment.amount_received'),
+                'change_given'    => $request->input('payment.change_given'),
+                'outstanding'     => $outstanding, // sync with quotation outstanding
+                'user_id'         => $user['id'],
             ];
-
-            // --- 3. Add payment if provided ---
-            if ($request->filled('payment.method')) {
-                $quotationData['payment'] = [
-                    'amount'          => (float) $request->input('payment.amount'), // net total
-                    'method'          => $request->input('payment.method'),
-                    'notes'           => $request->input('payment.notes'),
-                    'amount_received' => $request->input('payment.amount_received'),
-                    'change_given'    => $request->input('payment.change_given'),
-                    'user_id'         => $user['id'], // from session
-                ];
-            }
-   
-            // --- 4. Logging ---
-            \Log::info('📤 Sending quotation payload to FastAPI', $quotationData);
-
-            // --- 5. Create quotation (with optional payment) ---
-            $quotationResponse = $this->api->post('quotations', $quotationData);
-
-            if (!$quotationResponse->successful()) {
-                \Log::error('❌ Failed to create quotation: ' . $quotationResponse->body());
-                return back()->with('error', 'Failed to create quotation.')->withInput();
-            }
-
-            $quotation = $quotationResponse->json();
-            $quotationId = $quotation['id'] ?? null;
-
-            \Log::info("✅ Quotation created successfully with ID: {$quotationId}");
-
-            return redirect()->route('quotations.index')
-                ->with('success', 'Quotation (and payment if provided) created successfully.');
         }
+
+        \Log::info('📤 Sending quotation payload to FastAPI', $quotationData);
+
+        $quotationResponse = $this->api->post('quotations', $quotationData);
+
+        if (!$quotationResponse->successful()) {
+            return back()->with('error', 'Failed to create quotation.')->withInput();
+        }
+
+        return redirect()->route('quotations.index')
+            ->with('success', 'Quotation created successfully.');
+    }
+
+    public function storePatient(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'first_name'        => 'required|string|max:100',
+            'last_name'         => 'required|string|max:100',
+            'dob'               => 'required|date',
+            'gender'            => 'required|string|in:H,F',
+            'phone'             => 'nullable|string|max:20',
+            'email'             => 'nullable|email|max:150',
+            'address'           => 'nullable|string|max:255',
+            'blood_type'        => 'required|string|max:3',
+            'weight'            => 'nullable|numeric|min:0',
+            'allergies'         => 'nullable|string',
+            'medical_history'   => 'nullable|string',
+            'chronic_conditions'=> 'nullable|string',
+            'doctor_id'         => 'nullable|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Forward to FastAPI
+        $payload = $validator->validated();
+        $response = $this->api->post('patients', $payload);
+
+        if (!$response->successful()) {
+            return response()->json([
+                'error'   => 'Failed to create patient',
+                'details' => $response->body(),
+            ], $response->status());
+        }
+
+        return response()->json($response->json(), 201);
+    }
 
     public function show($id)
     {
@@ -139,116 +172,41 @@ class QuotationController extends Controller
         }
 
         $quotation = $response->json();
+        // ✅ Outstanding now comes directly from FastAPI/DB
         return view('quotations.show', compact('quotation'));
     }
 
     public function edit($id)
     {
-        $quotation = $this->api->get("quotations/{$id}")->json();
-        $patients = $this->api->get('patients')->json();
-        $analyses = $this->api->get('analyses')->json();
-        $agreements = $this->api->get('agreements', ['status' => 'active'])->json();
-        if (!$quotation) {
-            return redirect()->route('quotations.index')->with('error', 'Quotation not found.');
+        $response = $this->api->get("quotations/{$id}");
+        if (!$response->successful()) {
+            return redirect()->route('quotations.index')
+                ->with('error', 'Quotation not found.');
         }
+
+        $quotation  = $response->json();
+        $patients   = $this->api->get('patients')->json();
+        $analyses   = $this->api->get('analyses')->json();
+        $agreements = $this->api->get('agreements', ['status' => 'active'])->json();
+
         return view('quotations.edit', compact('quotation', 'patients', 'analyses', 'agreements'));
     }
 
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'patient_id' => 'required|integer',
-            'analyses' => 'required|array|min:1',
-            'analyses.*.analysis_id' => 'required|integer',
-            'analyses.*.price' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-            'status' => 'required|in:draft,confirmed,converted',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $data = [
-            'patient_id' => $request->patient_id,
-            'status' => $request->status,
-            'total' => $request->total,
-            'analyses' => $request->analyses,
+        $payload = [
+            'status'      => $request->input('status'),
+            'analyses'    => $request->input('analyses', []),
+            'new_payment' => $request->input('new_payment', null),
         ];
 
-        $response = $this->api->put("quotations/{$id}", $data);
+        $response = $this->api->put("quotations/{$id}", $payload);
 
-        return $response->successful()
-            ? redirect()->route('quotations.index')->with('success', 'Quotation updated.')
-            : back()->with('error', 'Failed to update quotation.')->withInput();
-    }
-
-    public function destroy($id)
-    {
-        $response = $this->api->delete("quotations/{$id}");
-
-        return $response->successful()
-            ? redirect()->route('quotations.index')->with('success', 'Quotation deleted.')
-            : back()->with('error', 'Failed to delete quotation.');
-    }
-
-    // Autocomplete APIs
-    public function searchPatients(Request $request)
-    {
-        $q = $request->get('q', '');
-        $response = $this->api->get('patients/search', ['q' => $q]);
-        return $response->successful() ? $response->json() : [];
-    }
-
-    public function searchAnalyses(Request $request)
-    {
-        $q = $request->get('q', '');
-        $response = $this->api->get('analyses/search', ['q' => $q]);
-        return $response->successful() ? $response->json() : [];
-    }
-
-    public function quotationsTable(Request $request)
-    {
-        $params = $request->only(['q', 'status']);
-        $response = $this->api->get('quotations/table', $params);
-
-        if (!$response->successful()) {
-            return response('Failed to load quotations.', 500);
+        if ($response->successful()) {
+            return redirect()->route('quotations.show', $id)
+                ->with('success', 'Quotation updated successfully.');
+        } else {
+            return back()->with('error', 'Failed to update quotation.')->withInput();
         }
-
-        $quotations = $response->json();
-        return view('quotations.partials.quotations_table', compact('quotations'));
-    }
-    public function convert($id)
-    {
-        // Call the new FastAPI convert route
-        $response = $this->api->put("quotations/{$id}/convert", []);
-
-        if (!$response->successful()) {
-            return redirect()
-                ->route('quotations.show', $id)
-                ->with('error', 'Failed to convert quotation.');
-        }
-
-        return redirect()
-            ->route('quotations.show', $id)
-            ->with('success', 'Quotation converted to visit successfully.');
-    }
-
-    // Download quotation as PDF
-    public function download($id)
-    {
-        $response = $this->api->get("quotations/{$id}");
-        if (!$response->successful()) {
-            return redirect()->route('quotations.index')->with('error', 'Quotation not found.');
-        }
-
-        $quotation = $response->json();
-
-        $pdf = Pdf::loadView('quotations.pdf', compact('quotation'));
-
-        $fileName = "Facture N° {$quotation['id']} - Dossier {$quotation['patient']['file_number']}.pdf";
-        
-        return $pdf->download($fileName);
     }
 }

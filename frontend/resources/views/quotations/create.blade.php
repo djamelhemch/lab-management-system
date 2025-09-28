@@ -1,20 +1,37 @@
 @extends('layouts.app')
 
 @section('content')
-<div x-data="quotationForm()" class="max-w-5xl mx-auto px-6 py-10 space-y-8">
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-        <!-- Header -->
-        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
-            <h1 class="text-2xl font-bold text-gray-800">New Quotation</h1>
-            <p class="text-sm text-gray-600 mt-1">Fill in the details below to create a new laboratory quotation.</p>
+<div class="min-h-screen bg-gray-50 py-8">
+    <div x-data="quotationForm()" class="max-w-6xl mx-auto px-4">
+
+        {{-- Progress Header --}}
+        <div class="mb-8">
+            <div class="bg-white rounded-xl shadow-md border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">Create New Quotation</h1>
+                            <p class="text-sm text-gray-500">Fill in the details to generate a laboratory quotation</p>
+                        </div>
+
+                        {{-- Step Progress Indicator --}}
+                        <div class="hidden md:flex items-center gap-3 text-sm text-gray-600">
+                            <span class="font-medium">Patient</span>
+                            <div class="w-6 h-px bg-gray-300"></div>
+                            <span>Analyses</span>
+                            <div class="w-6 h-px bg-gray-300"></div>
+                            <span>Payment</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        {{-- Error Display --}}
         @if ($errors->any())
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 mx-6 mt-6 rounded-md">
-                <h3 class="text-sm font-semibold text-red-800">
-                    {{ $errors->count() }} error(s) with your submission
-                </h3>
-                <ul class="mt-2 text-sm text-red-700 list-disc pl-5 space-y-1">
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+                <h3 class="text-sm font-semibold text-red-800 mb-2">Please fix the following errors:</h3>
+                <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -22,143 +39,297 @@
             </div>
         @endif
 
-        <form action="{{ route('quotations.store') }}" method="POST" id="quotation-form" class="divide-y divide-gray-200">
+        <form action="{{ route('quotations.store') }}" method="POST" id="quotation-form" class="space-y-6">
             @csrf
 
-            <!-- Patient Section -->
-            <section class="p-6 space-y-4">
-                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    👤 Patient Information
-                </h2>
-                <p class="text-sm text-gray-500">Select an existing patient or create a new one.</p>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {{-- Main Form Content --}}
+                <div class="xl:col-span-2 space-y-6">
 
-                <select name="patient_id" id="patient_id"
-                        class="w-full rounded-lg border-gray-300 py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">-- Select Existing Patient --</option>
-                    @foreach($patients as $patient)
-                        <option value="{{ $patient['id'] }}">{{ $patient['first_name'] }} {{ $patient['last_name'] }}</option>
-                    @endforeach
-                </select>
+                    {{-- Patient Section --}}
+                <div class="bg-white rounded-xl shadow-md border border-gray-200" x-data="patientForm()">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Patient Information</h2>
+                    <p class="text-sm text-gray-500">Select existing patient or create new</p>
+                </div>
 
-                <button type="button"
-                    class="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    @click="showNewPatientForm = !showNewPatientForm">
-                    + Add New Patient
-                </button>
-
-                <!-- Inline new patient form -->
-                <div x-show="showNewPatientForm" x-transition class="mt-4 space-y-4 bg-gray-50 p-4 rounded-md border">
-                    <h3 class="text-sm font-semibold text-gray-800">New Patient Details</h3>
-                    <div class="grid grid-cols-6 gap-4">
-                        <input type="text" name="new_patient[first_name]" placeholder="First Name"
-                               class="col-span-3 rounded-md border-gray-300">
-                        <input type="text" name="new_patient[last_name]" placeholder="Last Name"
-                               class="col-span-3 rounded-md border-gray-300">
-                        <input type="date" name="new_patient[dob]" class="col-span-3 rounded-md border-gray-300">
-                        <select name="new_patient[blood_type]" class="col-span-3 rounded-md border-gray-300">
-                            <option value="">Blood Type</option>
-                            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-                            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                <div class="p-6 space-y-6">
+                    {{-- Patient Selection --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Patient *</label>
+                        <select name="patient_id" id="patient_id"
+                            class="w-full px-3 py-2 border rounded-lg focus:border-indigo-500 focus:ring-0">
+                            <option value="">-- Sélectionnez un patient --</option>
+                            @foreach($patients as $patient)
+                                <option value="{{ $patient['id'] }}">{{ $patient['first_name'] }} {{ $patient['last_name'] }}</option>
+                            @endforeach
                         </select>
                     </div>
-                    <div class="flex justify-end gap-2">
-                        <button type="button" class="px-4 py-2 bg-gray-100 rounded-md" @click="showNewPatientForm=false">Cancel</button>
-                        <button type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md">Save Patient</button>
+
+                    {{-- Add New Patient Toggle --}}
+                    <div class="flex items-center justify-center mt-2">
+                        <button type="button"
+                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                            @click="showNewPatient = !showNewPatient">
+                            + Ajouter un nouveau patient
+                        </button>
+                    </div>
+                        <!-- keep the inner form for @submit.prevent but note required bindings are conditional -->
+                        <div 
+                            x-show="showNewPatient" 
+                            x-cloak 
+                            class="bg-gray-50 rounded-lg p-6 border border-gray-200 space-y-4"
+                        >
+                            <h3 class="text-sm font-semibold text-gray-700">Nouveau Patient</h3>
+
+                            <div x-show="showNewPatient" x-cloak>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Prénom -->
+                                    <div>
+                                        <label class="block mb-1 font-semibold text-gray-700">Prénom *</label>
+                                        <input type="text" x-model="form.first_name" :required="showNewPatient"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"/>
+                                    </div>
+
+                                    <!-- Nom -->
+                                    <div>
+                                        <label class="block mb-1 font-semibold text-gray-700">Nom *</label>
+                                        <input type="text" x-model="form.last_name" :required="showNewPatient"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"/>
+                                    </div>
+
+                                    <!-- Date de naissance -->
+                                    <div>
+                                        <label class="block mb-1 font-semibold text-gray-700">Date de naissance *</label>
+                                        <input type="date" x-model="form.dob" :required="showNewPatient"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"/>
+                                    </div>
+
+                                    <!-- Sexe -->
+                                    <div>
+                                        <label class="block mb-1 font-semibold text-gray-700">Sexe *</label>
+                                        <select x-model="form.gender" :required="showNewPatient"
+                                                class="p-3 border border-gray-300 rounded-lg w-full">
+                                            <option value="">Sélectionnez le sexe</option>
+                                            <option value="H">Homme</option>
+                                            <option value="F">Femme</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Téléphone -->
+                                    <div>
+                                        <label class="block mb-1 font-semibold text-gray-700">Téléphone</label>
+                                        <input type="text" x-model="form.phone" id="phoneField"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"/>
+                                    </div>
+
+                                    <!-- Email -->
+                                    <div>
+                                        <label class="block mb-1 font-semibold text-gray-700">Email</label>
+                                        <input type="email" x-model="form.email"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"/>
+                                    </div>
+
+                                    <!-- Adresse -->
+                                    <div class="md:col-span-2">
+                                        <label class="block mb-1 font-semibold text-gray-700">Adresse</label>
+                                        <textarea x-model="form.address"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"></textarea>
+                                    </div>
+
+                                    <!-- Groupe sanguin -->
+                                    <div>
+                                        <label for="blood_type" class="block mb-1 font-semibold text-gray-700">
+                                            Groupe sanguin <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="blood_type" x-model="form.blood_type" :required="showNewPatient"
+                                            class="p-3 border border-gray-300 rounded-lg w-full">
+                                            <option value="">-- Sélectionnez un groupe sanguin --</option>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Poids -->
+                                    <div>
+                                        <label class="block mb-1 font-semibold text-gray-700">Poids (kg)</label>
+                                        <input type="number" step="0.1" x-model="form.weight" :required="showNewPatient"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"/>
+                                    </div>
+
+                                    <!-- Allergies -->
+                                    <div class="md:col-span-2">
+                                        <label class="block mb-1 font-semibold text-gray-700">Allergies</label>
+                                        <textarea x-model="form.allergies"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"></textarea>
+                                    </div>
+
+                                    <!-- Antécédents médicaux -->
+                                    <div class="md:col-span-2">
+                                        <label class="block mb-1 font-semibold text-gray-700">Antécédents médicaux</label>
+                                        <textarea x-model="form.medical_history"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"></textarea>
+                                    </div>
+
+                                    <!-- Maladies chroniques -->
+                                    <div class="md:col-span-2">
+                                        <label class="block mb-1 font-semibold text-gray-700">Maladies chroniques</label>
+                                        <textarea x-model="form.chronic_conditions"
+                                            class="p-3 border border-gray-300 rounded-lg w-full"></textarea>
+                                    </div>
+
+                                    <!-- Médecin traitant -->
+                                    <div class="md:col-span-2">
+                                        <label class="block mb-1 font-semibold text-gray-700">Médecin traitant</label>
+                                        <select x-model="form.doctor_id" 
+                                                class="p-3 border border-gray-300 rounded-lg w-full">
+                                            <option value="">-- Sélectionnez un médecin --</option>
+                                            @foreach($doctors as $doctor)
+                                                <option value="{{ $doctor['id'] }}">
+                                                    {{ $doctor['full_name'] }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between mt-4">
+                                    <button type="button" @click="resetForm"
+                                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                                        Annuler
+                                    </button>
+
+                                    <button type="button" @click="validateBeforeSubmit"
+                                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                                        x-text="loading ? 'Saving...' : 'Save Patient'"
+                                        :disabled="loading">
+                                    </button>
+                                </div>
+                           </div>
+                        </div>
+                    </div>
+            </div>
+
+                <!-- Popup Modal -->
+                <div id="phonePopup" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                    <div class="bg-white p-6 rounded-xl shadow-lg max-w-sm text-center">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800">⚠️ Pas de numéro de téléphone !</h3>
+                        <p class="text-gray-600 mb-6">Vous pouvez l'ajouter si nécessaire.</p>
+                        <div class="flex justify-center gap-4">
+                            <button id="ignoreBtn" type="button"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                                Ignorer et continuer
+                            </button>
+                            <button id="addBtn" type="button"
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+                                Ajouter numéro
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </section>
+                    {{-- Analyses Section --}}
+                    <div class="bg-white rounded-xl shadow-md border border-gray-200">
+                        <div class="p-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Medical Analyses</h2>
+                            <p class="text-sm text-gray-500">Add laboratory tests and procedures</p>
+                        </div>
+                        <div class="p-6">
+                            <div id="analysis-rows" class="space-y-4"></div>
+                            <div class="mt-4">
+                                <button type="button" id="add-analysis"
+                                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                    + Add Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- Analyses Section -->
-            <section class="p-6 space-y-4">
-                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">Analyses</h2>
-                <p class="text-sm text-gray-500">Add laboratory analyses to this quotation.</p>
-                <div id="analysis-rows" class="space-y-3"></div>
-                <button type="button" id="add-analysis"
-                    class="mt-2 inline-flex items-center px-4 py-2 rounded-md border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-50">
-                    + Add Analysis
-                </button>
-            </section>
-
-            <!-- Agreement Section -->
-            <section class="p-6 space-y-4">
-                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">Agreement</h2>
-                <p class="text-sm text-gray-500">Apply a discount agreement if applicable.</p>
-                <select name="agreement_id" id="agreement_id"
-                        class="w-full rounded-lg border-gray-300 py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">-- No Agreement --</option>
-                    @foreach($agreements as $agreement)
-                        <option value="{{ $agreement['id'] }}">
-                            {{ ucfirst($agreement['discount_type']) }} - {{ $agreement['discount_value'] }}{{ $agreement['discount_type'] === 'percentage' ? '%' : ' DZD' }}
-                        </option>
-                    @endforeach
-                </select>
-            </section>
-
-            <section class="p-6 space-y-4" id="payment-section">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Payment Method -->
-                <div>
-                    <label class="block text-sm font-medium">Payment Method</label>
-                    <select id="payment-method" name="payment[method]" class="mt-1 block w-full rounded-md border-gray-300">
-                        <option value="">-- Select Method --</option>
-                        <option value="cash">Cash</option>
-                        <option value="card">Card</option>
-                        <option value="transfer">Bank Transfer</option>
-                    </select>
+                    {{-- Agreement Section --}}
+                    <div class="bg-white rounded-xl shadow-md border border-gray-200">
+                        <div class="p-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Discount Agreement</h2>
+                            <p class="text-sm text-gray-500">Apply discounts if applicable</p>
+                        </div>
+                        <div class="p-6">
+                            <select name="agreement_id" id="agreement_id"
+                                    class="w-full px-3 py-2 border rounded-lg focus:border-indigo-500 focus:ring-0">
+                                <option value="">-- No Discount Applied --</option>
+                                @foreach($agreements as $agreement)
+                                    <option value="{{ $agreement['id'] }}">
+                                        {{ ucfirst($agreement['discount_type']) }} -
+                                        {{ $agreement['discount_value'] }}{{ $agreement['discount_type'] === 'percentage' ? '%' : ' DZD' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Amount Received -->
-                <div>
-                    <label class="block text-sm font-medium">Amount Reçu</label>
-                    <input type="number" step="0.01" name="payment[amount_received]" id="payment-amount"
-                        placeholder="0.00" class="mt-1 block w-full rounded-md border-gray-300">
-                </div>
-            </div>
+                {{-- Sidebar - Payment & Summary --}}
+                <div class="xl:col-span-1 space-y-6 xl:sticky xl:top-6 self-start">
+                    {{-- Financial Summary --}}
+                    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 space-y-3">
+                        <h3 class="text-base font-semibold text-gray-800 mb-4">Financial Summary</h3>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Subtotal</span>
+                            <span id="subtotal-display" class="font-medium">DZD 0.00</span>
+                        </div>
+                        <div id="discount-row" class="flex justify-between text-sm hidden">
+                            <span class="text-gray-600">Discount</span>
+                            <span id="discount-display" class="font-medium text-red-600">-DZD 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm font-semibold border-t pt-2">
+                            <span>Total to Pay</span>
+                            <span id="total-display">DZD 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Amount Received</span>
+                            <span id="received-display" class="font-medium">DZD 0.00</span>
+                        </div>
+                        <div id="change-row" class="flex justify-between text-sm hidden">
+                            <span class="text-gray-600">Change Due</span>
+                            <span id="change-display">DZD 0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm font-semibold text-red-600">
+                            <span>Outstanding</span>
+                            <span id="outstanding-display">DZD 0.00</span>
+                        </div>
+                    </div>
 
-            <!-- Payment Summary -->
-            <div class="bg-gray-50 p-4 rounded-md border mt-4 space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span>Sous-total:</span>
-                    <span id="subtotal-display">DZD 0.00</span>
-                </div>
+                    {{-- Payment Section --}}
+                    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 space-y-4">
+                        <h3 class="text-base font-semibold text-gray-800">Payment Details</h3>
+                        <select id="payment-method" name="payment[method]"
+                                class="w-full px-3 py-2 border rounded-lg focus:border-indigo-500 focus:ring-0">
+                            <option value="">-- Select Method --</option>
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="transfer">Bank Transfer</option>
+                        </select>
+                        <input type="number" step="0.01" name="payment[amount_received]" id="payment-amount"
+                               placeholder="0.00"
+                               class="w-full px-3 py-2 border rounded-lg focus:border-indigo-500 focus:ring-0 text-right">
 
-                <div id="discount-row" class="flex justify-between text-sm hidden">
-                    <span>Remise:</span>
-                    <span id="discount-display">-DZD 0.00</span>
-                </div>
+                        {{-- Hidden Fields --}}
+                        <input type="hidden" name="payment[amount]" id="payment-amount-hidden">
+                        <input type="hidden" name="payment[change_given]" id="payment-change-hidden">
+                        <input type="hidden" name="payment[notes]" value="Created with quotation">
+                    </div>
 
-                <div class="flex justify-between text-base font-semibold border-t pt-2 mt-2">
-                    <span>Total à payer:</span>
-                    <span id="total-display">DZD 0.00</span>
+                    {{-- Submit Button --}}
+                    <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                        <button type="submit"
+                                class="w-full bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700">
+                            Create Quotation
+                        </button>
+                    </div>
                 </div>
-
-                <div class="flex justify-between text-sm">
-                    <span>Reçu:</span>
-                    <span id="received-display" class="text-green-600 font-medium">DZD 0.00</span>
-                </div>
-
-                <div class="flex justify-between text-sm" id="change-row" style="display:none;">
-                    <span>Monnaie:</span>
-                    <span id="change-display" class="text-gray-900 font-medium">DZD 0.00</span>
-                </div>
-                <div class="flex justify-between text-base font-semibold border-t pt-2 mt-2"> 
-                    <span>Restant:</span> 
-                    <span id="outstanding-display" class="text-red-600">DZD 0.00</span> 
-                </div>
-            </div>
-
-            <!-- Hidden inputs for backend -->
-            <input type="hidden" name="payment[amount]" id="payment-amount-hidden">
-            <input type="hidden" name="payment[change_given]" id="payment-change-hidden">
-            <input type="hidden" name="payment[notes]" value="Created at quotation"> <!-- Optional default -->
-        </section>
-
-            <!-- Submit -->
-            <div class="px-6 py-4 bg-gray-50 text-right">
-                <button type="submit"
-                        class="inline-flex items-center gap-2 py-3 px-6 rounded-lg bg-green-600 text-white text-lg font-medium hover:bg-green-700 focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow">
-                    ✅ Create Quotation
-                </button>
             </div>
         </form>
     </div>
@@ -166,6 +337,108 @@
 @endsection
 
 @push('scripts')
+
+<script>
+function patientForm() {
+    return {
+        showNewPatient: false,
+        loading: false,
+        form: {
+            first_name: '',
+            last_name: '',
+            dob: '',
+            gender: '',
+            phone: '',
+            email: '',
+            address: '',
+            blood_type: '',
+            weight: '',
+            allergies: '',
+            medical_history: '',
+            chronic_conditions: '',
+            doctor_id: ''
+        },
+        resetForm() {
+            this.form = {
+                first_name: '',
+                last_name: '',
+                dob: '',
+                gender: '',
+                phone: '',
+                email: '',
+                address: '',
+                blood_type: '',
+                weight: '',
+                allergies: '',
+                medical_history: '',
+                chronic_conditions: '',
+                doctor_id: ''
+            };
+            this.showNewPatient = false;
+        },
+        validateBeforeSubmit() {
+            // Manual validation
+            if (!this.form.first_name || !this.form.last_name || !this.form.dob || !this.form.gender || !this.form.blood_type) {
+                alert("⚠️ Merci de remplir tous les champs obligatoires.");
+                return;
+            }
+
+            if (!this.form.phone) {
+                document.getElementById('phonePopup').classList.remove('hidden');
+
+                document.getElementById('ignoreBtn').onclick = () => {
+                    document.getElementById('phonePopup').classList.add('hidden');
+                    this.submit(); // continue without phone
+                };
+                document.getElementById('addBtn').onclick = () => {
+                    document.getElementById('phonePopup').classList.add('hidden');
+                    document.getElementById('phoneField').focus();
+                };
+                return;
+            }
+
+            this.submit();
+        },
+        async submit() {
+            this.loading = true;
+            try {
+                let response = await fetch("{{ route('patients.ajaxStore') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify(this.form)
+                });
+
+                let data = await response.json();
+
+                if (!response.ok) {
+                    alert("❌ Error: " + JSON.stringify(data.errors || data.error));
+                    return;
+                }
+
+                // ✅ Add to patient dropdown
+                let patientSelect = document.getElementById('patient_id');
+                let option = document.createElement('option');
+                option.value = data.id;
+                option.textContent = data.first_name + " " + data.last_name;
+                option.selected = true;
+                patientSelect.appendChild(option);
+
+                this.resetForm();
+                alert("✅ Patient created and selected!");
+            } catch (err) {
+                console.error(err);
+                alert("Unexpected error creating patient");
+            } finally {
+                this.loading = false;
+            }
+        }
+    }
+}
+</script>
+
 <script>
 function quotationForm() {
     return {
@@ -206,65 +479,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Calculate subtotal, discount, and total
-    function calculateTotal() {
-        subtotal = 0;
+function calculateTotal() {
+    subtotal = 0;
+    document.querySelectorAll('.analysis-price').forEach(input => {
+        subtotal += parseFloat(input.value) || 0;
+    });
 
-        document.querySelectorAll('.analysis-price').forEach(input => {
-            subtotal += parseFloat(input.value) || 0;
-        });
-
-        // Calculate discount
-        const agreementId = agreementSelect.value;
-        discount = 0;
-
-        if (agreementId) {
-            const agreement = agreements.find(a => a.id == agreementId);
-            if (agreement) {
-                if (agreement.discount_type === 'percentage') {
-                    discount = subtotal * (agreement.discount_value / 100);
-                } else if (agreement.discount_type === 'fixed') {
-                    discount = agreement.discount_value;
-                }
-                discountRow.style.display = 'flex';
-                discountDisplay.textContent = `-DZD ${formatCurrency(discount)}`;
-            } else {
-                discountRow.style.display = 'none';
+    // Discount
+    const agreementId = agreementSelect.value;
+    discount = 0;
+    if (agreementId) {
+        const agreement = agreements.find(a => a.id == agreementId);
+        if (agreement) {
+            if (agreement.discount_type === 'percentage') {
+                discount = subtotal * (agreement.discount_value / 100);
+            } else if (agreement.discount_type === 'fixed') {
+                discount = agreement.discount_value;
             }
+            discountRow.style.display = 'flex';
+            discountDisplay.textContent = `-DZD ${formatCurrency(discount)}`;
         } else {
             discountRow.style.display = 'none';
         }
-
-        total = Math.max(subtotal - discount, 0);
-
-        subtotalDisplay.textContent = `DZD ${formatCurrency(subtotal)}`;
-        totalDisplay.textContent = `DZD ${formatCurrency(total)}`;
-
-        updatePaymentSummary();
+    } else {
+        discountRow.style.display = 'none';
     }
+
+    total = Math.max(subtotal - discount, 0);
+    subtotalDisplay.textContent = `DZD ${formatCurrency(subtotal)}`;
+    totalDisplay.textContent = `DZD ${formatCurrency(total)}`;
+
+    // ✅ Recalculate payment-related values
+    updatePaymentSummary();
+}
 
     // Update payment summary dynamically
-   function updatePaymentSummary() {
-        const payment = parseFloat(paymentAmountEl.value) || 0;
-        const method = paymentMethodEl.value;
+function updatePaymentSummary() {
+    const payment = parseFloat(paymentAmountEl.value) || 0;
+    const method = paymentMethodEl.value;
 
-        // amount_received = user entry
-        document.getElementById('payment-amount').value = payment;
-        document.getElementById('payment-amount-hidden').value = total;
+    // Net total to pay
+    document.getElementById('payment-amount-hidden').value = total;
+    receivedDisplay.textContent = `DZD ${formatCurrency(payment)}`;
 
-        receivedDisplay.textContent = `DZD ${formatCurrency(payment)}`;
-
-        let change = 0;
-        if (method === 'cash') {
-            change = Math.max(payment - total, 0);
-            changeRow.style.display = 'flex';
-            changeDisplay.textContent = `DZD ${formatCurrency(change)}`;
-        } else {
-            changeRow.style.display = 'none';
-        }
-
-        // Hidden field for backend
-        document.getElementById('payment-change-hidden').value = change;
+    // Change calculation (only for cash)
+    let change = 0;
+    if (method === 'cash') {
+        change = Math.max(payment - total, 0);
+        changeRow.style.display = 'flex';
+        changeDisplay.textContent = `DZD ${formatCurrency(change)}`;
+    } else {
+        changeRow.style.display = 'none';
     }
+    document.getElementById('payment-change-hidden').value = change;
+
+    // ✅ Outstanding balance
+    const outstanding = Math.max(total - payment, 0);
+    outstandingDisplay.textContent = `DZD ${formatCurrency(outstanding)}`;
+
+    // Optional: hidden input if you need it in backend
+    let outstandingHidden = document.getElementById('payment-outstanding-hidden');
+    if (outstandingHidden) {
+        outstandingHidden.value = outstanding;
+    }
+}
 
     // Event listeners for payment inputs
     paymentAmountEl.addEventListener('input', updatePaymentSummary);
@@ -336,4 +614,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addAnalysisRow();
 });
 </script>
+
+
 @endpush

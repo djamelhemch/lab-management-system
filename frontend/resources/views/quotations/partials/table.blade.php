@@ -1,83 +1,166 @@
-{{-- resources/views/quotations/partials/table.blade.php --}}
-<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-    <table class="min-w-full divide-y divide-gray-300">
-        <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dossier N°</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            @forelse($quotations as $quotation)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $quotation['id'] }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ $quotation['patient']['full_name'] ?? 'N/A' }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ $quotation['patient']['file_number'] ?? 'N/A' }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-medium capitalize
-                            {{ $quotation['status'] === 'draft' ? 'bg-gray-100 text-gray-800' :
-                            ($quotation['status'] === 'confirmed' ? 'bg-yellow-100 text-yellow-800' :
-                            ($quotation['status'] === 'converted' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')) }}">
-                            {{ $quotation['status'] }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        ${{ number_format((isset($quotation['net_total']) && $quotation['net_total'] > 0) ? $quotation['net_total'] : $quotation['total'], 2) }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ \Carbon\Carbon::parse($quotation['created_at'])->format('M d, Y H:i') }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div class="flex items-center justify-end space-x-3">
-                            <a href="{{ route('quotations.show', $quotation['id']) }}" 
-                               class="text-blue-600 hover:text-blue-900"
-                               title="View">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    {{-- Component Header --}}
+    <div class="bg-gradient-to-r from-gray-50 to-white p-6 border-b border-gray-100">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Quotations Overview</h3>
+            </div>
+            <div class="text-sm text-gray-500">
+                @php
+                    $quotationsCount = is_array($quotations) ? count($quotations) : $quotations->count();
+                @endphp
+                {{ $quotationsCount }} {{ Str::plural('quotation', $quotationsCount) }} found
+            </div>
+        </div>
+    </div>
+
+    {{-- Responsive Table Wrapper --}}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Patient</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">File No.</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Outstanding</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created</th>
+                    <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-100">
+                @forelse($quotations as $quotation)
+                    <tr class="hover:bg-indigo-50 transition-colors duration-200 group">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-200">
+                                <span class="text-sm font-semibold text-indigo-700">{{ $quotation['id'] }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm font-semibold">
+                                        {{ substr($quotation['patient']['full_name'] ?? 'N/A', 0, 1) }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ $quotation['patient']['full_name'] ?? 'No Patient' }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">Patient Record</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($quotation['patient']['file_number'] ?? null)
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ $quotation['patient']['file_number'] }}
+                                </span>
+                            @else
+                                <span class="text-gray-400 text-sm">No File</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span @class([
+                                'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold',
+                                'bg-yellow-100 text-yellow-800 border border-yellow-200' => $quotation['status'] === 'draft',
+                                'bg-blue-100 text-blue-800 border border-blue-200' => $quotation['status'] === 'confirmed',
+                                'bg-green-100 text-green-800 border border-green-200' => $quotation['status'] === 'converted',
+                                'bg-gray-100 text-gray-800 border border-gray-200' => !in_array($quotation['status'], ['draft', 'confirmed', 'converted']),
+                            ])> 
+                                {{ ucfirst($quotation['status']) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-lg font-bold text-gray-900">
+                                {{ number_format($quotation['total'] ?? 0, 2) }} {{ $defaultCurrency }}
+                            </div>
+                            <div class="text-xs text-gray-500">Net Amount</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          @php
+                            $outstanding = floatval($quotation['outstanding'] ?? 0);
+                            $status = $quotation['status'] ?? '';
+                        @endphp
+                        <div class="flex items-center gap-2">
+                            @if($status !== 'draft' && $outstanding <= 0)
+                                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                                <span class="text-sm font-semibold text-green-600">Paid</span>
+                            @else
+                                <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+                                <span class="text-sm font-semibold text-red-600">
+                                    {{ number_format($outstanding, 2) }} {{ $defaultCurrency }}
+                                </span>
+                            @endif
+                        </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div>
+                                <span class="font-medium">{{ \Carbon\Carbon::parse($quotation['created_at'])->format('M d, Y') }}</span>
+                                <span class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($quotation['created_at'])->format('H:i') }}</span>
+                            </div>
+                        </td>
+                       <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end gap-2">
+
+                            {{-- View Button --}}
+                            <a href="{{ route('quotations.show', $quotation['id']) }}" title="View Details"
+                            class="inline-flex items-center justify-center p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                 </svg>
                             </a>
-                            <a href="{{ route('quotations.edit', $quotation['id']) }}" 
-                               class="text-yellow-600 hover:text-yellow-900"
-                               title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+
+                            {{-- Edit Button --}}
+                            <a href="{{ route('quotations.edit', $quotation['id']) }}" title="Edit Quotation"
+                            class="inline-flex items-center justify-center p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors duration-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                 </svg>
                             </a>
-                            <form action="{{ route('quotations.destroy', $quotation['id']) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this quotation?')">
+
+                            {{-- Delete Button with Correct onsubmit --}}
+                            <form action="{{ route('quotations.destroy', $quotation['id']) }}" method="POST" class="inline"
+                                onsubmit="return confirm('Are you sure you want to delete this quotation? This action cannot be undone.')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" 
-                                        class="text-red-600 hover:text-red-900"
-                                        title="Delete">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <button type="submit" title="Delete Quotation"
+                                        class="inline-flex items-center justify-center p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                 </button>
                             </form>
+
                         </div>
                     </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">No quotations found</h3>
-                        <p class="mt-1 text-sm text-gray-500">Get started by creating a new quotation.</p>
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="8" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">No quotations found</h3>
+                                <p class="text-gray-500 mb-6">Create your first quotation to get started.</p>
+                                <a href="{{ route('quotations.create') }}" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl">Create Quotation</a>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Pagination Links --}}
+    @if(!is_array($quotations) && $quotations->hasPages())
+    <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+        {{ $quotations->links() }}
+    </div>
+    @endif
 </div>

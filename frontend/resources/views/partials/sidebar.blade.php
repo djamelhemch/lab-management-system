@@ -67,6 +67,11 @@
             flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
             <i class="fas fa-clipboard-list"></i> <span class="ml-2">Logs</span>
         </a>
+        <a href="{{ route('admin.settings.index') }}"
+            class="sidebar-link {{ request()->routeIs('admin.settings.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
+            flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+            <i class="fas fa-cogs"></i> <span class="ml-2">Parametres systemes</span>
+        </a>
     @endif
     
 </nav>

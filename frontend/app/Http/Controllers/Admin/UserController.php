@@ -20,17 +20,24 @@ class UserController extends Controller
     public function index()
     {
         try {
-            // Just pass query params, no need to pass headers here.
+            // Fetch all users
             $response = $this->api->get('/users');
+            $users = $response->successful() ? ($response->json()['data'] ?? $response->json()) : [];
 
-            if ($response->successful()) {
-                $json = $response->json();
-                $users = $json['data'] ?? $json;
-            } else {
-                $users = [];
+            // Fetch online user IDs from user_sessions where is_connected = true
+            $statusResponse = $this->api->get('/users/online-status');
+            $onlineUserIds = [];
+            if ($statusResponse->successful()) {
+                $statusJson = $statusResponse->json();
+                $onlineUserIds = $statusJson['online_user_ids'] ?? [];
+            }
+
+            // Add is_connected attribute by checking active sessions
+            foreach ($users as &$user) {
+                $user['is_connected'] = in_array($user['id'], $onlineUserIds);
             }
         } catch (\Exception $e) {
-            Log::error('Error fetching users: ' . $e->getMessage());
+            Log::error('Error fetching users or online status: ' . $e->getMessage());
             $users = [];
         }
 
@@ -100,9 +107,9 @@ class UserController extends Controller
 
             if ($response->successful()) {
                 $user = $response->json();
-                return view('admin.users.edit', compact('user'));
+                // Pass user data and id separately, or wrap in a User model (recommended)
+                return view('admin.users.edit', ['user' => (object) $user, 'userId' => $id]);
             }
-
             abort(404, 'User not found.');
         } catch (\Exception $e) {
             Log::error('Error fetching user: ' . $e->getMessage());

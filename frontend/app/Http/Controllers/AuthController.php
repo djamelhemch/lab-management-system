@@ -60,8 +60,23 @@ class AuthController extends Controller
 
         return back()->withErrors(['username' => 'Invalid credentials']);
     }
+
     public function logout()
     {
+        $token = Session::get('token');
+
+        if ($token) {
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                ])->post($this->apiBaseUrl . '/logout');
+
+                // Optionally you can check $response->successful() here
+            } catch (\Exception $e) {
+                Log::error('Logout API request failed: ' . $e->getMessage());
+            }
+        }
+
         Session::forget('token');
         Session::forget('user');
         Session::forget('role');

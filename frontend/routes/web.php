@@ -62,11 +62,13 @@ Route::middleware(['auth.api'])->group(function () {
     Route::get('api/search/doctors', [SamplesController::class, 'searchDoctors'])->name('api.search.doctors');
 
     // Quotations
-    Route::resource('quotations', QuotationController::class);
     Route::get('/quotations/table', [QuotationController::class, 'table'])->name('quotations.table');
-    Route::post('/quotations', [QuotationController::class, 'store'])->name('quotations.store');
     Route::put('quotations/{id}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
     Route::get('quotations/{id}/download', [QuotationController::class, 'download'])->name('quotations.download');
+    Route::post('/patients/ajax-store', [QuotationController::class, 'storePatient'])->name('patients.ajaxStore');
+
+    // --- Then, define the general resource route ---
+    Route::resource('quotations', QuotationController::class);
 
     //Queue mangement
     Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
@@ -87,14 +89,16 @@ Route::middleware(['auth.api', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-
-        // Users resource
         Route::resource('users', UserController::class);
-
-        // You don’t need to repeat 'admin/' here
-        Route::get('users/{id}', [UserController::class, 'show'])->name('users.show');
-        Route::get('users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
-
-        // Logs
         Route::get('logs', [LogsController::class, 'index'])->name('logs');
+
+        // Settings routes
+        Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])
+            ->name('settings.index');
+        Route::post('/settings/{id}/options', [\App\Http\Controllers\Admin\SettingsController::class, 'addOption'])
+            ->name('settings.addOption');
+        Route::delete('/settings/options/{id}', [\App\Http\Controllers\Admin\SettingsController::class, 'deleteOption'])
+            ->name('settings.deleteOption');
+        Route::put('/settings/{id}/options/{optionId}/default', [\App\Http\Controllers\Admin\SettingsController::class, 'setDefault'])
+            ->name('settings.setDefault');
     });
