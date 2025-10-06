@@ -93,13 +93,15 @@ class AnalysisBase(BaseModel):
     sample_type_id: Optional[int] = None
     formula: Optional[str] = None
     price: Optional[float] = 0.0
-
-
+    device_ids: Optional[List[int]] = []
+    tube_type: Optional[str] = None 
+    
 class AnalysisCreate(AnalysisBase):
     name: str
     price: float
     normal_ranges: Optional[List[NormalRangeCreate]] = []
-
+    device_ids: Optional[List[int]] = []
+    tube_type: Optional[str] = None 
     @validator('price')
     def price_must_be_positive(cls, v):
         if v < 0:
@@ -117,6 +119,19 @@ class AnalysisResponse(AnalysisBase):
     unit: Optional[UnitResponse] = None
     sample_type: Optional[SampleTypeResponse] = None
     normal_ranges: List[NormalRangeResponse] = []
+    device_ids: Optional[List[int]] = []
+    tube_type: Optional[str] = None          # ✅ ensure this exists
+    device_id: Optional[str]
+    device_names: Optional[List[str]] = []
+    
+    @validator("device_ids", pre=True, always=True)
+    def parse_device_ids(cls, v):
+        if isinstance(v, str):
+            try:
+                return [int(x.strip()) for x in v.split(",") if x.strip()]
+            except Exception:
+                return []
+        return v or []
 
     class Config:
         from_attributes = True

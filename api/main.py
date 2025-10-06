@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import auth, agreement, patient, doctor, dashboard, sample,analysis, quotation,queue,leave_request, profile, payment, logs, settings
+from app.routers import auth, agreement, patient, doctor, dashboard, sample,analysis, quotation,queue,leave_request, profile, payment, logs, settings,lab_device,lab_formulas
 from fastapi.middleware.cors import CORSMiddleware
 import time
 
@@ -38,6 +38,8 @@ app.include_router(profile.router)
 app.include_router(payment.router)
 app.include_router(logs.router)
 app.include_router(settings.router)
+app.include_router(lab_device.router)
+app.include_router(lab_formulas.router)
 @app.get("/")
 def root():
     return {"message": "LIS API is running"}

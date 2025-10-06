@@ -29,7 +29,7 @@ class PaymentUpdate(BaseModel):
     notes: Optional[str] = None
     amount_received: Optional[float] = None
     change_given: Optional[float] = None
-
+    
 class NestedPaymentCreate(PaymentBase):
     quotation_id: Optional[int] = None  # ✅ ignored when nested in quotation
 

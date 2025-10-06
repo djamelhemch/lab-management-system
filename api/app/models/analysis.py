@@ -1,10 +1,11 @@
 # models/analysis.py
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, Enum, Text, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, Enum, Text, DateTime, Table
 from sqlalchemy.ext.declarative import declarative_base
 from app.database import Base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
+
 
 class SexApplicableEnum(str, enum.Enum):
     M = "M"
@@ -52,13 +53,14 @@ class AnalysisCatalog(Base):
     sample_type_id = Column(Integer, ForeignKey("sample_types.id"))
     formula = Column(Text)
     price = Column(Float, default=0.0)
-    
+    tube_type = Column(String(50), nullable=True)  # New field for tube type
     # Relationships
     category_analyse = relationship("CategoryAnalyse", back_populates="analyses")
     unit = relationship("Unit", back_populates="analyses")
     sample_type = relationship("SampleType", back_populates="analyses")
     normal_ranges = relationship("NormalRange", back_populates="analysis", cascade="all, delete-orphan")
-  
+    device_id = Column(Text, nullable=True) 
+
     analysis_items = relationship("QuotationItem", back_populates="analysis")
 
 class NormalRange(Base):

@@ -118,13 +118,35 @@ def get_analyses_table(
         logger.error(f"Exception details:", exc_info=True)  
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     
-# Updated analysis endpoints
+#analysis endpoints
 @router.post("/", response_model=AnalysisResponse)
-@log_route("update_analysis")
-def create_analysis(analysis: AnalysisCreate, db: Session = Depends(get_db)):
+@log_route("create_analysis")
+async def create_analysis(
+    analysis: AnalysisCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    request: Request = None
+):
+    # Log the raw request JSON
+    try:
+        body = await request.json()  # only works if you make this function async
+    except Exception:
+        body = "Could not parse JSON"
+    logging.info(f"Received analysis payload: {body}")
+
+    # Check required fields explicitly
+    logging.info(f"tube_type: {analysis.tube_type}")
+    logging.info(f"device_ids: {analysis.device_ids}")
+
+    # Check if code exists
     if analysis.code and analysis_crud.get_by_code(db, analysis.code):
         raise HTTPException(status_code=400, detail="Analysis code already exists")
-    return analysis_crud.create(db, analysis)
+
+    result = analysis_crud.create(db, analysis)
+
+    logging.info(f"Created analysis ID: {result.id}")
+
+    return result
 
 @router.get("/", response_model=List[AnalysisResponse])
 def get_analyses(

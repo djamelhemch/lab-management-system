@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
 from app.database import get_db
 from app.crud import quotation as crud_quotation
 from app.models.quotation import Quotation
 from app.schemas.quotation import QuotationWithPatientSchema, QuotationCreate, QuotationStatusEnum, QuotationItem
-from typing import List
+from typing import List, Optional
+import math
 from app.crud.quotation import get_revenue_stats
 from app.routers.auth import get_current_user  # Add this import
 from app.utils.logging import log_route  # Import the logging decorator
 from app.models.user import User  # Import User model for current_user dependency
+from app.models.patient import Patient  # Import Patient model for search
 router = APIRouter(prefix="/quotations", tags=["Quotations"])
 
 
@@ -16,13 +19,46 @@ router = APIRouter(prefix="/quotations", tags=["Quotations"])
 def quotation_stats(db: Session = Depends(get_db)):
     return get_revenue_stats(db)
 
-@router.get("/", response_model=List[QuotationWithPatientSchema])
-def list_quotations(db: Session = Depends(get_db)):
-    quotations = db.query(Quotation).options(
+@router.get("/", response_model=dict)  # return structured dict instead of plain list
+def list_quotations(
+    db: Session = Depends(get_db),
+    q: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    page: int = 1,
+    limit: int = 10,
+):
+    query = db.query(Quotation).options(
         joinedload(Quotation.patient),
         joinedload(Quotation.analysis_items)
-    ).all()
-    return quotations
+    )
+
+    # search by patient name or file number
+    if q:
+        search = f"%{q}%"
+        query = query.join(Quotation.patient).filter(
+            or_(
+                Patient.first_name.ilike(search),
+                Patient.last_name.ilike(search),
+                Patient.file_number.ilike(search),
+            )
+        )
+
+    # filter by status
+    if status:
+        query = query.filter(Quotation.status == status)
+
+    # pagination
+    total = query.count()
+    items = query.offset((page - 1) * limit).limit(limit).all()
+
+    items_schema = [QuotationWithPatientSchema.model_validate(item, from_attributes=True) for item in items]
+
+    return {
+        "items": items_schema,
+        "total": total,
+        "page": page,
+        "last_page": math.ceil(total / limit) if total > 0 else 1,
+    }
 
 @router.get("/{quotation_id}", response_model=QuotationWithPatientSchema)
 @log_route("read_quotation")
