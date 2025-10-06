@@ -1,4 +1,4 @@
-@if(empty($analyses))
+@if(isset($analyses['last_page']) && $analyses['last_page'] > 1)
     <div class="text-center text-gray-600 bg-white p-8 rounded-lg shadow">
         <h3 class="text-lg font-medium text-gray-900 mb-2">No analyses found</h3>
         <p class="mb-4">Get started by creating your first analysis</p>

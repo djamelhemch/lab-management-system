@@ -35,7 +35,7 @@
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
-                @forelse($quotations as $quotation)
+                @forelse(($quotations['items'] ?? []) as $quotation)
                     <tr class="hover:bg-indigo-50 transition-colors duration-200 group">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-200">
@@ -67,14 +67,18 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span @class([
-                                'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold',
-                                'bg-yellow-100 text-yellow-800 border border-yellow-200' => $quotation['status'] === 'draft',
-                                'bg-blue-100 text-blue-800 border border-blue-200' => $quotation['status'] === 'confirmed',
-                                'bg-green-100 text-green-800 border border-green-200' => $quotation['status'] === 'converted',
-                                'bg-gray-100 text-gray-800 border border-gray-200' => !in_array($quotation['status'], ['draft', 'confirmed', 'converted']),
-                            ])> 
-                                {{ ucfirst($quotation['status']) }}
+                            @php
+                                $status = $quotation['status'] ?? 'unknown';
+                                $classes = match($status) {
+                                    'draft'     => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+                                    'confirmed' => 'bg-blue-100 text-blue-800 border border-blue-200',
+                                    'converted' => 'bg-green-100 text-green-800 border border-green-200',
+                                    default     => 'bg-gray-100 text-gray-800 border border-gray-200',
+                                };
+                            @endphp
+
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border {{ $classes }}">
+                                {{ ucfirst($status) }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -157,10 +161,76 @@
         </table>
     </div>
 
-    {{-- Pagination Links --}}
-    @if(!is_array($quotations) && $quotations->hasPages())
-    <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
-        {{ $quotations->links() }}
-    </div>
+    {{-- Pagination --}}
+    @if(($quotations['last_page'] ?? 1) > 1)
+        <div class="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+            <div class="text-sm text-gray-500">
+                Page {{ $quotations['page'] }} of {{ $quotations['last_page'] }} — 
+                Total: {{ $quotations['total'] }}
+            </div>
+            <div class="flex space-x-2">
+                @for ($i = 1; $i <= ($quotations['last_page'] ?? 1); $i++)
+                    <a href="?page={{ $i }}"
+                    class="px-3 py-1 rounded {{ $i == ($quotations['page'] ?? 1) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    {{ $i }}
+                    </a>
+                @endfor
+            </div>
+        </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("quotations-search-form");
+    const container = document.getElementById("quotations-table-container");
+    const route = container.getAttribute("data-table-route");
+
+    function fetchQuotations(params = null) {
+        const queryParams = params 
+            ? params 
+            : new URLSearchParams(new FormData(form)).toString();
+
+        fetch(route + "?" + queryParams, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => response.text())
+        .then(html => {
+            container.innerHTML = html;
+
+            // re-bind pagination links after reload
+            container.querySelectorAll(".pagination a").forEach(link => {
+                link.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const url = new URL(this.href);
+                    fetchQuotations(url.searchParams.toString());
+                });
+            });
+        })
+        .catch(err => console.error("Error fetching quotations:", err));
+    }
+
+    // live search
+    const searchInput = form.querySelector("[name='q']");
+    if (searchInput) {
+        searchInput.addEventListener("keyup", () => fetchQuotations());
+    }
+
+    // filter by status
+    const statusSelect = form.querySelector("[name='status']");
+    if (statusSelect) {
+        statusSelect.addEventListener("change", () => fetchQuotations());
+    }
+
+    // initial pagination binding
+    container.querySelectorAll(".pagination a").forEach(link => {
+        link.addEventListener("click", function (e) {
+            e.preventDefault();
+            const url = new URL(this.href);
+            fetchQuotations(url.searchParams.toString());
+        });
+    });
+});
+</script>
+@endpush

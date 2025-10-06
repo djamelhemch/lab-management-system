@@ -103,7 +103,7 @@
         </div>
 
         {{-- Data Table --}}
-        <div id="quotations-table-container">
+        <div id="quotations-table-container" data-table-route="{{ route('quotations.table') }}">
             @include('quotations.partials.table', ['quotations' => $quotations])
         </div>
     </div>

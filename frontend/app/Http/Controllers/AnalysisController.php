@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Http\Controllers\Session;
 use Illuminate\Http\Request;
 use App\Services\ApiService;
 use Illuminate\Support\Facades\Validator;
@@ -25,7 +25,7 @@ class AnalysisController extends Controller
             'q_filled' => $request->filled('q'),  
             'category_filled' => $request->filled('category_analyse_id')  
         ]);  
-  
+        
         $params = [];  
         if ($request->filled('q')) {  
             $params['q'] = $request->input('q');  
@@ -73,7 +73,7 @@ class AnalysisController extends Controller
             'analyses_count' => count($analyses),  
             'categories_count' => count($categories)  
         ]);  
-  
+        
         return view('analyses.index', compact('analyses', 'categories'));  
     }
     
@@ -120,13 +120,17 @@ class AnalysisController extends Controller
     }
 
    
-    public function create()  
-    {  
-        $categories = $this->api->get('analyses/category-analyse')->json();  
-        $sampleTypes = $this->api->get('analyses/sample-types')->json();  
-        $units = $this->api->get('analyses/units')->json();  
-    
-        return view('analyses.create', compact('categories', 'sampleTypes', 'units'));  
+    public function create()
+    {
+        $categories = $this->api->get('analyses/category-analyse')->json();
+        $sampleTypes = $this->api->get('analyses/sample-types')->json();
+        $units = $this->api->get('analyses/units')->json();
+        $devices = $this->api->get('/lab-devices')->json() ?? [];
+
+        // ✅ Add this line:
+        $analyses = $this->api->get('analyses')->json() ?? [];
+
+        return view('analyses.create', compact('categories', 'sampleTypes', 'units', 'devices', 'analyses'));
     }
 
     public function store(Request $request)
@@ -141,6 +145,9 @@ class AnalysisController extends Controller
             'normal_max' => 'nullable|numeric',
             'formula' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'tube_type' => 'nullable|string|max:50',
+            'device_ids' => 'nullable|array',
+            'device_ids.*' => 'integer',
             'normal_ranges' => 'array',
             'normal_ranges.*.sex_applicable' => 'required|in:M,F,All',
             'normal_ranges.*.age_min' => 'nullable|integer',
@@ -153,24 +160,35 @@ class AnalysisController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Handle temporary categories, sample types, and units
+        // Handle temporary entities
         $categoryId = $this->handleTempCategory($request);
         $sampleTypeId = $this->handleTempSampleType($request);
         $unitId = $this->handleTempUnit($request);
 
-        $data = $request->only([
-        'name', 'code', 'formula', 'price',
-            'category_analyse_id', 'sample_type_id', 'unit_id', 'is_active'
-        ]);
+        // Prepare data
+        $data = [
+            'name' => $request->name,
+            'code' => $request->code,
+            'formula' => $request->formula,
+            'price' => $request->price,
+            'category_analyse_id' => $categoryId ?: $request->category_analyse_id,
+            'sample_type_id' => $sampleTypeId ?: $request->sample_type_id,
+            'unit_id' => $unitId ?: $request->unit_id,
+            'tube_type' => $request->tube_type,
+            'device_ids' => $request->input('device_ids', []), // ✅ always array
+            'normal_ranges' => $request->input('normal_ranges', []),
+            'is_active' => $request->is_active ?? 1,
+        ];
 
-        $data['category_analyse_id'] = $categoryId ?: $request->category_analyse_id;
-        $data['sample_type_id'] = $sampleTypeId ?: $request->sample_type_id;
-        $data['unit_id'] = $unitId ?: $request->unit_id;
+        // User
+        $user = session('user');
+        if (!$user || empty($user['id'])) {
+            return back()->with('error', 'User session expired, please log in again.');
+        }
+        $data['user_id'] = $user['id'];
 
-        // Attach normal ranges if provided
-        $data['normal_ranges'] = $request->input('normal_ranges', []);
-
-        $response = $this->api->post('analyses', $data);
+        // ✅ Ensure FastAPI receives proper JSON
+        $response = $this->api->post('analyses', $data, ['json' => true]);
 
         if ($response->successful()) {
             return redirect()->route('analyses.index')->with('success', 'Analysis created successfully.');
@@ -179,17 +197,25 @@ class AnalysisController extends Controller
         }
     }
 
-   public function show($id)  
-    {  
-        $response = $this->api->get("analyses/{$id}");  
-        if (!$response->successful()) {  
-            abort(404, 'Analysis not found');  
-        }  
-        $analysis = $response->json();  
-        if (!is_array($analysis) || !isset($analysis['id'])) {  
-            abort(404, 'Analysis not found');  
-        }  
-        return view('analyses.show', compact('analysis'));  
+    public function show($id)
+    {
+        $response = $this->api->get("analyses/{$id}");
+
+        if (!$response->successful()) {
+            abort(404, 'Analysis not found');
+        }
+
+        $analysis = $response->json();
+
+        if (!is_array($analysis) || !isset($analysis['id'])) {
+            abort(404, 'Invalid analysis data');
+        }
+
+        // Default fallbacks
+        $analysis['device_names'] = $analysis['device_names'] ?? [];
+        $analysis['tube_type'] = $analysis['tube_type'] ?? 'Not specified';
+
+        return view('analyses.show', compact('analysis'));
     }
 
     public function edit($id)  
@@ -198,6 +224,7 @@ class AnalysisController extends Controller
         $categories = $this->api->get('analyses/category-analyse')->json();  
         $sampleTypes = $this->api->get('analyses/sample-types')->json();  
         $units = $this->api->get('analyses/units')->json();  
+        
         if (!$analysis) {
             abort(404); // Or handle the error as you see fit
         }
@@ -240,7 +267,7 @@ class AnalysisController extends Controller
         // Attach the normal ranges (array)
         $data['normal_ranges'] = $request->input('normal_ranges', []);
 
-        $response = $this->api->put("analyses/{$id}", $data);
+        $response = $this->api->put("analyses/{$id}", $data, ['json' => true]);
 
         if ($response->successful()) {
             return redirect()->route('analyses.index')->with('success', 'Analysis updated successfully.');

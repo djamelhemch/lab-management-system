@@ -18,18 +18,23 @@ class QuotationController extends Controller
     {
         $this->api = $api;
     }
-
     public function index(Request $request)
     {
         $params = [
             'q'      => $request->get('q'),
             'status' => $request->get('status'),
+            'page'   => $request->get('page', 1),
+            'limit'  => $request->get('limit', 10),
         ];
 
         $response = $this->api->get('/quotations', array_filter($params));
-        $quotations = $response->ok() ? $response->json() : [];
+        $quotations = $response->ok() ? $response->json() : [
+            'items' => [],
+            'total' => 0,
+            'page' => 1,
+            'last_page' => 1,
+        ];
 
-        // full page
         return view('quotations.index', compact('quotations'));
     }
 
@@ -38,12 +43,18 @@ class QuotationController extends Controller
         $params = [
             'q'      => $request->get('q'),
             'status' => $request->get('status'),
+            'page'   => $request->get('page', 1),
+            'limit'  => $request->get('limit', 10),
         ];
 
         $response = $this->api->get('/quotations', array_filter($params));
-        $quotations = $response->ok() ? $response->json() : [];
+        $quotations = $response->ok() ? $response->json() : [
+            'items' => [],
+            'total' => 0,
+            'page' => 1,
+            'last_page' => 1,
+        ];
 
-        // only table partial, NO layout
         return view('quotations.partials.table', compact('quotations'));
     }
 
