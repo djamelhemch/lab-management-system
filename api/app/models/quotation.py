@@ -35,6 +35,8 @@ class Quotation(Base):
     )
     agreement = relationship("Agreement")
     payments = relationship("Payment", back_populates="quotation", cascade="all, delete-orphan")
+    lab_results = relationship("LabResult", back_populates="quotation")
+
 
 class QuotationItem(Base):
     __tablename__ = 'quotation_items'
@@ -46,3 +48,4 @@ class QuotationItem(Base):
 
     quotation = relationship("Quotation", back_populates="analysis_items")
     analysis = relationship("AnalysisCatalog", back_populates="analysis_items")
+    lab_results = relationship("LabResult", back_populates="quotation_item")

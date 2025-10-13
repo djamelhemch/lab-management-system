@@ -26,5 +26,4 @@ class AnalysisRequest(Base):
 
     # ✅ Relationships
     sample = relationship("Sample", back_populates="analysis_requests")
-
     device = relationship("LabDevice", back_populates="analysis_requests")

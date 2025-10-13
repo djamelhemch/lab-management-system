@@ -15,7 +15,7 @@ class LabDevice(Base):
     description = sqlalchemy.Column(sqlalchemy.Text)
     created_at = sqlalchemy.Column(sqlalchemy.DateTime, server_default=sqlalchemy.func.now())
     updated_at = sqlalchemy.Column(sqlalchemy.DateTime, server_default=sqlalchemy.func.now(), onupdate=sqlalchemy.func.now())
-
+    
 class FhirResource(Base):
     __tablename__ = "fhir_resources"
 

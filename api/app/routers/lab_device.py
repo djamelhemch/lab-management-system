@@ -7,20 +7,33 @@ from app.schemas.lab_device import LabDeviceCreate, LabDevice, FHIRObservation
 from app.crud.lab_device import get_device, get_devices, create_device, create_fhir_resource
 from app.database import get_db
 
+from app.crud.lab_result import create_lab_result
+from app.schemas.lab_result import LabResultCreate
+from app.models.patient import Patient
+from app.models.analysis import NormalRange, AnalysisCatalog
+from app.schemas.lab_result import LabResultCreate
+from datetime import datetime
 router = APIRouter(prefix="/lab-devices", tags=["Lab Devices"])
 
 # MLLP Helper Functions
 def mllp_wrap(message: str) -> bytes:
-    """Wrap HL7 message with MLLP framing"""
-    return b'\x0b' + message.encode() + b'\x1c\r'
+    """Wrap HL7 message with MLLP start and end block characters."""
+    return b'\x0b' + message.encode('utf-8') + b'\x1c\r'
 
 def mllp_unwrap(data: bytes) -> str:
-    """Unwrap HL7 message from MLLP framing"""
-    if data.startswith(b'\x0b'):
-        data = data[1:]
-    if data.endswith(b'\x1c\r'):
-        data = data[:-2]
-    return data.decode()
+    """Safely unwrap MLLP, preserving HL7 structure and carriage returns."""
+    # MLLP framing characters
+    START_BLOCK = b'\x0b'
+    END_BLOCK = b'\x1c\r'
+
+    # Only remove exact framing (not all control chars)
+    if data.startswith(START_BLOCK):
+        data = data[len(START_BLOCK):]
+    if data.endswith(END_BLOCK):
+        data = data[:-len(END_BLOCK)]
+
+    # Decode normally
+    return data.decode('utf-8', errors='ignore')
 
 # Device registry endpoints
 @router.post("/", response_model=LabDevice)
@@ -38,87 +51,142 @@ def get_lab_device(device_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Device not found")
     return device
 
-# HL7 TCP communication with robust MLLP handling
 def tcp_client_send_receive_store(device_ip: str, device_port: int, message: str, device_name: str, db: Session):
+    import datetime
+    from app.models.quotation import Quotation, QuotationItem
+
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(15)  # Increased timeout
+            sock.settimeout(15)
             sock.connect((device_ip, device_port))
-            
-            # Send HL7 message with MLLP framing
+
             sock.sendall(mllp_wrap(message))
-            print(f"Sent HL7 message to {device_name} ({device_ip}:{device_port})")
-            
-            # Receive response with MLLP handling
+            print(f"[{datetime.datetime.now()}] 📤 Sent HL7 message to {device_name} ({device_ip}:{device_port})")
+
             buffer = b""
-            while True:
+            messages_received = 0
+            max_messages = 2  # Expect ACK + ORU
+            
+            while messages_received < max_messages:
                 data = sock.recv(4096)
                 if not data:
                     break
                 buffer += data
-                
-                # Check for complete MLLP message
-                if b'\x1c\r' in buffer:
-                    response = mllp_unwrap(buffer)
-                    print(f"Received HL7 response from {device_name}: {response}")
+
+                # Process all complete messages in buffer
+                while b'\x1c\r' in buffer:
+                    end_idx = buffer.index(b'\x1c\r') + 2
+                    msg_data = buffer[:end_idx]
+                    buffer = buffer[end_idx:]
                     
-                    # Parse HL7 and convert to FHIR
+                    response = mllp_unwrap(msg_data)
+                    print(f"[{datetime.datetime.now()}] 📥 Received HL7 response ({len(response)} bytes):\n{response}\n---")
+
                     try:
                         hl7_msg = parse_message(response)
-                        
-                        # Check if it's a result message (ORU^R01)
-                        if hl7_msg.segment('MSH').message_type.value.startswith('ORU'):
-                            obx = hl7_msg.segment('OBX')
-                            observation = FHIRObservation(
-                                status="final",
-                                code={
-                                    "coding": [{
-                                        "system": "http://loinc.org",
-                                        "code": obx.observation_identifier.identifier.value,
-                                        "display": obx.observation_identifier.text.value
-                                    }]
-                                },
-                                subject={"reference": f"Patient/{hl7_msg.segment('PID').patient_id.patient_id.value}"},
-                                effectiveDateTime=hl7_msg.segment('OBR').observation_date_time.value,
-                                valueQuantity={
-                                    "value": float(obx.observation_value[0].value),
-                                    "unit": obx.units.identifier.value,
-                                    "system": "http://unitsofmeasure.org",
-                                    "code": obx.units.identifier.value
-                                }
-                            )
-                            
-                            # Store FHIR resource
-                            resource_dict = observation.dict(by_alias=True)
-                            resource_dict["device_source"] = device_name  # Add device context
-                            created_resource = create_fhir_resource(db, "Observation", resource_dict)
-                            print(f"Created FHIR Observation resource with ID: {created_resource.id}")
-                            
-                    except Exception as parse_error:
-                        print(f"Error parsing HL7 response from {device_name}: {parse_error}")
-                    
-                    break
-            
-            # Graceful socket shutdown
-            sock.shutdown(socket.SHUT_RDWR)
-            
-    except socket.timeout:
-        print(f"Timeout connecting to device {device_name} ({device_ip}:{device_port})")
-    except ConnectionRefusedError:
-        print(f"Connection refused by device {device_name} ({device_ip}:{device_port})")
-    except Exception as e:
-        print(f"Error communicating with device {device_name}: {e}")
+                        msg_type = hl7_msg.segment('MSH').message_type.value
+                        print(f"🧾 Parsed Message Type → {msg_type}")
 
+                        if msg_type.startswith('ACK'):
+                            msa_seg = hl7_msg.segment('MSA')
+                            ack_code = msa_seg.acknowledgment_code.value if msa_seg else '?'
+                            print(f"✅ Received ACK → Code: {ack_code}")
+                            messages_received += 1
+
+                        elif msg_type.startswith('ORU'):
+                            print("🧬 Processing ORU^R01 observation result...")
+                            pid_seg = hl7_msg.segment('PID')
+                            patient_identifier = (
+                                pid_seg.patient_id.patient_id.value if pid_seg and pid_seg.patient_id else None
+                            )
+                            print(f"👤 PID: {patient_identifier or 'Unknown'}")
+
+                            patient = None
+                            if patient_identifier:
+                                patient = db.query(Patient).filter(Patient.file_number == patient_identifier).first()
+                            if not patient:
+                                print(f"⚠️ No patient found for PID {patient_identifier}")
+                                messages_received += 1
+                                continue
+                            
+                            print(f"✅ Found patient {patient.first_name} {patient.last_name}")
+
+                            quotation = db.query(Quotation).filter(
+                                Quotation.patient_id == patient.id
+                            ).order_by(Quotation.created_at.desc()).first()
+                            
+                            if not quotation:
+                                print(f"⚠️ No quotation found for {patient.file_number}")
+                                messages_received += 1
+                                continue
+
+                            for obx in hl7_msg.segments('OBX'):
+                                try:
+                                    test_code = obx.observation_identifier.identifier.value
+                                    result_value = obx.observation_value[0].value
+                                    print(f"🧪 OBX → {test_code}: {result_value}")
+
+                                    analysis = db.query(AnalysisCatalog).filter(
+                                        AnalysisCatalog.code == test_code
+                                    ).first()
+                                    
+                                    if not analysis:
+                                        print(f"⚠️ Unknown analysis code {test_code}")
+                                        continue
+
+                                    quotation_item = db.query(QuotationItem).filter(
+                                        QuotationItem.quotation_id == quotation.id,
+                                        QuotationItem.analysis_id == analysis.id
+                                    ).first()
+
+                                    if not quotation_item:
+                                        print(f"⚠️ No quotation item found for {analysis.name}")
+                                        continue
+
+                                    normal_range = db.query(NormalRange).filter(
+                                        NormalRange.analysis_id == analysis.id
+                                    ).first()
+
+                                    new_result = LabResultCreate(
+                                        quotation_id=quotation.id,
+                                        quotation_item_id=quotation_item.id,
+                                        result_value=result_value,
+                                    )
+
+                                    stored_result = create_lab_result(db, new_result, patient, normal_range)
+                                    print(f"✅ Stored result → {analysis.name}: {result_value} ({stored_result.interpretation})")
+
+                                except Exception as e:
+                                    print(f"❌ Error in OBX parsing: {e}")
+                            
+                            messages_received += 1
+
+                    except Exception as parse_error:
+                        print(f"❌ Failed to parse HL7 message: {parse_error}")
+                        print(f"Raw response:\n{response}")
+                        messages_received += 1
+
+            sock.shutdown(socket.SHUT_RDWR)
+
+    except socket.timeout:
+        print(f"⏱️ Timeout connecting to {device_name}")
+    except ConnectionRefusedError:
+        print(f"🚫 Connection refused by {device_name}")
+    except Exception as e:
+        print(f"💥 Error communicating with {device_name}: {e}")
+
+        
 @router.post("/devices/{device_id}/send_hl7_order/")
 async def send_hl7_order_to_device(device_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     device = get_device(db, device_id)
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    # Properly formatted HL7 order message with correct segment separation
+    # Properly formatted HL7 order message - ensure clean structure
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     hl7_order_message = (
-        "MSH|^~\\&|LIS|HOSPITAL|DEVICE|LAB|202509291000||ORM^O01|54321|P|2.3.1\r"
-        "PID|||123456||DOE^JOHN\r"
+        f"MSH|^~\\&|LIS|HOSPITAL|DEVICE|LAB|{timestamp}||ORM^O01|MSG{timestamp}|P|2.3.1\r"
+        "PID|1||123456||DOE^JOHN\r"
         "ORC|NW|1001\r"
         "OBR|1|||GLU^Glucose Test\r"
     )
@@ -132,6 +200,7 @@ async def send_hl7_order_to_device(device_id: int, background_tasks: BackgroundT
         db
     )
     return {"status": f"HL7 order sent to device {device.name} in background"}
+
 
 @router.post("/send_all_orders/")
 async def send_hl7_order_to_all_devices(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
@@ -171,3 +240,4 @@ async def test_device_connection(device_id: int, db: Session = Depends(get_db)):
             return {"status": f"Successfully connected to {device.name}"}
     except Exception as e:
         return {"status": f"Failed to connect to {device.name}: {str(e)}"}
+

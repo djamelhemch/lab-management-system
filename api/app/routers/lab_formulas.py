@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List
 from app.database import get_db
 from app.models.lab_formulas import LabFormula
 from pydantic import BaseModel
-
+from app.routers.auth import get_current_user
+from app.utils.logging import log_action, log_route  
+from app.models.user import User
 router = APIRouter(prefix="/lab-formulas", tags=["Lab Formulas"])
 
 class FormulaBase(BaseModel):
@@ -21,12 +23,26 @@ class FormulaResponse(FormulaBase):
 
 
 @router.post("/", response_model=FormulaResponse)
-def create_formula(data: FormulaBase, db: Session = Depends(get_db)):
-    formula = LabFormula(name=data.name, formula=data.formula)
-    db.add(formula)
-    db.commit()
-    db.refresh(formula)
-    return formula
+@log_route("create_formula")
+def create_formula(
+    data: FormulaBase,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    request: Request = None
+):
+    try:
+        formula = LabFormula(
+            name=data.name,
+            formula=data.formula,
+            created_by=current_user["id"]  # 👈 take from authenticated user
+        )
+        db.add(formula)
+        db.commit()
+        db.refresh(formula)
+        return formula
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/", response_model=List[FormulaResponse])

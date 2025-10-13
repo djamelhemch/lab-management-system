@@ -1,69 +1,90 @@
-# dummy_device.py - Updated version
 import socket
 import threading
+import time
+from datetime import datetime
 
-HL7_MESSAGE = (
-    "MSH|^~\\&|LAB|DEVICE|LIS|HOSPITAL|202509291000||ORU^R01|12345|P|2.3.1\r"
-    "PID|||123456||DOE^JOHN\r"
-    "OBR|1|||TEST^Blood Test\r"
-    "OBX|1|NM|GLU^Glucose||5.4|mmol/L|3.9-5.5|N|||F\r"
-)
-
-def mllp_wrap(message: str) -> bytes:
-    return b'\x0b' + message.encode() + b'\x1c\r'
+def mllp_wrap(msg: str) -> bytes:
+    """Wrap HL7 message in MLLP (start/end control characters)."""
+    return b'\x0b' + msg.encode("utf-8") + b'\x1c\r'
 
 def mllp_unwrap(data: bytes) -> str:
+    """Remove MLLP framing from received data."""
     if data.startswith(b'\x0b'):
         data = data[1:]
     if data.endswith(b'\x1c\r'):
         data = data[:-2]
-    return data.decode()
+    return data.decode("utf-8")
 
-def handle_client(client_socket):
-    print("Client connected")
+def handle_client(conn, addr):
+    print(f"📡 Client connected from {addr}")
+    buffer = b""
     try:
-        # Send initial HL7 result message
-        client_socket.sendall(mllp_wrap(HL7_MESSAGE))
-        
-        buffer = b""
         while True:
-            data = client_socket.recv(1024)
+            data = conn.recv(4096)
             if not data:
-                print("Client closed connection")
                 break
             buffer += data
-            
-            # Process complete MLLP messages
-            while b'\x1c\r' in buffer:
-                split_idx = buffer.find(b'\x1c\r') + 2
-                hl7_data = mllp_unwrap(buffer[:split_idx])
-                print("Received HL7 message:", hl7_data)
+
+            if b'\x1c\r' in buffer:
+                msg = mllp_unwrap(buffer)
+                print("📥 Received HL7 message:\n", msg)
+
+                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
                 
-                # Send ACK response
-                ack_message = (
-                    "MSH|^~\\&|DEVICE|LAB|HOSPITAL|LIS|202509291001||ACK^R01|54321|P|2.3.1\r"
-                    "MSA|AA|12345\r"
+                # Extract message control ID from received MSH if possible
+                msg_control_id = "MSG54321"
+                try:
+                    if msg.startswith("MSH"):
+                        parts = msg.split('|')
+                        if len(parts) > 9:
+                            msg_control_id = parts[9]
+                except:
+                    pass
+
+                # ✅ Send proper ACK message - MSH segment MUST be first
+                ack_msg = (
+                    f"MSH|^~\\&|DEVICE|LAB|LIS|HOSPITAL|{timestamp}||ACK^O01|ACK{timestamp}|P|2.3.1\r"
+                    f"MSA|AA|{msg_control_id}"
                 )
-                client_socket.sendall(mllp_wrap(ack_message))
-                buffer = buffer[split_idx:]
-                
+                conn.sendall(mllp_wrap(ack_msg))
+                print("📤 Sent valid ACK ✅")
+
+                # Wait to simulate analyzer processing
+                time.sleep(1)
+
+                # ✅ Send valid ORU^R01 result message - MSH MUST be first
+                result_value = round(3.9 + (1.6 * (datetime.now().second % 10) / 10), 1)
+                oru_msg = (
+                    f"MSH|^~\\&|DEVICE|LAB|LIS|HOSPITAL|{timestamp}||ORU^R01|RSLT{timestamp}|P|2.3.1\r"
+                    "PID|1||P2025014||TEST^PATIENT||19900101|M\r"
+                    "OBR|1|||GLU^Glucose Test\r"
+                    f"OBX|1|NM|GLU^Glucose||{result_value}|mmol/L|3.9-5.5|N|||F"
+                )
+                conn.sendall(mllp_wrap(oru_msg))
+                print(f"📤 Sent ORU^R01 result → GLU = {result_value} mmol/L ✅")
+
+                buffer = b""
+
     except ConnectionResetError:
-        print("Connection reset by client")
+        print(f"⚠️ Connection reset by {addr}")
+    except Exception as e:
+        print(f"💥 Error handling client {addr}: {e}")
     finally:
-        client_socket.close()
-        print("Client disconnected")
+        conn.close()
+        print(f"🔌 Client disconnected: {addr}\n")
 
 def start_server():
+    HOST = "127.0.0.1"
+    PORT = 2575
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(("0.0.0.0", 2575))
+    server.bind((HOST, PORT))
     server.listen(5)
-    print("Dummy device server listening on port 2575...")
-    
+    print(f"🧪 Dummy device listening on {HOST}:{PORT} ...")
+
     while True:
-        client_sock, addr = server.accept()
-        client_thread = threading.Thread(target=handle_client, args=(client_sock,))
-        client_thread.start()
+        conn, addr = server.accept()
+        threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
 
 if __name__ == "__main__":
     start_server()

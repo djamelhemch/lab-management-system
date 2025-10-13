@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, ForeignKey, BigInteger
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, ForeignKey, BigInteger, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
@@ -26,10 +26,8 @@ class Sample(Base):
     rejection_reason = Column(String)
     barcode = Column(String(100), unique=True)
     tube_type = Column(String(50))
-    device_id = Column(BigInteger, ForeignKey("lab_devices.id")) 
 
-    # Relationships
+    # relationship
+
     patient = relationship("Patient", back_populates="samples")
     doctor = relationship("Doctor", back_populates="samples")
-    
-    device = relationship("LabDevice", backref="samples")

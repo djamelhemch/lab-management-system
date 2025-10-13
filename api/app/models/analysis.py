@@ -60,8 +60,9 @@ class AnalysisCatalog(Base):
     sample_type = relationship("SampleType", back_populates="analyses")
     normal_ranges = relationship("NormalRange", back_populates="analysis", cascade="all, delete-orphan")
     device_id = Column(Text, nullable=True) 
-
+    
     analysis_items = relationship("QuotationItem", back_populates="analysis")
+  
 
 class NormalRange(Base):
     __tablename__ = "normal_ranges"
@@ -76,5 +77,5 @@ class NormalRange(Base):
     pregnant_applicable = Column(Boolean, default=False)
     # Relationship
     analysis = relationship("AnalysisCatalog", back_populates="normal_ranges")
-
+    lab_results = relationship("LabResult", back_populates="normal_range")
 # in AnalysisCatalog
