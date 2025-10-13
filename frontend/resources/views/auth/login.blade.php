@@ -3,7 +3,7 @@
 @section('title', 'Login')
 
 @section('content')
-    <h2 class="text-2xl font-bold mb-6 text-center">Login to Abdelatif Lab</h2>
+    <h2 class="text-2xl font-bold mb-6 text-center">Connexion - Abdelatif Lab</h2>
 
     @if($errors->any())
         <div class="mb-4 text-red-600">

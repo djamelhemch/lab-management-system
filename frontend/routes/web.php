@@ -14,7 +14,8 @@ use App\Http\Controllers\{
     AgreementController,
     QueueController,
     ProfileController,
-    LeaveRequestController
+    LeaveRequestController,
+    LabResultController
 };
 
 // Authentication routes
@@ -82,6 +83,14 @@ Route::middleware(['auth.api'])->group(function () {
 
     //reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    // Lab results
+    Route::prefix('lab-results')->group(function () {
+    Route::get('/', [LabResultController::class, 'index'])->name('lab-results.index');
+    Route::get('/{id}', [LabResultController::class, 'show'])->name('lab-results.show');
+    Route::post('/', [LabResultController::class, 'store'])->name('lab-results.store');
+    Route::get('{id}/download', [LabResultController::class, 'download'])
+    ->name('lab-results.download');
+});
 });
 
 // Routes only for ADMIN users

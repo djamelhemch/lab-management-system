@@ -25,9 +25,11 @@
         <i class="fas fa-vial"></i> <span class="ml-2">Échantillons</span>
     </a>
     <!--lien vers resultats {{ route('reports.index') }} -->
-    <a href="#"  class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }} {{ request()->routeIs('reports.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-        <i class="fas fa-file-medical"></i> <span class="ml-2">Résultat</span>
+    <a href="{{ route('lab-results.index') }}" class="sidebar-link {{ request()->routeIs('lab-results.*') ? 'active bg-blue-100 text-blue-700 font-bold shadow' : 'text-gray-700 hover:bg-blue-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-vials"></i> 
+        <span class="ml-2">Résultats</span>
     </a>
+
     <a href="{{ route('analyses.index') }}" class="sidebar-link {{ request()->routeIs('analyses.*') ? 'active' : '' }} {{ request()->routeIs('analyses.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">  
         <i class="fas fa-flask"></i> <span class="ml-2">Analyses</span>  
     </a>
@@ -52,7 +54,7 @@
             <span class="ml-2">Mon Profile</span>
         </a>
     @endif
-
+    
 
     {{-- Admin Links --}}
 
