@@ -1,4 +1,5 @@
-@if(isset($analyses['last_page']) && $analyses['last_page'] > 1)
+@if(empty($analyses) || (isset($analyses['data']) && count($analyses['data']) === 0) || (is_iterable($analyses) && count($analyses) === 0))
+    {{-- Empty state --}}
     <div class="text-center text-gray-600 bg-white p-8 rounded-lg shadow">
         <h3 class="text-lg font-medium text-gray-900 mb-2">No analyses found</h3>
         <p class="mb-4">Get started by creating your first analysis</p>
@@ -41,18 +42,18 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($analyses as $analysis)
+                    @foreach(($analyses['data'] ?? $analyses) as $analysis)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {{ $analysis['code'] ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $analysis['name'] ?? 'N/A'}}
+                                {{ $analysis['name'] ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 @if($analysis['category_analyse'])
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        {{ $analysis['category_analyse']['name']  ?? 'N/A' }}
+                                        {{ $analysis['category_analyse']['name'] ?? 'N/A' }}
                                     </span>
                                 @else
                                     <span class="text-gray-400">N/A</span>
@@ -89,7 +90,7 @@
                                         </svg>
                                         View
                                     </a>
-                                    <a href="{{ route('analyses.edit', $analysis['id'] ?? $analysis->id ?? '') }}"
+                                    <a href="{{ route('analyses.edit', $analysis['id']) }}"
                                        class="text-yellow-600 hover:text-yellow-900 flex items-center"
                                        title="Edit">
                                         <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,5 +120,42 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- Pagination --}}
+        @if(isset($analyses['links']) && count($analyses['links']) > 3)
+            <div class="bg-gray-50 px-6 py-4 border-t flex justify-center">
+                <div class="pagination flex flex-wrap gap-2">
+                    @foreach($analyses['links'] as $link)
+                        @if($link['url'])
+                            <button 
+                                class="px-3 py-1 text-sm rounded-md border 
+                                       {{ $link['active'] ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100' }}"
+                                data-page="{{ preg_replace('/[^0-9]/', '', $link['url']) }}"
+                                onclick="fetchPage('{{ $link['url'] }}')"
+                                {!! $link['active'] ? 'disabled' : '' !!}
+                            >
+                                {!! $link['label'] !!}
+                            </button>
+                        @else
+                            <span class="px-3 py-1 text-sm text-gray-400">{!! $link['label'] !!}</span>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 @endif
+
+{{-- AJAX Pagination Script --}}
+<script>
+function fetchPage(url) {
+    if (!url) return;
+    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then(r => r.text())
+        .then(html => {
+            document.getElementById('analyses-table-container').innerHTML = html;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+        .catch(err => console.error("Pagination fetch error:", err));
+}
+</script>

@@ -92,24 +92,24 @@ class LabResultController extends Controller
         }
     }
     public function download($id)
-{
-    try {
-        $result = $this->api->get("/lab-results/{$id}")->json();
+    {
+        try {
+            $result = $this->api->get("/lab-results/{$id}")->json();
 
-        if (!$result) {
-            abort(404, 'Result not found.');
+            if (!$result) {
+                abort(404, 'Result not found.');
+            }
+
+            $pdf = \PDF::loadView('lab_results.pdf', compact('result'))
+                ->setPaper('a4', 'portrait');
+
+            $filename = 'Resultat_' . ($result['file_number'] ?? 'Unknown') . '.pdf';
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            Log::error('❌ PDF generation failed: ' . $e->getMessage());
+            abort(500, 'Unable to generate PDF report.');
         }
-
-        $pdf = \PDF::loadView('lab_results.pdf', compact('result'))
-            ->setPaper('a4', 'portrait');
-
-        $filename = 'Resultat_' . ($result['file_number'] ?? 'Unknown') . '.pdf';
-        return $pdf->download($filename);
-
-    } catch (\Exception $e) {
-        Log::error('❌ PDF generation failed: ' . $e->getMessage());
-        abort(500, 'Unable to generate PDF report.');
     }
-}
 
 }

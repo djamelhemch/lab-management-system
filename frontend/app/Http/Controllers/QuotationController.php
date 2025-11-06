@@ -220,4 +220,20 @@ class QuotationController extends Controller
             return back()->with('error', 'Failed to update quotation.')->withInput();
         }
     }
+    public function download($id)
+{
+    $response = $this->api->get("quotations/{$id}");
+    if (!$response->successful()) {
+        return redirect()->route('quotations.index')->with('error', 'Quotation not found.');
+    }
+
+    $quotation = $response->json();
+
+    // Load the PDF view — make sure this file exists at resources/views/quotations/pdf.blade.php
+    $pdf = Pdf::loadView('quotations.pdf', compact('quotation'))->setPaper('A4', 'portrait');
+
+    $filename = 'quotation_' . $quotation['id'] . '.pdf';
+    return $pdf->download($filename);
+}
+
 }

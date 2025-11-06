@@ -37,7 +37,7 @@
     
     {{-- NEW LINKS --}}
     <a href="{{ route('quotations.index') }}" class="sidebar-link {{ request()->routeIs('quotations.*') ? 'active' : '' }} {{ request()->routeIs('quotations.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-        <i class="fas fa-file-invoice"></i> <span class="ml-2">Devis</span>
+        <i class="fas fa-file-invoice"></i> <span class="ml-2">Visites</span>
     </a>
      <a href="{{ route('queues.index') }}" 
        class="sidebar-link {{ request()->routeIs('queues.index') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
@@ -72,7 +72,7 @@
         <a href="{{ route('admin.settings.index') }}"
             class="sidebar-link {{ request()->routeIs('admin.settings.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
             flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-            <i class="fas fa-cogs"></i> <span class="ml-2">Parametres systemes</span>
+            <i class="fas fa-cogs"></i> <span class="ml-2">Paramètres système </span>
         </a>
     @endif
     
