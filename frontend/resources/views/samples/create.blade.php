@@ -101,26 +101,27 @@
         </div>
 
         {{-- Physical Characteristics --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <x-input-text id="appearance" name="appearance" label="Appearance" placeholder="e.g., Clear, Cloudy, Turbid" />
-            <x-input-text id="color" name="color" label="Color" placeholder="e.g., Yellow, Red, Clear" />
-            <x-input-text id="odor" name="odor" label="Odor" placeholder="e.g., Normal, Strong, None" />
+        <div>
+            <label for="appearance" class="block text-sm font-medium text-gray-700 mb-2">Appearance</label>
+            <input type="text" name="appearance" id="appearance" value="{{ old('appearance') }}" placeholder="e.g., Clear, Cloudy, Turbid"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
         </div>
 
         {{-- Volume, Status, and Machine --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <x-input-number id="volume_ml" name="volume_ml" label="Volume (ml)" step="0.1" min="0" placeholder="Enter volume in ml" />
+        <div>
+            <label for="volume_ml" class="block text-sm font-medium text-gray-700 mb-2">Volume (ml)</label>
+            <input 
+                type="number" 
+                id="volume_ml" 
+                name="volume_ml" 
+                value="{{ old('volume_ml') }}" 
+                placeholder="Enter volume in ml" 
+                step="0.1" 
+                min="0"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            />
+        </div>
 
-            <div>
-                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select id="status" name="status" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                    <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="urgent" {{ old('status') == 'urgent' ? 'selected' : '' }}>Urgent</option>
-                    <option value="in_progress" {{ old('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                    <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="rejected" {{ old('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                </select>
-            </div>
 
             {{-- Assigned Machine --}}
             <div>
@@ -141,9 +142,32 @@
 
         {{-- Collection Date & Barcode --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <x-input-datetime id="collection_date" name="collection_date" label="Collection Date" />
-            <x-input-text id="barcode" name="barcode" label="Barcode (Optional)" placeholder="Leave empty for auto-generation" />
-        </div>
+    <!-- Collection Date -->
+    <div>
+        <label for="collection_date" class="block text-sm font-medium text-gray-700 mb-2">Collection Date</label>
+        <input 
+            type="datetime-local" 
+            id="collection_date" 
+            name="collection_date" 
+            value="{{ old('collection_date') ?? now()->format('Y-m-d\TH:i') }}" 
+            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        />
+    </div>
+
+    <!-- Barcode -->
+    <div>
+        <label for="barcode" class="block text-sm font-medium text-gray-700 mb-2">Barcode (Optional)</label>
+        <input 
+            type="text" 
+            id="barcode" 
+            name="barcode" 
+            value="{{ old('barcode') }}" 
+            placeholder="Leave empty for auto-generation"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        />
+    </div>
+</div>
+
 
         {{-- Rejection Reason --}}
         <div id="rejection_reason_div" class="mb-6 hidden">
