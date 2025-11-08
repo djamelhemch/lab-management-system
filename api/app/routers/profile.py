@@ -36,10 +36,38 @@ def create_profile(profile_in: ProfileCreate, db: Session = Depends(get_db), cur
 
 
 @router.put("/{user_id}", response_model=ProfileResponse)
-def update_profile_endpoint(user_id: int, updates: ProfileUpdate, db: Session = Depends(get_db)):
-    profile = crud_profile.update_profile(db, user_id, updates)
-    # Wrap dict in Pydantic response if needed
-    return ProfileResponse(**profile) if isinstance(profile, dict) else profile
+@log_route("update_profile")
+def update_profile_endpoint(
+    user_id: int,
+    updates: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    request: Request = None
+):
+    # Fetch profile as dict from crud
+    profile_data = crud_profile.get_profile(db, user_id)
+    
+    if not profile_data:
+        # Profile doesn't exist → create safely via crud
+        return crud_profile.update_profile(db, user_id, updates)
+    
+    # Convert dict to temporary object to allow setattr
+    profile_obj = SimpleNamespace(**profile_data)
+    
+    # Apply updates to the temporary object
+    for key, value in updates.dict(exclude_unset=True).items():
+        setattr(profile_obj, key, value)
+    
+    logging.info(f"Update called for user {user_id} with keys: {list(updates.dict(exclude_unset=True).keys())}")
+    
+    # Push updates back through crud.update_profile
+    updated_profile = crud_profile.update_profile(db, user_id, updates)
+    
+    # Build response including email (from original dict)
+    response_data = updated_profile.__dict__.copy()
+    response_data["email"] = profile_data.get("email")
+    
+    return response_data
 
 
 @router.post("/photo")
