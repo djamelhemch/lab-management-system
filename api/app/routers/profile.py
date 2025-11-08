@@ -51,15 +51,13 @@ async def upload_profile_photo(file: UploadFile = File(...), db: Session = Depen
     file_ext = os.path.splitext(file.filename)[1]
     filename = f"user_{current_user.id}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, filename)
-
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     updates = ProfileUpdate(photo=filename)
     profile = crud_profile.update_profile(db, current_user.id, updates)
 
-    # Full photo URL
-    base_url = str(request.base_url).rstrip("/") if request else "https://lab-management-system-ikt8.onrender.com"
+    base_url = str(request.base_url).rstrip("/")
     profile.photo_url = f"{base_url}/static/{filename}"
 
     return ProfileResponse.model_validate(profile)
