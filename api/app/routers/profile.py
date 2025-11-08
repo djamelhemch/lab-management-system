@@ -2,6 +2,7 @@ import os
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from fastapi.staticfiles import StaticFiles
+from types import SimpleNamespace
 
 from sqlalchemy.orm import Session
 from app.schemas.profile import ProfileResponse, ProfileCreate, ProfileUpdate
