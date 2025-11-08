@@ -1,12 +1,18 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
+import os
+import shutil
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
-import os, shutil, logging
-from app.schemas.profile import ProfileResponse, ProfileCreate, ProfileUpdate
-from app.dependencies import get_db, get_current_user
-from app import crud_profile
 
+from sqlalchemy.orm import Session
+from app.schemas.profile import ProfileResponse, ProfileCreate, ProfileUpdate
+from app.crud import profile as crud_profile
+from app.database import get_db
+from app.routers.auth import get_current_user  # Add this import (adjust path if needed)
+from app.models.profile import Profile  # Add this import (adjust path if needed)
+from app.models.user import User  # Add this import (adjust path if needed)
+from app.utils.logging import log_route 
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
+
 
 UPLOAD_DIR = "uploads/profile_photos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
