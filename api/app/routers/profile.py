@@ -1,7 +1,7 @@
 import os
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
-from fastapi.staticfiles import StaticFiles
+
 from sqlalchemy.orm import Session
 from app.schemas.profile import ProfileResponse, ProfileCreate, ProfileUpdate
 from app.crud import profile as crud_profile
@@ -23,8 +23,7 @@ def read_profile(
 ):
 
     profile = crud_profile.get_profile(db, user_id)
-    if profile.photo:
-        profile.photo_url = f"{str(request.base_url).rstrip('/')}/static/{profile.photo}"
+
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
