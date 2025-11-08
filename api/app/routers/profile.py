@@ -65,4 +65,10 @@ async def upload_profile_photo(
     db.commit()
     logging.info(f"Profile updated in DB for user {current_user.id}")
 
+      # Build absolute URL
+    base_url = str(request.base_url).rstrip("/") if request else "https://lab-management-system-ikt8.onrender.com"
+    photo_url = f"{base_url}/static/{filename}"
+
+
+
     return {"message": "Profile photo updated", "photo_url": f"/static/{filename}"}

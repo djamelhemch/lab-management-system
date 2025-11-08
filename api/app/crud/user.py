@@ -4,6 +4,7 @@ from app.schemas.user import UserCreate
 from passlib.hash import bcrypt
 from passlib.context import CryptContext
 from typing import Optional
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_user(db: Session, username: str):
