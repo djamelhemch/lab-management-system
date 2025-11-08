@@ -8,3 +8,4 @@ pymysql
 passlib[bcrypt]
 SQLAlchemy==2.0.41
 uvicorn[standard]
+hl7apy
