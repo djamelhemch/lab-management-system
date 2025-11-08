@@ -11,7 +11,7 @@ from app.database import get_db
 from app.routers.auth import get_current_user  # Add this import (adjust path if needed)
 from app.models.profile import Profile  # Add this import (adjust path if needed)
 from app.models.user import User  # Add this import (adjust path if needed)
-from app.utils.logging import log_route .
+from app.utils.logging import log_route
 import logging
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
 
