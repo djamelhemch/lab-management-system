@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -20,7 +20,7 @@ class ProfileCreate(ProfileBase):
 class ProfileUpdate(ProfileBase):
     pass
 
-class ProfileResponse(ProfileBase):
+class ProfileResponse(BaseModel):
     id: int
     user_id: int
     created_at: datetime
@@ -29,12 +29,11 @@ class ProfileResponse(ProfileBase):
     photo_url: Optional[str] = None  # full URL
 
     model_config = {
-        "from_attributes": True  # <- important for .from_orm() support
+        "from_attributes": True  # important for .from_orm()
     }
 
     @field_validator("photo_url", mode="before", check_fields=False)
     def build_photo_url(cls, v, info):
- 
         values = info.data
         filename = values.get("photo")
         if filename:

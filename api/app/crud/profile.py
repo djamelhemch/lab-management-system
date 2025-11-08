@@ -2,14 +2,15 @@ from sqlalchemy.orm import Session
 from app.models.profile import Profile
 from app.schemas.profile import ProfileCreate, ProfileUpdate
 from app.models.user import User
+
 def get_profile(db: Session, user_id: int) -> Profile | None:
     """
     Returns the Profile ORM object for a given user_id, or None if not found.
-    Joins with User to fetch email and attaches it as an attribute.
+    Automatically attaches 'email' from the User table as an attribute.
     """
     profile = db.query(Profile).filter(Profile.user_id == user_id).first()
     if profile:
-        # Attach email dynamically from the User table
+        # Attach email dynamically
         user = db.query(User).filter(User.id == profile.user_id).first()
         profile.email = user.email if user else None
     return profile
@@ -18,7 +19,7 @@ def get_profile(db: Session, user_id: int) -> Profile | None:
 def create_profile(db: Session, profile_in: ProfileCreate) -> Profile:
     """
     Creates a Profile ORM object.
-    Only passes fields that exist in the Profile model.
+    Only includes fields that exist in the Profile model.
     """
     allowed_fields = {c.name for c in Profile.__table__.columns}
     profile_data = {k: v for k, v in profile_in.model_dump().items() if k in allowed_fields}
@@ -27,6 +28,11 @@ def create_profile(db: Session, profile_in: ProfileCreate) -> Profile:
     db.add(db_profile)
     db.commit()
     db.refresh(db_profile)
+
+    # Attach email dynamically
+    user = db.query(User).filter(User.id == db_profile.user_id).first()
+    db_profile.email = user.email if user else None
+
     return db_profile
 
 
@@ -36,11 +42,10 @@ def update_profile(db: Session, user_id: int, updates: ProfileUpdate) -> Profile
     """
     db_profile = get_profile(db, user_id)
     allowed_fields = {c.name for c in Profile.__table__.columns}
-
     update_data = updates.model_dump(exclude_unset=True)
 
     if not db_profile:
-        # Profile doesn't exist → create it safely
+        # Create new profile if it doesn't exist
         update_data["user_id"] = user_id
         db_profile = Profile(**{k: v for k, v in update_data.items() if k in allowed_fields})
         db.add(db_profile)
@@ -52,5 +57,9 @@ def update_profile(db: Session, user_id: int, updates: ProfileUpdate) -> Profile
 
     db.commit()
     db.refresh(db_profile)
-    return db_profile
+
+    # Attach email dynamically
+    user = db.query(User).filter(User.id == db_profile.user_id).first()
+    db_profile.email = user.email if user else None
+
     return db_profile
