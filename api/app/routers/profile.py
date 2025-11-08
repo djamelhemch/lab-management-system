@@ -15,7 +15,6 @@ from app.utils.logging import log_route
 import logging
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
 
-
 UPLOAD_DIR = "uploads/profile_photos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -28,48 +27,33 @@ def read_profile(user_id: int, db: Session = Depends(get_db), current_user=Depen
     profile = crud_profile.get_profile(db, user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    return ProfileResponse(**profile) if isinstance(profile, dict) else profile
+    # Ensure we return SQLAlchemy model converted to schema
+    return ProfileResponse.from_orm(profile)
 
 
 @router.post("/", response_model=ProfileResponse)
 def create_profile(profile_in: ProfileCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     profile = crud_profile.create_profile(db, profile_in)
-    return profile
+    return ProfileResponse.from_orm(profile)
 
 
 @router.put("/{user_id}", response_model=ProfileResponse)
-@log_route("update_profile")
 def update_profile_endpoint(
     user_id: int,
     updates: ProfileUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
     request: Request = None
 ):
-    # Fetch profile as dict from crud
-    profile_data = crud_profile.get_profile(db, user_id)
-    
-    if not profile_data:
-        # Profile doesn't exist → create safely via crud
-        return crud_profile.update_profile(db, user_id, updates)
-    
-    # Convert dict to temporary object to allow setattr
-    profile_obj = SimpleNamespace(**profile_data)
-    
-    # Apply updates to the temporary object
-    for key, value in updates.dict(exclude_unset=True).items():
-        setattr(profile_obj, key, value)
-    
     logging.info(f"Update called for user {user_id} with keys: {list(updates.dict(exclude_unset=True).keys())}")
     
-    # Push updates back through crud.update_profile
+    # Update profile via CRUD
     updated_profile = crud_profile.update_profile(db, user_id, updates)
     
-    # Build response including email (from original dict)
-    response_data = updated_profile.__dict__.copy()
-    response_data["email"] = profile_data.get("email")
-    
-    return response_data
+    if not updated_profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return ProfileResponse.from_orm(updated_profile)
 
 
 @router.post("/photo")
