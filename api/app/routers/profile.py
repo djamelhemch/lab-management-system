@@ -1,6 +1,7 @@
 import os
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.schemas.profile import ProfileResponse, ProfileCreate, ProfileUpdate
 from app.crud import profile as crud_profile
