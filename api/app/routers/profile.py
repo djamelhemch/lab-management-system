@@ -20,7 +20,10 @@ def read_profile(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+
     profile = crud_profile.get_profile(db, user_id)
+    if profile.photo:
+        profile.photo_url = f"{str(request.base_url).rstrip('/')}/static/{profile.photo}"
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile

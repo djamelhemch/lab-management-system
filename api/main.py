@@ -7,6 +7,8 @@ start = time.time()
 print(">>> Starting FastAPI setup...")
 
 app = FastAPI(title="Laboratory Information System")
+# Mount static files
+app.mount("/static", StaticFiles(directory="uploads/profile_photos"), name="static")
 
 origins = [  
     "http://localhost",  
