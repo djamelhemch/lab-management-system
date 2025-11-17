@@ -13,10 +13,24 @@ DB_URL = (
 
 print("Connecting to: database")
 
-engine = create_engine(DB_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# --- FIX: prevent "Lost connection" errors ---
+engine = create_engine(
+    DB_URL,
+    pool_pre_ping=True,      # Detect dead/stale connections automatically
+    pool_recycle=280,        # Recycle connections before MySQL terminates them
+    pool_timeout=30,         # Prevent long waits on a dead socket
+    pool_size=10,            # Safe default for Render
+    max_overflow=20          # Allow bursts under load
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()
@@ -24,7 +38,11 @@ def get_db():
         yield db
     finally:
         db.close()
-if get_db:
-    print("Database connection established")
-else:
-    print("Failed to connect to the database")
+
+
+# Optional console output
+try:
+    with engine.connect() as conn:
+        print("Database connection established")
+except Exception as e:
+    print("Failed to connect to the database:", e)
