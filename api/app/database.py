@@ -20,7 +20,7 @@ engine = create_engine(
     pool_recycle=280,        # Recycle connections before MySQL terminates them
     pool_timeout=30,         # Prevent long waits on a dead socket
     pool_size=10,            # Safe default for Render
-    max_overflow=20          # Allow bursts under load
+    max_overflow=20,          # Allow bursts under load
     connect_args={
         "connect_timeout": 10    # Prevent slow-connect hangs
     }
