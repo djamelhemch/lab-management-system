@@ -15,7 +15,8 @@ use App\Http\Controllers\{
     QueueController,
     ProfileController,
     LeaveRequestController,
-    LabResultController
+    LabResultController,
+    LabDeviceController
 };
 
 // Authentication routes
@@ -53,7 +54,8 @@ Route::middleware(['auth.api'])->group(function () {
     Route::post('/analyses/sample-types', [AnalysisController::class, 'storeSampleType']);  
     Route::post('/analyses/units', [AnalysisController::class, 'storeUnit']);  
     Route::resource('analyses', AnalysisController::class);
-
+    // Lab devices
+    Route::resource('lab-devices', LabDeviceController::class);
     // Samples
     Route::resource('samples', SamplesController::class);
     Route::put('samples/{id}/status', [SamplesController::class, 'updateStatus'])->name('samples.updateStatus');
@@ -90,7 +92,8 @@ Route::middleware(['auth.api'])->group(function () {
     Route::post('/', [LabResultController::class, 'store'])->name('lab-results.store');
     Route::get('{id}/download', [LabResultController::class, 'download'])
     ->name('lab-results.download');
-});
+    });    
+
 });
 
 // Routes only for ADMIN users

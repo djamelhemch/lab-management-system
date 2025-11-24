@@ -33,8 +33,12 @@
     <a href="{{ route('analyses.index') }}" class="sidebar-link {{ request()->routeIs('analyses.*') ? 'active' : '' }} {{ request()->routeIs('analyses.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">  
         <i class="fas fa-flask"></i> <span class="ml-2">Analyses</span>  
     </a>
-    
-    
+    {{-- lab devices --}}
+    <a href="{{ route('lab-devices.index') }}" 
+    class="sidebar-link {{ request()->routeIs('lab-devices.*') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-microscope"></i> 
+        <span class="ml-2">Lab Devices</span>
+    </a>
     {{-- NEW LINKS --}}
     <a href="{{ route('quotations.index') }}" class="sidebar-link {{ request()->routeIs('quotations.*') ? 'active' : '' }} {{ request()->routeIs('quotations.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
         <i class="fas fa-file-invoice"></i> <span class="ml-2">Visites</span>

@@ -12,6 +12,12 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- Toastr CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+
 <style>
     /* Light theme (default) */
     body.light {
@@ -138,6 +144,9 @@
             document.getElementById('sidebar')?.classList.remove('open');
             document.getElementById('overlay')?.classList.add('hidden');
         });
+    </script>
+    <script>
+        window.apiUrl = "{{ env('FASTAPI_URL', 'http://127.0.0.1:8000') }}";
     </script>
     <script>
         const themeSelect = document.querySelector('select[name="theme"]');
