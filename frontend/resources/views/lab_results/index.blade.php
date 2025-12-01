@@ -1,89 +1,54 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="p-6">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Résultats du Laboratoire</h1>
-
-    {{-- Flash messages --}}
-    @if(session('error'))
-        <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg shadow">
-            {{ session('error') }}
+<div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-7xl mx-auto">
+        {{-- Header --}}
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Résultats du Laboratoire</h1>
+            <p class="text-gray-600 mt-1">Gestion et consultation des analyses</p>
         </div>
-    @endif
 
-    {{-- Search --}}
-    <div class="mb-4 flex justify-between items-center">
-        <input type="text" placeholder="Rechercher un résultat..." 
-               class="border border-gray-300 rounded-lg px-3 py-2 w-1/3 focus:ring-2 focus:ring-red-500 outline-none">
-    <a href="{{ route('lab-results.index') }}" 
-        class="text-sm text-gray-500 hover:text-red-600 transition">🔄 Actualiser</a>
-    </div>
+        {{-- Flash messages --}}
+        @if(session('error'))
+            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg flex items-start">
+                <svg class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"/>
+                </svg>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
 
-    {{-- Results Table --}}
-    <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 border-b">
-                <tr>
-                    <th class="px-4 py-3 text-left">Patient</th>
-                    <th class="px-4 py-3 text-left">N° Dossier</th>
-                    <th class="py-3 px-4 text-sm font-semibold text-gray-600">Analyse</th>
-                    <th class="py-3 px-4 text-sm font-semibold text-gray-600">Résultat</th>
-                    <th class="py-3 px-4 text-sm font-semibold text-gray-600">Plage Normale</th>
-                    <th class="py-3 px-4 text-sm font-semibold text-gray-600">Appareil</th>
-                    <th class="py-3 px-4 text-sm font-semibold text-gray-600">Statut</th>
-                    <th class="py-3 px-4 text-sm font-semibold text-gray-600">Date</th>
-                    <th class="py-3 px-4"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($labResults as $result)
-                    @php
-                        $isCritical = strtolower($result['interpretation'] ?? '') === 'critical';
-                    @endphp
-                    <tr class="border-b hover:bg-gray-50 transition">
-                        <td class="px-4 py-2">{{ $result['patient_first_name'] ?? '' }} {{ $result['patient_last_name'] ?? '' }}</td>
-                        <td class="px-4 py-2 font-mono text-gray-600">{{ $result['file_number'] ?? '—' }}</td>
-                        <td class="py-3 px-4 text-gray-800 font-medium">
-                            {{ $result['analysis_code'] ?? '—' }}
-                            <span class="text-gray-500 text-sm">({{ $result['analysis_name'] ?? '' }})</span>
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="font-semibold {{ $isCritical ? 'text-red-600' : 'text-gray-800' }}">
-                                {{ $result['result_value'] ?? '—' }}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4 text-gray-600">
-                            @if($result['normal_min'] !== null && $result['normal_max'] !== null)
-                                {{ $result['normal_min'] }} - {{ $result['normal_max'] }}
-                            @else
-                                <span class="text-gray-400 italic">N/A</span>
-                            @endif
-                        </td>
-                        <td class="py-3 px-4 text-gray-700">{{ $result['device_name'] ?? '—' }}</td>
-                        <td class="py-3 px-4">
-                            @if($isCritical)
-                                <span class="bg-red-100 text-red-700 px-2 py-1 text-xs font-semibold rounded-lg">Critique</span>
-                            @elseif($result['status'] === 'final')
-                                <span class="bg-green-100 text-green-700 px-2 py-1 text-xs font-semibold rounded-lg">Final</span>
-                            @else
-                                <span class="bg-yellow-100 text-yellow-700 px-2 py-1 text-xs font-semibold rounded-lg">En Cours</span>
-                            @endif
-                        </td>
-                        <td class="py-3 px-4 text-gray-600">
-                            {{ \Carbon\Carbon::parse($result['created_at'])->format('d/m/Y H:i') }}
-                        </td>
-                        <td class="py-3 px-4">
-                            <a href="{{ route('lab-results.show', $result['id']) }}" 
-                               class="text-blue-600 hover:underline text-sm">Détails</a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="text-center py-6 text-gray-500">Aucun résultat disponible</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+        {{-- View Toggle Navigation --}}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-1 inline-flex">
+            <a href="{{ route('lab-results.index', ['view' => 'chronological']) }}" 
+               class="px-6 py-2.5 rounded-md font-medium text-sm transition-all {{ $view === 'chronological' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-50' }}">
+                <span class="inline-flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Tous les Résultats
+                </span>
+            </a>
+            <a href="{{ route('lab-results.index', ['view' => 'patients']) }}" 
+               class="px-6 py-2.5 rounded-md font-medium text-sm transition-all {{ $view === 'patients' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-50' }}">
+                <span class="inline-flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    Par Patient
+                </span>
+            </a>
+        </div>
+
+        {{-- Dynamic Content Area --}}
+        <div id="results-container">
+            @if($view === 'chronological')
+                @include('lab_results.partials.chronological', ['labResults' => $labResults])
+            @elseif($view === 'patients')
+                @include('lab_results.partials.patient_list', ['patients' => $patients])
+            @endif
+        </div>
     </div>
 </div>
 @endsection

@@ -82,9 +82,8 @@ public function update(Request $request, $userId)
 
         Log::info("Sending photo to API", ['multipart' => $multipartData]);
 
-        $photoResponse = $this->api->post("/profiles/photo", [], [
-            'multipart' => $multipartData
-        ]);
+        $photoResponse = $this->api->multipart("/profiles/photo", $multipartData);
+
 
         Log::info("Photo API response", ['body' => $photoResponse->body()]);
 

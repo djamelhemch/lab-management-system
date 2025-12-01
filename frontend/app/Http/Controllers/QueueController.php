@@ -101,7 +101,7 @@ class QueueController extends Controller
         \Log::error('FastAPI moveNext failed:', [$response->body()]);  
         return back()->withErrors('Failed to move patient.');  
     }
-    public function show()  
+        public function show()  
     {  
         $responseQueues = Http::get("{$this->apiBase}/queues");  
         if ($responseQueues->failed()) {  

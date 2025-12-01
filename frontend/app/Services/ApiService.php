@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-
+use Illuminate\Support\Facades\Log;
 class ApiService
 {
     protected $baseUrl;
@@ -30,7 +30,20 @@ class ApiService
 
         return $client;
     }
-
+    public function multipart($endpoint, $data)
+    {
+        // CRITICAL FIX: Use send() with 'POST'. 
+        // 'post()' forces JSON encoding which breaks file uploads.
+        // 'send()' allows raw Guzzle options like 'multipart'.
+        
+        return $this->client()->send('POST', $endpoint, [
+            'multipart' => $data,
+            'headers' => [
+                'Accept' => 'application/json',
+                // Do NOT set Content-Type here. Guzzle does it automatically.
+            ],
+        ]);
+    }
     public function get($endpoint, $params = [])
     {
         return $this->client()->get($endpoint, $params);

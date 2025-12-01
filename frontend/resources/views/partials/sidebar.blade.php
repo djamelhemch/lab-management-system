@@ -24,7 +24,7 @@
     <a href="{{ route('samples.index') }}" class="sidebar-link {{ request()->routeIs('samples.*') ? 'active' : '' }} {{ request()->routeIs('samples.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
         <i class="fas fa-vial"></i> <span class="ml-2">Échantillons</span>
     </a>
-    <!--lien vers resultats {{ route('reports.index') }} -->
+
     <a href="{{ route('lab-results.index') }}" class="sidebar-link {{ request()->routeIs('lab-results.*') ? 'active bg-blue-100 text-blue-700 font-bold shadow' : 'text-gray-700 hover:bg-blue-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
         <i class="fas fa-vials"></i> 
         <span class="ml-2">Résultats</span>
@@ -38,6 +38,12 @@
     class="sidebar-link {{ request()->routeIs('lab-devices.*') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
         <i class="fas fa-microscope"></i> 
         <span class="ml-2">Lab Devices</span>
+    </a>
+
+    <a href="{{ route('statistics.index') }}" 
+    class="sidebar-link {{ request()->routeIs('statistics.*') ? 'active bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
+        <i class="fas fa-chart-line"></i> 
+        <span class="ml-2">Statistiques</span>
     </a>
     {{-- NEW LINKS --}}
     <a href="{{ route('quotations.index') }}" class="sidebar-link {{ request()->routeIs('quotations.*') ? 'active' : '' }} {{ request()->routeIs('quotations.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
@@ -76,7 +82,7 @@
         <a href="{{ route('admin.settings.index') }}"
             class="sidebar-link {{ request()->routeIs('admin.settings.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }}
             flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200">
-            <i class="fas fa-cogs"></i> <span class="ml-2">Paramètres système </span>
+            <i class="fas fa-cogs"></i> <span class="ml-2">Paramètres système</span>
         </a>
     @endif
     

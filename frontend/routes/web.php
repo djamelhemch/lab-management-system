@@ -5,6 +5,7 @@ use App\Http\Controllers\{
     PatientController,
     DoctorController,
     DashboardController,
+    StatisticsController,
     AnalysisController,
     SamplesController,
     QuotationController,
@@ -28,10 +29,14 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Routes for authenticated users (admin + user)
 Route::middleware(['auth.api'])->group(function () {
     
+    // Dashboard (Hub)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
+    
+    // Statistics (Old Dashboard)
+    Route::get('/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
+    Route::get('/statistics/stats', [StatisticsController::class, 'stats'])->name('statistics.stats');
 
-     // Profile page
+    // Profile page
     Route::get('/profile/{userId}', [ProfileController::class, 'show'])->name('profiles.show');
     Route::put('/profile/{userId}', [ProfileController::class, 'update'])->name('profiles.update');
     
@@ -54,8 +59,10 @@ Route::middleware(['auth.api'])->group(function () {
     Route::post('/analyses/sample-types', [AnalysisController::class, 'storeSampleType']);  
     Route::post('/analyses/units', [AnalysisController::class, 'storeUnit']);  
     Route::resource('analyses', AnalysisController::class);
+    
     // Lab devices
     Route::resource('lab-devices', LabDeviceController::class);
+    
     // Samples
     Route::resource('samples', SamplesController::class);
     Route::put('samples/{id}/status', [SamplesController::class, 'updateStatus'])->name('samples.updateStatus');
@@ -69,11 +76,9 @@ Route::middleware(['auth.api'])->group(function () {
     Route::put('quotations/{id}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
     Route::get('quotations/{id}/download', [QuotationController::class, 'download'])->name('quotations.download');
     Route::post('/patients/ajax-store', [QuotationController::class, 'storePatient'])->name('patients.ajaxStore');
-
-    // --- Then, define the general resource route ---
     Route::resource('quotations', QuotationController::class);
 
-    //Queue mangement
+    // Queue management
     Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
     Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
     Route::delete('/queues/{id}', [QueueController::class, 'destroy'])->name('queues.destroy');
@@ -83,17 +88,14 @@ Route::middleware(['auth.api'])->group(function () {
     // Agreements
     Route::resource('agreements', AgreementController::class);
 
-    //reports
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     // Lab results
     Route::prefix('lab-results')->group(function () {
-    Route::get('/', [LabResultController::class, 'index'])->name('lab-results.index');
-    Route::get('/{id}', [LabResultController::class, 'show'])->name('lab-results.show');
-    Route::post('/', [LabResultController::class, 'store'])->name('lab-results.store');
-    Route::get('{id}/download', [LabResultController::class, 'download'])
-    ->name('lab-results.download');
-    });    
-
+        Route::get('/', [LabResultController::class, 'index'])->name('lab-results.index');
+        Route::get('/patient/{patientId}', [LabResultController::class, 'patientResults'])->name('lab-results.patient');
+        Route::post('/', [LabResultController::class, 'store'])->name('lab-results.store');
+        Route::get('/{id}', [LabResultController::class, 'show'])->name('lab-results.show');
+        Route::get('/{id}/download', [LabResultController::class, 'download'])->name('lab-results.download');
+    });  
 });
 
 // Routes only for ADMIN users
