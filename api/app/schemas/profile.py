@@ -26,17 +26,9 @@ class ProfileResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     email: Optional[str] = None
-    photo_url: Optional[str] = None  # full URL
+    photo_url: Optional[str] = None
+    theme: Optional[str] = None
+    goals: Optional[list] = []
+    checklist: Optional[list] = []
 
-    model_config = {
-        "from_attributes": True  # important for .from_orm()
-    }
-
-    @field_validator("photo_url", mode="before", check_fields=False)
-    def build_photo_url(cls, v, info):
-        values = info.data
-        filename = values.get("photo")
-        if filename:
-            base_url = "https://lab-management-system-ikt8.onrender.com"
-            return f"{base_url}/static/{filename}"
-        return None
+    model_config = {"from_attributes": True}

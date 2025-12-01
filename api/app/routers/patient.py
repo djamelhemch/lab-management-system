@@ -15,6 +15,10 @@ from typing import Optional
 from app.routers.auth import get_current_user
 import logging
 from app.utils.logging import log_action, log_route
+from app.models.lab_result import LabResult
+from app.models.quotation import Quotation, QuotationItem
+from app.models.analysis import AnalysisCatalog, CategoryAnalyse, Unit
+from collections import defaultdict
 
 logger = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/patients", tags=["Patients"])
@@ -131,6 +135,100 @@ def get_patient_route(patient_id: int, db: Session = Depends(get_db)):
     patient_data['age'] = calculate_age(db_patient.dob)  
 
     return PatientRead(**patient_data)
+
+from datetime import datetime
+
+@router.get("/{patient_id}/results")
+def get_patient_results(patient_id: int, db: Session = Depends(get_db)):
+
+    # 1️⃣ Fetch patient
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+
+    # 2️⃣ Fetch all lab results using joinedload for relationships
+    results = (
+        db.query(LabResult)
+        .options(
+            joinedload(LabResult.quotation_item)
+            .joinedload(QuotationItem.analysis)
+            .joinedload(AnalysisCatalog.unit),
+            joinedload(LabResult.quotation_item)
+            .joinedload(QuotationItem.analysis)
+            .joinedload(AnalysisCatalog.category_analyse),
+            joinedload(LabResult.quotation)  # for patient filter if needed
+        )
+        .join(Quotation, Quotation.id == LabResult.quotation_id)
+        .filter(Quotation.patient_id == patient_id)
+        .order_by(LabResult.created_at.desc())
+        .all()
+    )
+
+    grouped = defaultdict(lambda: defaultdict(list))
+    years = set()
+    all_dates = {}
+
+    for lab in results:
+        item = lab.quotation_item
+        analysis: AnalysisCatalog = item.analysis
+        category: CategoryAnalyse = analysis.category_analyse
+        unit = analysis.unit
+
+        category_name = category.name
+        analysis_name = analysis.name
+
+        result_obj = {
+            "result_id": lab.id,
+            "value": lab.result_value,
+            "interpretation": lab.interpretation,
+            "date": lab.created_at.isoformat() if lab.created_at else None,
+            "device": lab.device_name,
+            "normal_min": lab.normal_min,
+            "normal_max": lab.normal_max,
+            "unit": unit.name if unit else None
+        }
+
+        grouped[category_name][analysis_name].append(result_obj)
+
+        if lab.created_at:
+            years.add(lab.created_at.year)
+            date_key = lab.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            if date_key not in all_dates:
+                all_dates[date_key] = {
+                    "display": lab.created_at.strftime('%d/%m/%Y'),
+                    "time": lab.created_at.strftime('%H:%M'),
+                    "year": lab.created_at.year,
+                }
+
+    years_sorted = sorted(list(years), reverse=True)
+    dates_sorted = dict(sorted(all_dates.items(), reverse=True))
+
+    patient_payload = {
+        "id": patient.id,
+        "file_number": patient.file_number,
+        "first_name": patient.first_name,
+        "last_name": patient.last_name,
+        "dob": str(patient.dob) if patient.dob else None,
+        "gender": patient.gender,
+        "blood_type": patient.blood_type,
+        "weight": patient.weight,
+        "height": getattr(patient, "height", None),
+        "phone": getattr(patient, "phone", None),
+        "email": getattr(patient, "email", None),
+        "address": getattr(patient, "address", None),
+        "allergies": getattr(patient, "allergies", None),
+        "chronic_diseases": getattr(patient, "chronic_conditions", None),
+        "antecedents": getattr(patient, "antecedents", None),
+        "medication": getattr(patient, "medication", None),
+    }
+
+    return {
+        "patient": patient_payload,
+        "categories": grouped,
+        "years": years_sorted,
+        "dates": dates_sorted
+    }
+
 
 @router.put("/{patient_id}", response_model=PatientRead)  
 @log_route("update_patient")

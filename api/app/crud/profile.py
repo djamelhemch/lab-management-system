@@ -4,17 +4,12 @@ from app.schemas.profile import ProfileCreate, ProfileUpdate
 from app.models.user import User
 
 def get_profile(db: Session, user_id: int) -> Profile | None:
-    """
-    Returns the Profile ORM object for a given user_id, or None if not found.
-    Automatically attaches 'email' from the User table as an attribute.
-    """
     profile = db.query(Profile).filter(Profile.user_id == user_id).first()
     if profile:
         # Attach email dynamically
         user = db.query(User).filter(User.id == profile.user_id).first()
         profile.email = user.email if user else None
     return profile
-
 
 def create_profile(db: Session, profile_in: ProfileCreate) -> Profile:
     """

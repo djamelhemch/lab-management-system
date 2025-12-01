@@ -12,123 +12,155 @@ from app.models.patient import Patient
 from app.schemas.patient import PatientListItem
 
 router = APIRouter(prefix="/doctors", tags=["Doctors"])
-
-
-@router.get("/", response_model=List[DoctorRead])
-def list_doctors_route(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return crud.get_doctors_with_patient_count(db, skip, limit)
-
+# -----------------------------
+# LIST DOCTORS (default)
+# -----------------------------
 @router.get("/", response_model=List[DoctorRead])
 def list_doctors_route(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud.get_doctors(db, skip, limit)
 
-@router.get("/table", response_model=List[DoctorRead])  
-def list_doctors_table_route(  
-    skip: int = 0,  
-    limit: int = 100,  
-    q: str = None,  
-    db: Session = Depends(get_db)  
-):  
-    query = db.query(Doctor)  
-    if q:  
-        q_like = f"%{q}%"  
-        query = query.filter(  
-            or_(  
-                Doctor.full_name.ilike(q_like),  
-                Doctor.specialty.ilike(q_like),  
-                Doctor.phone.ilike(q_like),  
-                Doctor.email.ilike(q_like)  
-            )  
-        )  
+
+# -----------------------------
+# CREATE DOCTOR (NEEDED for POST /doctors/)
+# -----------------------------
+@router.post("/", response_model=DoctorRead, status_code=201)
+def create_doctor_route(doctor: DoctorCreate, db: Session = Depends(get_db)):
+    return crud.create_doctor(db, doctor)
+
+
+# -----------------------------
+# DOCTOR TABLE (Searchable)
+# -----------------------------
+@router.get("/table", response_model=List[DoctorRead])
+def list_doctors_table_route(
+    skip: int = 0,
+    limit: int = 100,
+    q: str = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Doctor)
+
+    if q:
+        q_like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Doctor.full_name.ilike(q_like),
+                Doctor.specialty.ilike(q_like),
+                Doctor.phone.ilike(q_like),
+                Doctor.email.ilike(q_like)
+            )
+        )
+
     return query.order_by(Doctor.full_name.asc()).offset(skip).limit(limit).all()
 
+
+# -----------------------------
+# GET ONE DOCTOR
+# -----------------------------
 @router.get("/{doctor_id}", response_model=DoctorRead)
 def get_doctor_route(doctor_id: int, db: Session = Depends(get_db)):
-    db_doctor = crud.get_doctor(db, doctor_id)
-    if not db_doctor:
+    doctor = crud.get_doctor(db, doctor_id)
+    if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
-    return db_doctor
+    return doctor
 
 
+# -----------------------------
+# GET DOCTOR'S PATIENTS
+# -----------------------------
+@router.get("/{doctor_id}/patients", response_model=List[PatientListItem])
+def get_doctor_patients_route(doctor_id: int, db: Session = Depends(get_db)):
+    patients = db.query(Patient).filter(Patient.doctor_id == doctor_id).all()
+
+    result = []
+    for p in patients:
+        full_name = f"{p.first_name or ''} {p.last_name or ''}".strip()
+
+        # Age calculation
+        age = None
+        if p.dob:
+            today = dt.date.today()
+            age = today.year - p.dob.year - (
+                (today.month, today.day) < (p.dob.month, p.dob.day)
+            )
+
+        result.append(
+            PatientListItem(
+                id=p.id,
+                full_name=full_name,
+                file_number=p.file_number,
+                blood_type=p.blood_type,
+                phone=p.phone,
+                dob=p.dob,
+                age=age
+            )
+        )
+
+    return result
 
 
-@router.get("/{doctor_id}/patients", response_model=List[PatientListItem])  
-def get_doctor_patients_route(doctor_id: int, db: Session = Depends(get_db)):  
-    patients = db.query(Patient).filter(Patient.doctor_id == doctor_id).all()  
+# -----------------------------
+# PATIENT TABLE (searchable)
+# -----------------------------
+@router.get("/{doctor_id}/patients/table", response_model=List[PatientListItem])
+def list_doctor_patients_table_route(
+    doctor_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    q: str = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Patient).filter(Patient.doctor_id == doctor_id)
 
-    patient_list = []  
-    for patient in patients:  
-        # Calculate full_name  
-        full_name = f"{patient.first_name or ''} {patient.last_name or ''}".strip()  
+    if q:
+        q_like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Patient.first_name.ilike(q_like),
+                Patient.last_name.ilike(q_like),
+                Patient.file_number.ilike(q_like),
+                Patient.phone.ilike(q_like),
+            )
+        )
 
-        # Calculate age from date of birth  
-        age = None  
-        if patient.dob:  
-            today = dt.date.today()  
-            age = today.year - patient.dob.year - ((today.month, today.day) < (patient.dob.month, patient.dob.day))  
+    patients = query.order_by(
+        Patient.last_name.asc(),
+        Patient.first_name.asc()
+    ).offset(skip).limit(limit).all()
 
-        # Create patient list item  
-        patient_item = PatientListItem(  
-            id=patient.id,  
-            full_name=full_name,  
-            file_number=patient.file_number,  
-            blood_type=patient.blood_type,  
-            phone=patient.phone,  
-            dob=patient.dob,  
-            age=age  
-        )  
-        patient_list.append(patient_item)  
+    result = []
+    for p in patients:
+        full_name = f"{p.first_name or ''} {p.last_name or ''}".strip()
 
-    return patient_list
+        age = None
+        if p.dob:
+            today = dt.date.today()
+            age = today.year - p.dob.year - (
+                (today.month, today.day) < (p.dob.month, p.dob.day)
+            )
 
-@router.get("/{doctor_id}/patients/table", response_model=List[PatientListItem])  
-def list_doctor_patients_table_route(  
-    doctor_id: int,  
-    skip: int = 0,  
-    limit: int = 100,  
-    q: str = None,  
-    db: Session = Depends(get_db)  
-):  
-    query = db.query(Patient).filter(Patient.doctor_id == doctor_id)  
-    if q:  
-        q_like = f"%{q}%"  
-        query = query.filter(  
-            or_(  
-                Patient.first_name.ilike(q_like),  
-                Patient.last_name.ilike(q_like),  
-                Patient.file_number.ilike(q_like),  
-                Patient.phone.ilike(q_like)  
-            )  
-        )  
-    # Order by last_name, then first_name  
-    query = query.order_by(Patient.last_name.asc(), Patient.first_name.asc())  
-    patients = query.offset(skip).limit(limit).all()  
-  
-    # Build the response with full_name and age  
-    patient_list = []  
-    for patient in patients:  
-        full_name = f"{patient.first_name or ''} {patient.last_name or ''}".strip()  
-        age = None  
-        if patient.dob:  
-            today = dt.date.today()  
-            age = today.year - patient.dob.year - ((today.month, today.day) < (patient.dob.month, patient.dob.day))  
-        patient_item = PatientListItem(  
-            id=patient.id,  
-            full_name=full_name,  
-            file_number=patient.file_number,  
-            blood_type=patient.blood_type,  
-            phone=patient.phone,  
-            dob=patient.dob,  
-            age=age  
-        )  
-        patient_list.append(patient_item)  
-  
-    return patient_list
+        result.append(
+            PatientListItem(
+                id=p.id,
+                full_name=full_name,
+                file_number=p.file_number,
+                blood_type=p.blood_type,
+                phone=p.phone,
+                dob=p.dob,
+                age=age
+            )
+        )
 
-@router.put("/{doctor_id}", response_model=DoctorRead)  
-def update_doctor_route(doctor_id: int, doctor_update: DoctorUpdate, db: Session = Depends(get_db)):  
-    db_doctor = crud.get_doctor(db, doctor_id)  
-    if not db_doctor:  
-        raise HTTPException(status_code=404, detail="Doctor not found")  
-    updated_doctor = crud.update_doctor(db, doctor_id, doctor_update)  
-    return updated_doctor
+    return result
+
+
+# -----------------------------
+# UPDATE DOCTOR
+# -----------------------------
+@router.put("/{doctor_id}", response_model=DoctorRead)
+def update_doctor_route(doctor_id: int, doctor_update: DoctorUpdate, db: Session = Depends(get_db)):
+    existing = crud.get_doctor(db, doctor_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    return crud.update_doctor(db, doctor_id, doctor_update)
