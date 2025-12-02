@@ -15,77 +15,129 @@
 {{-- Predictive Analytics Section --}}
 @if(isset($predictions) && !empty($predictions))
 <section class="mb-10">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-        <i class="fas fa-brain text-purple-600"></i> Analyses Prédictives
-    </h2>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-brain text-purple-600"></i> Analyses Prédictives
+        </h2>
+        <div class="relative group">
+            <i class="fas fa-question-circle text-gray-400 hover:text-purple-600 cursor-help text-lg transition"></i>
+            <div class="absolute right-0 top-8 w-96 bg-gray-900 text-white text-sm rounded-lg p-4 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-brain text-purple-400 text-xl flex-shrink-0 mt-1"></i>
+                    <div>
+                        <p class="font-bold mb-2">Intelligence Prédictive</p>
+                        <p class="text-xs leading-relaxed text-gray-300">
+                            Ces indicateurs utilisent des <strong>algorithmes d'apprentissage automatique</strong> pour 
+                            analyser vos données historiques et prédire les performances futures. Les prévisions sont 
+                            mises à jour quotidiennement et s'améliorent avec le temps.
+                        </p>
+                    </div>
+                </div>
+                <div class="absolute -top-2 right-4 w-4 h-4 bg-gray-900 transform rotate-45"></div>
+            </div>
+        </div>
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
         {{-- Revenue Forecast --}}
         @if(isset($predictions['revenue_forecast']))
-        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
-            <div class="flex items-center justify-between mb-3">
-                <i class="fas fa-chart-line text-3xl opacity-80"></i>
-                @if($predictions['revenue_forecast']['trend'] === 'increasing')
-                    <i class="fas fa-arrow-up text-2xl"></i>
-                @else
-                    <i class="fas fa-arrow-down text-2xl"></i>
-                @endif
+        <div class="relative group/card">
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="flex items-center justify-between mb-3">
+                    <i class="fas fa-chart-line text-3xl opacity-80"></i>
+                    @if($predictions['revenue_forecast']['trend'] === 'increasing')
+                        <i class="fas fa-arrow-up text-2xl"></i>
+                    @else
+                        <i class="fas fa-arrow-down text-2xl"></i>
+                    @endif
+                </div>
+                <p class="text-sm opacity-90 font-medium">Prévision Semaine Prochaine</p>
+                <p class="text-3xl font-bold mt-2">{{ number_format($predictions['revenue_forecast']['predicted_next_week'], 0) }} DA</p>
+                <p class="text-xs mt-2 opacity-75">
+                    Tendance: {{ $predictions['revenue_forecast']['trend'] === 'increasing' ? '📈 Croissance' : '📉 Baisse' }}
+                </p>
             </div>
-            <p class="text-sm opacity-90 font-medium">Prévision Semaine Prochaine</p>
-            <p class="text-3xl font-bold mt-2">{{ number_format($predictions['revenue_forecast']['predicted_next_week'], 0) }} DA</p>
-            <p class="text-xs mt-2 opacity-75">
-                Tendance: {{ $predictions['revenue_forecast']['trend'] === 'increasing' ? '📈 Croissance' : '📉 Baisse' }}
-            </p>
+            {{-- Card Tooltip --}}
+            <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl opacity-0 invisible group-hover/card:opacity-100 group-hover/card:visible transition-all duration-200 z-50 pointer-events-none">
+                <p class="font-semibold mb-1">💰 Prévision de Revenus</p>
+                <p class="text-gray-300 leading-relaxed">Estimation basée sur la moyenne mobile des 4 dernières semaines</p>
+                <div class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+            </div>
         </div>
         @endif
 
         {{-- Patient Growth --}}
         @if(isset($predictions['patient_growth']))
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
-            <div class="flex items-center justify-between mb-3">
-                <i class="fas fa-users text-3xl opacity-80"></i>
-                <i class="fas fa-chart-area text-2xl"></i>
+        <div class="relative group/card">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="flex items-center justify-between mb-3">
+                    <i class="fas fa-users text-3xl opacity-80"></i>
+                    <i class="fas fa-chart-area text-2xl"></i>
+                </div>
+                <p class="text-sm opacity-90 font-medium">Nouveaux Patients Prévus</p>
+                <p class="text-3xl font-bold mt-2">{{ $predictions['patient_growth']['predicted_next_month'] }}</p>
+                <p class="text-xs mt-2 opacity-75">
+                    Croissance: {{ number_format($predictions['patient_growth']['growth_rate'], 1) }}%
+                </p>
             </div>
-            <p class="text-sm opacity-90 font-medium">Nouveaux Patients Prévus</p>
-            <p class="text-3xl font-bold mt-2">{{ $predictions['patient_growth']['predicted_next_month'] }}</p>
-            <p class="text-xs mt-2 opacity-75">
-                Croissance: {{ number_format($predictions['patient_growth']['growth_rate'], 1) }}%
-            </p>
+            {{-- Card Tooltip --}}
+            <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl opacity-0 invisible group-hover/card:opacity-100 group-hover/card:visible transition-all duration-200 z-50 pointer-events-none">
+                <p class="font-semibold mb-1">👥 Prévision Patients</p>
+                <p class="text-gray-300 leading-relaxed">Nombre estimé de nouveaux patients pour le mois prochain</p>
+                <div class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+            </div>
         </div>
         @endif
 
         {{-- Sample Volume --}}
         @if(isset($predictions['sample_metrics']))
-        <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
-            <div class="flex items-center justify-between mb-3">
-                <i class="fas fa-vial text-3xl opacity-80"></i>
-                <i class="fas fa-calendar-day text-2xl"></i>
+        <div class="relative group/card">
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="flex items-center justify-between mb-3">
+                    <i class="fas fa-vial text-3xl opacity-80"></i>
+                    <i class="fas fa-calendar-day text-2xl"></i>
+                </div>
+                <p class="text-sm opacity-90 font-medium">Échantillons Demain</p>
+                <p class="text-3xl font-bold mt-2">{{ $predictions['sample_metrics']['predicted_tomorrow'] }}</p>
+                <p class="text-xs mt-2 opacity-75">
+                    Moyenne: {{ number_format($predictions['sample_metrics']['avg_daily_samples'], 1) }}/jour
+                </p>
             </div>
-            <p class="text-sm opacity-90 font-medium">Échantillons Demain</p>
-            <p class="text-3xl font-bold mt-2">{{ $predictions['sample_metrics']['predicted_tomorrow'] }}</p>
-            <p class="text-xs mt-2 opacity-75">
-                Moyenne: {{ number_format($predictions['sample_metrics']['avg_daily_samples'], 1) }}/jour
-            </p>
+            {{-- Card Tooltip --}}
+            <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl opacity-0 invisible group-hover/card:opacity-100 group-hover/card:visible transition-all duration-200 z-50 pointer-events-none">
+                <p class="font-semibold mb-1">🧪 Prévision Échantillons</p>
+                <p class="text-gray-300 leading-relaxed">Volume estimé basé sur la moyenne des 30 derniers jours</p>
+                <div class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+            </div>
         </div>
         @endif
 
         {{-- Financial Health Score --}}
         @if(isset($predictions['financial_health']))
-        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
-            <div class="flex items-center justify-between mb-3">
-                <i class="fas fa-heartbeat text-3xl opacity-80"></i>
-                <div class="text-right">
-                    <div class="text-4xl font-bold">{{ round($predictions['financial_health']['health_score']) }}</div>
-                    <div class="text-xs opacity-75">/100</div>
+        <div class="relative group/card">
+            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transition">
+                <div class="flex items-center justify-between mb-3">
+                    <i class="fas fa-heartbeat text-3xl opacity-80"></i>
+                    <div class="text-right">
+                        <div class="text-4xl font-bold">{{ round($predictions['financial_health']['health_score']) }}</div>
+                        <div class="text-xs opacity-75">/100</div>
+                    </div>
                 </div>
+                <p class="text-sm opacity-90 font-medium">Score de Santé Financière</p>
+                <div class="mt-3 bg-white bg-opacity-20 rounded-full h-2">
+                    <div class="bg-white rounded-full h-2 transition-all" style="width: {{ $predictions['financial_health']['health_score'] }}%"></div>
+                </div>
+                <p class="text-xs mt-2 opacity-75">
+                    Taux recouvrement: {{ number_format($predictions['financial_health']['collection_rate'], 1) }}%
+                </p>
             </div>
-            <p class="text-sm opacity-90 font-medium">Score de Santé Financière</p>
-            <div class="mt-3 bg-white bg-opacity-20 rounded-full h-2">
-                <div class="bg-white rounded-full h-2 transition-all" style="width: {{ $predictions['financial_health']['health_score'] }}%"></div>
+            {{-- Card Tooltip --}}
+            <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl opacity-0 invisible group-hover/card:opacity-100 group-hover/card:visible transition-all duration-200 z-50 pointer-events-none">
+                <p class="font-semibold mb-1">💚 Score de Santé Financière</p>
+                <p class="text-gray-300 leading-relaxed">Indicateur composite basé sur le taux de recouvrement des paiements. 
+                Un score > 80 indique une excellente santé financière.</p>
+                <div class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
             </div>
-            <p class="text-xs mt-2 opacity-75">
-                Taux recouvrement: {{ number_format($predictions['financial_health']['collection_rate'], 1) }}%
-            </p>
         </div>
         @endif
     </div>
@@ -275,13 +327,39 @@
 {{-- Revenue Trend Chart --}}
 @if(isset($predictions['revenue_forecast']['historical_weekly']))
 <section class="mb-10">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-        <i class="fas fa-chart-area text-blue-600"></i> Tendance des Revenus (12 Semaines)
-    </h2>
-    <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="chart-container" style="position: relative; height: 350px;">
-            <canvas id="revenueChart" width="400" height="350"></canvas>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-chart-area text-blue-600"></i> Tendance des Revenus (12 Semaines)
+        </h2>
+        <div class="relative group">
+            <i class="fas fa-info-circle text-gray-400 hover:text-blue-600 cursor-help text-lg transition"></i>
+            <div class="absolute right-0 top-8 w-80 bg-gray-900 text-white text-sm rounded-lg p-4 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-lightbulb text-yellow-400 text-xl flex-shrink-0 mt-1"></i>
+                    <div>
+                        <p class="font-bold mb-2">Analyse des Revenus Hebdomadaires</p>
+                        <p class="text-xs leading-relaxed text-gray-300">
+                            Ce graphique affiche l'évolution des revenus encaissés sur les 12 dernières semaines. 
+                            La ligne pointillée représente la <strong>prévision</strong> pour la semaine prochaine, 
+                            calculée à partir des tendances récentes. Utilisez ces données pour anticiper les flux de trésorerie.
+                        </p>
+                    </div>
+                </div>
+                <div class="absolute -top-2 right-4 w-4 h-4 bg-gray-900 transform rotate-45"></div>
+            </div>
         </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-md p-6">
+        @if(!empty($predictions['revenue_forecast']['historical_weekly']))
+            <div style="position: relative; height: 350px;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        @else
+            <div class="text-center py-12 text-gray-400">
+                <i class="fas fa-chart-line text-5xl mb-4"></i>
+                <p>Données insuffisantes pour générer le graphique</p>
+            </div>
+        @endif
     </div>
 </section>
 @endif
@@ -289,16 +367,43 @@
 {{-- Patient Growth Chart --}}
 @if(isset($predictions['patient_growth']['historical_monthly']))
 <section class="mb-10">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-        <i class="fas fa-users text-green-600"></i> Croissance des Patients (6 Mois)
-    </h2>
-    <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="chart-container" style="position: relative; height: 350px;">
-            <canvas id="patientChart" width="400" height="350"></canvas>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-users text-green-600"></i> Croissance des Patients (6 Mois)
+        </h2>
+        <div class="relative group">
+            <i class="fas fa-info-circle text-gray-400 hover:text-green-600 cursor-help text-lg transition"></i>
+            <div class="absolute right-0 top-8 w-80 bg-gray-900 text-white text-sm rounded-lg p-4 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-lightbulb text-yellow-400 text-xl flex-shrink-0 mt-1"></i>
+                    <div>
+                        <p class="font-bold mb-2">Analyse de Croissance des Patients</p>
+                        <p class="text-xs leading-relaxed text-gray-300">
+                            Ce graphique montre le nombre de <strong>nouveaux patients</strong> enregistrés chaque mois 
+                            sur les 6 derniers mois. La barre transparente représente la <strong>prévision</strong> 
+                            pour le mois prochain basée sur les tendances d'acquisition. Identifiez les périodes de forte/faible activité.
+                        </p>
+                    </div>
+                </div>
+                <div class="absolute -top-2 right-4 w-4 h-4 bg-gray-900 transform rotate-45"></div>
+            </div>
         </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-md p-6">
+        @if(!empty($predictions['patient_growth']['historical_monthly']))
+            <div style="position: relative; height: 350px;">
+                <canvas id="patientChart"></canvas>
+            </div>
+        @else
+            <div class="text-center py-12 text-gray-400">
+                <i class="fas fa-users text-5xl mb-4"></i>
+                <p>Données insuffisantes pour générer le graphique</p>
+            </div>
+        @endif
     </div>
 </section>
 @endif
+
 {{-- Operational Metrics --}}
 <section class="mb-10">
     <h2 class="text-xl font-semibold text-gray-800 mb-4">Métriques Opérationnelles</h2>
@@ -339,6 +444,36 @@
 </section>
 
 @endsection
+
+@push('styles')
+<style>
+/* Smooth tooltip animations */
+.group:hover .group-hover\:opacity-100 {
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Prevent tooltip overflow */
+.relative.group {
+    overflow: visible !important;
+}
+
+/* Tooltip arrow styling */
+.group .absolute.-top-2 {
+    filter: drop-shadow(0 -1px 2px rgba(0,0,0,0.1));
+}
+</style>
+@endpush
 
 @push('scripts')
 {{-- Chart.js CDN --}}

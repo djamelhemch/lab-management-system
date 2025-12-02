@@ -80,6 +80,7 @@ class QuotationController extends Controller
             'payment.notes'           => 'nullable|string|max:255',
             'payment.amount_received' => 'nullable|numeric|min:0',
             'payment.change_given'    => 'nullable|numeric|min:0',
+            'priority'                => 'nullable|integer|min:0|max:2',
         ]);
 
         if ($validator->fails()) {
@@ -121,21 +122,96 @@ class QuotationController extends Controller
                 'notes'           => $request->input('payment.notes'),
                 'amount_received' => $request->input('payment.amount_received'),
                 'change_given'    => $request->input('payment.change_given'),
-                'outstanding'     => $outstanding, // sync with quotation outstanding
+                'outstanding'     => $outstanding,
                 'user_id'         => $user['id'],
             ];
         }
 
         \Log::info('📤 Sending quotation payload to FastAPI', $quotationData);
 
+        // ============================================
+        // STEP 1: CREATE QUOTATION
+        // ============================================
         $quotationResponse = $this->api->post('quotations', $quotationData);
 
         if (!$quotationResponse->successful()) {
+            \Log::error('❌ Quotation creation failed', [
+                'status' => $quotationResponse->status(),
+                'body' => $quotationResponse->body()
+            ]);
             return back()->with('error', 'Failed to create quotation.')->withInput();
         }
 
-        return redirect()->route('quotations.index')
-            ->with('success', 'Quotation created successfully.');
+        $quotation = $quotationResponse->json();
+        $quotationId = $quotation['id'] ?? null;
+
+        if (!$quotationId) {
+            \Log::error('❌ No quotation ID returned from API');
+            return back()->with('error', 'Quotation created but ID not returned.')->withInput();
+        }
+
+        \Log::info('✅ Quotation created successfully', [
+            'quotation_id' => $quotationId,
+            'patient_id' => $request->patient_id
+        ]);
+
+        // ============================================
+        // STEP 2: ADD PATIENT TO QUEUE
+        // ============================================
+        $priority = (int) $request->input('priority', 0);
+        
+        $queueData = [
+            'patient_id'   => (int) $request->patient_id,
+            'quotation_id' => $quotationId,
+            'queue_type'   => 'reception',
+            'priority'     => $priority,
+            'notes'        => 'Added from quotation #' . $quotationId
+        ];
+
+        \Log::info('📤 Adding patient to queue', $queueData);
+
+        try {
+            $queueResponse = $this->api->post('queues', $queueData);
+
+            if ($queueResponse->successful()) {
+                $queueItem = $queueResponse->json();
+                
+                \Log::info('✅ Patient added to queue successfully', [
+                    'queue_id' => $queueItem['id'] ?? 'unknown',
+                    'position' => $queueItem['position'] ?? 'unknown',
+                    'patient_id' => $request->patient_id
+                ]);
+                
+                // Success - redirect to queue management
+                return redirect()->route('queues.index')
+                    ->with('success', 'Quotation created and patient added to reception queue!')
+                    ->with('quotation_id', $quotationId)
+                    ->with('queue_position', $queueItem['position'] ?? null)
+                    ->with('show_announcement', true);
+            } else {
+                \Log::warning('⚠️ Failed to add patient to queue', [
+                    'status' => $queueResponse->status(),
+                    'body' => $queueResponse->body(),
+                    'quotation_id' => $quotationId
+                ]);
+                
+                // Quotation created but queue failed
+                return redirect()->route('quotations.show', $quotationId)
+                    ->with('success', 'Quotation created successfully.')
+                    ->with('warning', 'Could not add patient to queue automatically. Please add manually from queue management.');
+            }
+        } catch (\Exception $e) {
+            \Log::error('❌ Exception while adding patient to queue', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'quotation_id' => $quotationId
+            ]);
+            
+            // Quotation created but queue failed with exception
+            return redirect()->route('quotations.show', $quotationId)
+                ->with('success', 'Quotation created successfully.')
+                ->with('warning', 'An error occurred while adding patient to queue. Please add manually.');
+        }
     }
 
     public function storePatient(Request $request)

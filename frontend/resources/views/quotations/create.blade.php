@@ -233,6 +233,46 @@
                         </div>
                     </div>
                 </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+    <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+     
+        Queue Settings
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {{-- Priority Selection --}}
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-exclamation-circle text-indigo-500 mr-1"></i> 
+                Queue Priority
+            </label>
+            <select name="priority" 
+                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                <option value="0" selected>
+                    Normal - Standard processing
+                </option>
+                <option value="1">
+                    Urgent - Priority processing
+                </option>
+                <option value="2">
+                    Emergency - Immediate attention
+                </option>
+            </select>
+        </div>
+
+        {{-- Info Box --}}
+        <div class="flex items-center bg-blue-50 rounded-xl p-4">
+            <i class="fas fa-info-circle text-blue-500 text-2xl mr-3"></i>
+            <div>
+                <h4 class="font-semibold text-blue-900 text-sm">Automatic Queue Add</h4>
+                <p class="text-xs text-blue-800">
+                    Patient will be added to reception queue after quotation creation
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
                     {{-- Analyses Section --}}
                     <div class="bg-white rounded-xl shadow-md border border-gray-200">
                         <div class="p-4 border-b border-gray-200">
