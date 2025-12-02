@@ -33,3 +33,9 @@ class Patient(Base):
     # Add the relationship
     doctor = relationship("Doctor", back_populates="patients")
 
+    @property
+    def full_name(self):
+        first = self.first_name or ''
+        last = self.last_name or ''
+        name = f"{first} {last}".strip()
+        return name if name else f"Patient #{self.id}"

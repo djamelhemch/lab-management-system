@@ -11,7 +11,8 @@ from app.models.patient import Patient
 from app.models.doctor import Doctor
 from app.models.sample import Sample
 from app.models.quotation import Quotation  
-from app.models.queue import Queue, QueueType
+from app.models.queue import Queue, QueueLog
+from app.schemas.queue import QueueCreate, QueueUpdate, QueueOut, QueuesResponse, QueueStats, QueueStatusResponse
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
@@ -30,12 +31,12 @@ def get_dashboard_metrics(db: Session = Depends(get_db)):
 
     # Updated queue counts using your single Queue table with type filter
     reception_queue_count = db.query(func.count(Queue.id)).filter(
-        Queue.type == QueueType.reception,
+        Queue.queue_type == QueueType.reception,
         Queue.status == "waiting"
     ).scalar()
 
     blood_draw_queue_count = db.query(func.count(Queue.id)).filter(
-        Queue.type == QueueType.blood_draw,
+        Queue.queue_type == QueueType.blood_draw,
         Queue.status == "waiting"
     ).scalar()
 

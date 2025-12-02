@@ -1,127 +1,348 @@
-from fastapi import FastAPI, HTTPException, Depends, APIRouter
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-from app.database import SessionLocal, engine
-from app.models.queue import Queue, QueueType
-from app.schemas.queue import QueueCreate, QueueOut, QueuesResponse
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, and_, or_
+from datetime import datetime, timedelta, timezone
+from app.database import get_db
+from app.models.queue import Queue, QueueLog, QueueType, QueueStatus
+from app.models.patient import Patient
+from app.models.quotation import Quotation
+from app.schemas.queue import QueueCreate, QueueOut, QueuesResponse, QueueStats, QueueStatusResponse
+from typing import List, Optional
+import statistics
+import json
 
-router = APIRouter(prefix="/queues", tags=["Queue"])
+router = APIRouter(prefix="/queues", tags=["queues"])
 
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def utc_now():
+    """Get current UTC timestamp"""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
-# Helper to reorder positions for a queue type
-def reorder_positions(db: Session, queue_type: QueueType):
-    queues = db.query(Queue).filter(Queue.type == queue_type).order_by(Queue.position).all()
-    for i, q in enumerate(queues, 1):
-        q.position = i
+def calculate_time_diff(start, end):
+    """Calculate time difference in seconds"""
+    if not start or not end:
+        return None
+    if start.tzinfo:
+        start = start.replace(tzinfo=None)
+    if end.tzinfo:
+        end = end.replace(tzinfo=None)
+    return int((end - start).total_seconds())
+
+def log_action(db: Session, queue_id: Optional[int], patient_id: int, queue_type: str, 
+               action: str, old_status: str = None, new_status: str = None, 
+               position: int = None, notes: str = None):
+    """Log queue action"""
+    log = QueueLog(
+        queue_id=queue_id,
+        patient_id=patient_id,
+        queue_type=queue_type,
+        action=action,
+        old_status=old_status,
+        new_status=new_status,
+        position=position,
+        notes=notes
+    )
+    db.add(log)
     db.commit()
 
+def reorder_queue(db: Session, queue_type: str):
+    """Reorder positions based on priority"""
+    items = db.query(Queue).filter(
+        Queue.queue_type == queue_type,
+        Queue.status == 'waiting'
+    ).order_by(Queue.priority.desc(), Queue.created_at).all()
+    
+    for idx, item in enumerate(items, 1):
+        item.position = idx
+    db.commit()
+
+def get_avg_service_time(db: Session, queue_type: str) -> int:
+    """Get average service time from last 50 completed"""
+    week_ago = utc_now() - timedelta(days=7)
+    
+    logs = db.query(QueueLog).filter(
+        QueueLog.queue_type == queue_type,
+        QueueLog.action == 'completed',
+        QueueLog.service_time_seconds.isnot(None),
+        QueueLog.created_at >= week_ago
+    ).order_by(QueueLog.created_at.desc()).limit(50).all()
+    
+    if not logs:
+        return 300  # 5 minutes default
+    
+    avg = statistics.mean([log.service_time_seconds for log in logs])
+    return int(avg)
+
+def enrich_queue_item(db: Session, item: Queue, avg_service_time: int):
+    """Add calculated fields to queue item"""
+    # Get patient name
+    patient = db.query(Patient).filter(Patient.id == item.patient_id).first()
+    item.patient_name = patient.full_name if patient else f"Patient #{item.patient_id}"
+    
+    # Calculate estimated wait
+    if item.status == 'waiting':
+        item.estimated_wait_minutes = (item.position * avg_service_time) // 60
+    else:
+        item.estimated_wait_minutes = 0
+
+# ==================== ENDPOINTS ====================
 
 @router.get("/", response_model=QueuesResponse)
-def get_queues(db: Session = Depends(get_db)):
-    reception = db.query(Queue).filter(Queue.type == QueueType.reception).order_by(Queue.position).all()
-    blood_draw = db.query(Queue).filter(Queue.type == QueueType.blood_draw).order_by(Queue.position).all()
-    return {
-        "reception": reception,
-        "blood_draw": blood_draw
-    }
+def get_all_queues(db: Session = Depends(get_db)):
+    """Get all active queues"""
+    
+    reception_items = db.query(Queue).filter(
+        Queue.queue_type == 'reception',
+        Queue.status.in_(['waiting', 'called'])
+    ).order_by(Queue.priority.desc(), Queue.position).all()
+    
+    blood_draw_items = db.query(Queue).filter(
+        Queue.queue_type == 'blood_draw',
+        Queue.status.in_(['waiting', 'called', 'in_progress'])
+    ).order_by(Queue.priority.desc(), Queue.position).all()
+    
+    # Enrich with patient names and estimates
+    reception_avg = get_avg_service_time(db, 'reception')
+    blood_draw_avg = get_avg_service_time(db, 'blood_draw')
+    
+    for item in reception_items:
+        enrich_queue_item(db, item, reception_avg)
+    
+    for item in blood_draw_items:
+        enrich_queue_item(db, item, blood_draw_avg)
+    
+    return QueuesResponse(
+        reception=[QueueOut.from_orm(item) for item in reception_items],
+        blood_draw=[QueueOut.from_orm(item) for item in blood_draw_items]
+    )
 
 @router.post("/", response_model=QueueOut, status_code=201)
-def add_to_queue(queue_in: QueueCreate, db: Session = Depends(get_db)):
-    max_position = db.query(Queue).filter(Queue.type == queue_in.type).order_by(Queue.position.desc()).first()
-    pos = max_position.position + 1 if max_position else 1
-
-    queue = Queue(
-        patient_id=queue_in.patient_id,
-        quotation_id=queue_in.quotation_id,
-        type=queue_in.type,
-        position=pos
+def add_to_queue(data: QueueCreate, db: Session = Depends(get_db)):
+    """Add patient to queue"""
+    
+    # Check if patient exists
+    patient = db.query(Patient).filter(Patient.id == data.patient_id).first()
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+    
+    # Check if already in queue
+    existing = db.query(Queue).filter(
+        Queue.patient_id == data.patient_id,
+        Queue.queue_type == data.queue_type,
+        Queue.status.in_(['waiting', 'called', 'in_progress'])
+    ).first()
+    
+    if existing:
+        raise HTTPException(400, f"Patient already in {data.queue_type} queue")
+    
+    # Get next position
+    max_pos = db.query(func.max(Queue.position)).filter(
+        Queue.queue_type == data.queue_type,
+        Queue.status == 'waiting'
+    ).scalar() or 0
+    
+    # Create queue item
+    queue_item = Queue(
+        patient_id=data.patient_id,
+        quotation_id=data.quotation_id,
+        queue_type=data.queue_type,
+        position=max_pos + 1,
+        priority=data.priority,
+        status='waiting',
+        notes=data.notes
     )
-    db.add(queue)
+    db.add(queue_item)
     db.commit()
-    db.refresh(queue)
-    return queue
-
-@router.delete("/{queue_id}", status_code=204)
-def remove_from_queue(queue_id: int, db: Session = Depends(get_db)):
-    queue = db.query(Queue).filter(Queue.id == queue_id).first()
-    if not queue:
-        raise HTTPException(status_code=404, detail="Queue item not found")
-
-    queue_type = queue.type
-    db.delete(queue)
-    db.commit()
-    reorder_positions(db, queue_type)
-    return
+    db.refresh(queue_item)
+    
+    # Log action
+    log_action(db, queue_item.id, data.patient_id, data.queue_type, 'added', 
+               new_status='waiting', position=queue_item.position)
+    
+    # Reorder by priority
+    reorder_queue(db, data.queue_type)
+    db.refresh(queue_item)
+    
+    # Enrich response
+    avg_time = get_avg_service_time(db, data.queue_type)
+    enrich_queue_item(db, queue_item, avg_time)
+    
+    return QueueOut.from_orm(queue_item)
 
 @router.post("/move-next", response_model=QueueOut)
-def move_next_to_blood_draw(db: Session = Depends(get_db)):  
-    # Remove the first patient in blood_draw queue (if any)  
-    first_blood_draw = db.query(Queue).filter(Queue.type == QueueType.blood_draw).order_by(Queue.position).first()  
-    if first_blood_draw:  
-        db.delete(first_blood_draw)  
-        db.commit()  
-        reorder_positions(db, QueueType.blood_draw)  
-  
-    # Get the next patient in reception queue  
-    next_reception = db.query(Queue).filter(Queue.type == QueueType.reception).order_by(Queue.position).first()  
-    if not next_reception:  
-        raise HTTPException(status_code=404, detail="Reception queue empty")  
-  
-    # Remove from reception  
-    db.delete(next_reception)  
-    db.commit()  
-    reorder_positions(db, QueueType.reception)  
-  
-    # Add to blood_draw queue with next position  
-    max_position = db.query(Queue).filter(Queue.type == QueueType.blood_draw).order_by(Queue.position.desc()).first()  
-    pos = max_position.position + 1 if max_position else 1  
-  
-    new_blood_draw = Queue(  
-        patient_id=next_reception.patient_id,  
-        quotation_id=next_reception.quotation_id,  
-        type=QueueType.blood_draw,  
-        position=pos,  
-    )  
-    db.add(new_blood_draw)  
-    db.commit()  
-    db.refresh(new_blood_draw)  
-  
-    reorder_positions(db, QueueType.blood_draw)  
-  
-    return new_blood_draw
-
-@router.get("/status")
-def queue_status(db: Session = Depends(get_db)):
-    def summarize_queue(queue_type: QueueType):
-        queue_items = db.query(Queue).filter(Queue.type == queue_type).order_by(Queue.position).all()
-        total = len(queue_items)
-        current = queue_items[0].position if total > 0 else None
-        next_ = queue_items[1].position if total > 1 else None
+def move_to_blood_draw(db: Session = Depends(get_db)):
+    """Move next reception patient to blood draw"""
+    
+    # Complete current blood draw patient
+    current = db.query(Queue).filter(
+        Queue.queue_type == 'blood_draw',
+        Queue.status.in_(['called', 'in_progress'])
+    ).first()
+    
+    if current:
+        now = utc_now()
+        current.completed_at = now
+        current.status = 'completed'
         
-        # For example, assume avg_wait_time in minutes, you can improve this logic
-        avg_wait_time = 7  
-        estimated_wait_time = avg_wait_time * total
+        # Calculate times
+        wait_time = calculate_time_diff(current.created_at, current.called_at or now)
+        service_time = calculate_time_diff(current.started_at or current.called_at, now)
         
-        return {
-            "current": current,
-            "next": next_,
-            "total": total,
-            "avg_wait_time": avg_wait_time,
-            "estimated_wait_time": estimated_wait_time,
-        }
+        # Log completion
+        log_entry = QueueLog(
+            queue_id=current.id,
+            patient_id=current.patient_id,
+            queue_type='blood_draw',
+            action='completed',
+            old_status='in_progress',
+            new_status='completed',
+            wait_time_seconds=wait_time,
+            service_time_seconds=service_time
+        )
+        db.add(log_entry)
+        db.delete(current)
+        db.commit()
+    
+    # Get next from reception
+    next_patient = db.query(Queue).filter(
+        Queue.queue_type == 'reception',
+        Queue.status == 'waiting'
+    ).order_by(Queue.priority.desc(), Queue.position).first()
+    
+    if not next_patient:
+        raise HTTPException(404, "No patients in reception queue")
+    
+    patient_id = next_patient.patient_id
+    quotation_id = next_patient.quotation_id
+    priority = next_patient.priority
+    
+    # Log reception completion
+    now = utc_now()
+    wait_time = calculate_time_diff(next_patient.created_at, now)
+    log_entry = QueueLog(
+        queue_id=next_patient.id,
+        patient_id=patient_id,
+        queue_type='reception',
+        action='completed',
+        old_status='waiting',
+        new_status='completed',
+        wait_time_seconds=wait_time
+    )
+    db.add(log_entry)
+    
+    db.delete(next_patient)
+    db.commit()
+    
+    # Create in blood_draw
+    new_item = Queue(
+        patient_id=patient_id,
+        quotation_id=quotation_id,
+        queue_type='blood_draw',
+        position=1,
+        priority=priority,
+        status='called',
+        called_at=now
+    )
+    db.add(new_item)
+    db.commit()
+    db.refresh(new_item)
+    
+    # Log call
+    log_action(db, new_item.id, patient_id, 'blood_draw', 'called', 
+               old_status=None, new_status='called', position=1)
+    
+    # Reorder queues
+    reorder_queue(db, 'reception')
+    reorder_queue(db, 'blood_draw')
+    db.refresh(new_item)
+    
+    # Enrich response
+    avg_time = get_avg_service_time(db, 'blood_draw')
+    enrich_queue_item(db, new_item, avg_time)
+    
+    return QueueOut.from_orm(new_item)
 
-    reception_summary = summarize_queue(QueueType.reception)
-    blood_draw_summary = summarize_queue(QueueType.blood_draw)
+@router.put("/{queue_id}/priority")
+def update_priority(queue_id: int, priority: int = Query(..., ge=0, le=2), 
+                   db: Session = Depends(get_db)):
+    """Update queue item priority"""
+    
+    item = db.query(Queue).filter(Queue.id == queue_id).first()
+    if not item:
+        raise HTTPException(404, "Queue item not found")
+    
+    old_priority = item.priority
+    old_position = item.position
+    item.priority = priority
+    db.commit()
+    
+    # Reorder
+    reorder_queue(db, item.queue_type)
+    db.refresh(item)
+    
+    # Log
+    log_action(db, queue_id, item.patient_id, item.queue_type, 'priority_changed',
+               notes=f"Priority changed from {old_priority} to {priority}")
+    
+    return {"success": True, "old_position": old_position, "new_position": item.position}
 
-    return JSONResponse({
-        "reception": reception_summary,
-        "blood_draw": blood_draw_summary,
-    })
+@router.delete("/{queue_id}", status_code=204)
+def remove_from_queue(queue_id: int, reason: str = Query("manual_removal"), 
+                     db: Session = Depends(get_db)):
+    """Remove patient from queue"""
+    
+    item = db.query(Queue).filter(Queue.id == queue_id).first()
+    if not item:
+        raise HTTPException(404, "Queue item not found")
+    
+    # Log removal
+    log_action(db, queue_id, item.patient_id, item.queue_type, 'removed',
+               old_status=item.status, notes=reason)
+    
+    queue_type = item.queue_type
+    db.delete(item)
+    db.commit()
+    
+    # Reorder
+    reorder_queue(db, queue_type)
+
+@router.get("/status", response_model=QueueStatusResponse)
+def get_queue_status(db: Session = Depends(get_db)):
+    """Get queue statistics"""
+    
+    def get_stats(queue_type: str) -> QueueStats:
+        waiting = db.query(func.count(Queue.id)).filter(
+            Queue.queue_type == queue_type, Queue.status == 'waiting'
+        ).scalar()
+        
+        called = db.query(func.count(Queue.id)).filter(
+            Queue.queue_type == queue_type, Queue.status == 'called'
+        ).scalar()
+        
+        in_progress = db.query(func.count(Queue.id)).filter(
+            Queue.queue_type == queue_type, Queue.status == 'in_progress'
+        ).scalar()
+        
+        urgent = db.query(func.count(Queue.id)).filter(
+            Queue.queue_type == queue_type,
+            Queue.status.in_(['waiting', 'called']),
+            Queue.priority > 0
+        ).scalar()
+        
+        avg_service = get_avg_service_time(db, queue_type)
+        avg_wait_min = avg_service // 60
+        estimated_total = (waiting * avg_service) // 60
+        
+        return QueueStats(
+            total_waiting=waiting,
+            total_called=called,
+            total_in_progress=in_progress,
+            urgent_count=urgent,
+            avg_wait_minutes=avg_wait_min,
+            estimated_total_wait=estimated_total
+        )
+    
+    return QueueStatusResponse(
+        reception=get_stats('reception'),
+        blood_draw=get_stats('blood_draw'),
+        last_updated=utc_now()
+    )
