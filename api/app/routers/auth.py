@@ -7,6 +7,8 @@ from typing import Optional
 from app.crud.user import get_user, get_all_users, add_user
 from app.models.user import User
 from app.models.user_session import UserSession  # Ensure this path is correct
+from app.schemas.profile import ProfileCreate  # Add this import
+from app.crud import profile as crud_profile  # Add this import
 from app.schemas.user import UserCreate, UserOut
 from fastapi import APIRouter
 from sqlalchemy.orm import Session
@@ -14,6 +16,7 @@ from app.database import get_db
 from fastapi import Request
 from app.utils.app_logging import _insert_log,log_route    # Ensure this path is correct
 import logging
+from sqlalchemy.exc import IntegrityError
 logger = logging.getLogger("uvicorn.error")
 
 SECRET_KEY = "test"
@@ -194,15 +197,44 @@ async def create_user(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create users")
     
-    # Check if username exists
-    if get_user(db, user.username):
-        raise HTTPException(status_code=400, detail="Username already exists")
-    
-    # Check if email exists
-    if db.query(User).filter(User.email == user.email).first():
-        raise HTTPException(status_code=400, detail="Email already exists")
+    try:
+        # Check if username exists
+        if get_user(db, user.username):
+            raise HTTPException(status_code=400, detail="Username already exists")
+        
+        # Check if email exists
+        if db.query(User).filter(User.email == user.email).first():
+            raise HTTPException(status_code=400, detail="Email already exists")
 
-    return add_user(db, user)
+        # Create user
+        new_user = add_user(db, user)
+        
+        # Create profile with user data
+        profile_data = ProfileCreate(
+            user_id=new_user.id,
+            full_name=user.full_name,
+            email=user.email,
+            role=user.role
+        )
+        crud_profile.create_profile(db, profile_data)
+        
+        return new_user
+        
+    except HTTPException:
+        # Re-raise HTTPExceptions (validation errors)
+        raise
+    except IntegrityError as e:
+        db.rollback()
+        # Handle database integrity errors (duplicate username/email at DB level)
+        if "username" in str(e.orig):
+            raise HTTPException(status_code=400, detail="Username already exists")
+        elif "email" in str(e.orig):
+            raise HTTPException(status_code=400, detail="Email already exists")
+        else:
+            raise HTTPException(status_code=400, detail="Database integrity error")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
 
 @router.get("/users/{user_id}")
 def read_user(user_id: int, db: Session = Depends(get_db)):
