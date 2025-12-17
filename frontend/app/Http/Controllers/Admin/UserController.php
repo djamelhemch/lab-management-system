@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use App\Services\ApiService;
 
 class UserController extends Controller
@@ -49,39 +50,80 @@ class UserController extends Controller
         return view('admin.users.create');
     }
 
-    public function store(Request $request)
-    {
-        $request->merge([
-            'status' => $request->input('status', 'active'),
-        ]);
+public function store(Request $request)
+{
+    $request->merge([
+        'status' => $request->input('status', 'active'),
+    ]);
 
-        $validated = $request->validate([
-            'username' => 'required|string|max:255',
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'role' => 'required|in:admin,biologist,technician,secretary,intern',
-            'password' => 'required|confirmed|min:8',
-            'status' => 'required|in:active,inactive',
-        ]);
+    $validator = Validator::make($request->all(), [
+        'username' => 'required|string|max:255',
+        'full_name' => 'required|string|max:255',
+        'email' => 'required|email',
+        'role' => 'required|in:admin,biologist,technician,secretary,intern',
+        'password' => 'required|confirmed|min:8',
+        'status' => 'required|in:active,inactive',
+    ]);
 
-        Log::info('Creating user', ['data' => $validated]);
-
-        try {
-            $response = $this->api->post('/users', $validated);
-
-            if ($response->successful()) {
-                Log::info('User created successfully');
-                return redirect()->route('admin.users.index')
-                    ->with('success', 'User created successfully');
-            }
-
-            Log::error('User creation failed', ['response' => $response->json()]);
-            return back()->withErrors($response->json()['detail'] ?? 'Creation failed');
-        } catch (\Exception $e) {
-            Log::error('User creation error', ['exception' => $e->getMessage()]);
-            return back()->with('error', 'Service unavailable');
+    // Return validation errors for AJAX
+    if ($validator->fails()) {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
         }
+        return back()->withErrors($validator)->withInput();
     }
+
+    $validated = $validator->validated();
+    Log::info('Creating user', ['data' => $validated]);
+
+    try {
+        $response = $this->api->post('/users', $validated);
+
+        if ($response->successful()) {
+            Log::info('User created successfully');
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User created successfully'
+                ]);
+            }
+            
+            return redirect()->route('admin.users.index')
+                ->with('success', 'User created successfully');
+        }
+
+        // Handle API errors
+        $errorData = $response->json();
+        $errorMessage = $errorData['detail'] ?? 'User creation failed';
+        
+        Log::error('User creation failed', ['response' => $errorData]);
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'error' => $errorMessage
+            ], 400);
+        }
+        
+        return back()->withInput()->with('error', $errorMessage);
+        
+    } catch (\Exception $e) {
+        Log::error('User creation error', ['exception' => $e->getMessage()]);
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Service unavailable. Please try again later.'
+            ], 503);
+        }
+        
+        return back()->withInput()->with('error', 'Service unavailable');
+    }
+}
 
     public function show($id)
     {
