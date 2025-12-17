@@ -102,81 +102,81 @@ class QueueController extends Controller
      * Move next patient from reception to blood draw
      */
     public function moveNext(Request $request)
-{
-    try {
-        Log::info('🔄 Move next called');
-        
-        $response = Http::timeout($this->timeout)
-            ->post("{$this->apiUrl}/queues/move-next");
-
-        Log::info('📥 Move next response', [
-            'status' => $response->status(),
-            'body' => $response->body()
-        ]);
-
-        if ($response->successful()) {
-            $data = $response->json();
+    {
+        try {
+            Log::info('🔄 Move next called');
             
-            Log::info('✅ Move next successful', ['data' => $data]);
-            
-            // Return JSON for AJAX requests
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Patient moved successfully',
-                    'id' => $data['id'] ?? null,
-                    'patient_id' => $data['patient_id'] ?? null,
+            $response = Http::timeout($this->timeout)
+                ->post("{$this->apiUrl}/queues/move-next");
+
+            Log::info('📥 Move next response', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                Log::info('✅ Move next successful', ['data' => $data]);
+                
+                // Return JSON for AJAX requests
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Patient moved successfully',
+                        'id' => $data['id'] ?? null,
+                        'patient_id' => $data['patient_id'] ?? null,
+                        'patient_name' => $data['patient_name'] ?? 'Patient',
+                        'position' => $data['position'] ?? 1,
+                        'queue_type' => $data['queue_type'] ?? 'blood_draw'
+                    ]);
+                }
+                
+                // Traditional redirect for non-AJAX
+                session()->flash('next_patient', [
+                    'id' => $data['id'],
+                    'patient_id' => $data['patient_id'],
                     'patient_name' => $data['patient_name'] ?? 'Patient',
-                    'position' => $data['position'] ?? 1,
-                    'queue_type' => $data['queue_type'] ?? 'blood_draw'
+                    'position' => $data['position']
                 ]);
+                
+                return redirect()
+                    ->route('queues.index')
+                    ->with('success', 'Patient moved to blood draw successfully');
             }
+
+            $error = $response->json()['detail'] ?? 'Failed to move patient';
             
-            // Traditional redirect for non-AJAX
-            session()->flash('next_patient', [
-                'id' => $data['id'],
-                'patient_id' => $data['patient_id'],
-                'patient_name' => $data['patient_name'] ?? 'Patient',
-                'position' => $data['position']
+            Log::error('❌ Move next failed', [
+                'error' => $error,
+                'response' => $response->body()
             ]);
             
-            return redirect()
-                ->route('queues.index')
-                ->with('success', 'Patient moved to blood draw successfully');
-        }
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $error
+                ], 400);
+            }
+            
+            return back()->withErrors($error);
 
-        $error = $response->json()['detail'] ?? 'Failed to move patient';
-        
-        Log::error('❌ Move next failed', [
-            'error' => $error,
-            'response' => $response->body()
-        ]);
-        
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => false,
-                'message' => $error
-            ], 400);
+        } catch (\Exception $e) {
+            Log::error('❌ Move next exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred'
+                ], 500);
+            }
+            
+            return back()->withErrors('An error occurred. Please try again.');
         }
-        
-        return back()->withErrors($error);
-
-    } catch (\Exception $e) {
-        Log::error('❌ Move next exception', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred'
-            ], 500);
-        }
-        
-        return back()->withErrors('An error occurred. Please try again.');
     }
-}
 
 
     /**
