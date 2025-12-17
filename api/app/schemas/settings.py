@@ -24,3 +24,5 @@ class SettingSchema(SettingBase):
     options: List[SettingOptionSchema] = []
     class Config:
         orm_mode = True
+class SettingOptionUpdate(BaseModel):
+    value: str

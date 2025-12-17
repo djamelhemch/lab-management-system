@@ -72,3 +72,16 @@ def get_default_option(db: Session, setting_name: str):
         models.SettingOption.is_default == True
     ).first()
 
+def update_option(db: Session, setting_id: int, option_id: int, option_update: schemas.SettingOptionUpdate):
+    """Update a setting option"""
+    option = db.query(models.SettingOption).filter(
+        models.SettingOption.id == option_id,
+        models.SettingOption.setting_id == setting_id
+    ).first()
+    
+    if option:
+        option.value = option_update.value
+        db.commit()
+        db.refresh(option)
+        return option
+    return None
