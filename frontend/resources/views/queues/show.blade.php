@@ -77,7 +77,7 @@
     {{-- Footer --}}
     <div class="marquee-container bg-red-500 text-white py-4">
         <div class="marquee-content text-xl font-semibold whitespace-nowrap">
-           L'ÉTABLISSEMENT "ABDELATIF LAB" LABORATOIRE D'ANALYSES DE SANG CONVENTIONNÉ AVEC LE LABORATOIRE CERBA EN FRANCE VOUS SOUHAITE LA BIENVENUE, LE LABORATOIRE EST OUVERT DU SAMEDI AU JEUDI DE 7H30 à 16H30. 
+           {{ $marqueeText }}
         </div>
     </div>
     

@@ -53,7 +53,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-800">{{ ucfirst($setting['name']) }}</h2>
+                        <h2 class="text-lg font-semibold text-gray-800">{{ ucfirst(str_replace('_', ' ', $setting['name'])) }}</h2>
                         <p class="text-sm text-gray-500">Setting ID: {{ $setting['id'] }}</p>
                     </div>
                 </div>
@@ -71,76 +71,138 @@
 
             {{-- Collapsible Content --}}
             <div x-show="open" x-collapse class="border-t border-gray-100 p-6 bg-gray-50">
-                {{-- Options --}}
-                <div class="space-y-3 mb-6">
+                
+                @if($setting['name'] === 'marquee_banner')
+                    {{-- Special handling for marquee banner - inline edit --}}
                     @foreach($setting['options'] as $option)
-                        <div class="flex flex-col md:flex-row md:items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-[#bc1622]/40 transition">
-                            <span class="font-medium text-gray-800">
-                                {{ $option['value'] }}
-                                @if($option['is_default'])
-                                    <span class="ml-2 text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                        Default
-                                    </span>
-                                @endif
-                            </span>
+                        @if($option['is_default'])
+                            <div x-data="{ editing: false }" class="space-y-4">
+                                {{-- Display Mode --}}
+                                <div x-show="!editing">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Current Banner Text</label>
+                                    <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                                        <p class="text-gray-800">{{ $option['value'] }}</p>
+                                    </div>
+                                    <button @click="editing = true" type="button"
+                                        class="mt-3 flex items-center px-4 py-2 bg-[#bc1622] text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                </div>
 
-                            <div class="flex space-x-2 mt-2 md:mt-0">
-                                {{-- Set Default --}}
-                                @if(!$option['is_default'])
-                                    <form method="POST" action="{{ route('admin.settings.setDefault', [$setting['id'], $option['id']]) }}">
+                                {{-- Edit Mode --}}
+                                <div x-show="editing">
+                                    <form method="POST" action="{{ route('admin.settings.update') }}">
                                         @csrf
-                                        @method('PUT')
+                                        <input type="hidden" name="setting_id" value="{{ $setting['id'] }}">
+                                        <input type="hidden" name="option_id" value="{{ $option['id'] }}">
+                                        
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Edit Banner Text</label>
+                                        <textarea 
+                                            name="marquee_text" 
+                                            rows="4"
+                                            required
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#bc1622] focus:border-[#bc1622] transition-colors resize-none"
+                                        >{{ $option['value'] }}</textarea>
+                                        
+                                        <div class="flex gap-2 mt-3">
+                                            <button type="submit"
+                                                class="flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                                Save
+                                            </button>
+                                            <button @click="editing = false" type="button"
+                                                class="flex items-center px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                @else
+                    {{-- Regular settings with add/delete options --}}
+                    <div class="space-y-3 mb-6">
+                        @foreach($setting['options'] as $option)
+                            <div class="flex flex-col md:flex-row md:items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-[#bc1622]/40 transition">
+                                <span class="font-medium text-gray-800">
+                                    {{ $option['value'] }}
+                                    @if($option['is_default'])
+                                        <span class="ml-2 text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                            Default
+                                        </span>
+                                    @endif
+                                </span>
+
+                                <div class="flex space-x-2 mt-2 md:mt-0">
+                                    {{-- Set Default --}}
+                                    @if(!$option['is_default'])
+                                        <form method="POST" action="{{ route('admin.settings.setDefault', [$setting['id'], $option['id']]) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit"
+                                                class="flex items-center px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                                Set Default
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    {{-- Delete --}}
+                                    <form method="POST" action="{{ route('admin.settings.deleteOption', $option['id']) }}">
+                                        @csrf
+                                        @method('DELETE')
                                         <button type="submit"
-                                            class="flex items-center px-3 py-1.5 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                                            class="flex items-center px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
                                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M5 13l4 4L19 7"/>
+                                                      d="M6 18L18 6M6 6l12 12"/>
                                             </svg>
-                                            Set Default
+                                            Delete
                                         </button>
                                     </form>
-                                @endif
-
-                                {{-- Delete --}}
-                                <form method="POST" action="{{ route('admin.settings.deleteOption', $option['id']) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="flex items-center px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </form>
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
-                </div>
+                        @endforeach
+                    </div>
 
-                {{-- Add New Option --}}
-                <form method="POST" action="{{ route('admin.settings.addOption', $setting['id']) }}" class="flex flex-col md:flex-row md:items-center md:space-x-3 space-y-3 md:space-y-0">
-                    @csrf
-                    <input type="text" name="value" placeholder="Enter new option..."
-                           class="flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-[#bc1622] focus:border-[#bc1622] p-2"
-                           required>
+                    {{-- Add New Option --}}
+                    <form method="POST" action="{{ route('admin.settings.addOption', $setting['id']) }}" class="flex flex-col md:flex-row md:items-center md:space-x-3 space-y-3 md:space-y-0">
+                        @csrf
+                        <input type="text" name="value" placeholder="Enter new option..."
+                               class="flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-[#bc1622] focus:border-[#bc1622] p-2"
+                               required>
 
-                    <label class="flex items-center space-x-2">
-                        <input type="checkbox" name="is_default" value="1"
-                               class="rounded border-gray-300 text-[#bc1622] focus:ring-[#bc1622]">
-                        <span class="text-sm text-gray-700">Set as default</span>
-                    </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="is_default" value="1"
+                                   class="rounded border-gray-300 text-[#bc1622] focus:ring-[#bc1622]">
+                            <span class="text-sm text-gray-700">Set as default</span>
+                        </label>
 
-                    <button type="submit"
-                            class="flex items-center justify-center px-5 py-2 bg-[#bc1622] text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 4v16m8-8H4"/>
-                        </svg>
-                        Add Option
-                    </button>
-                </form>
+                        <button type="submit"
+                                class="flex items-center justify-center px-5 py-2 bg-[#bc1622] text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Add Option
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
         @endforeach

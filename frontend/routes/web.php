@@ -111,13 +111,20 @@ Route::middleware(['auth.api', 'admin'])
         Route::resource('users', UserController::class);
         Route::get('logs', [LogsController::class, 'index'])->name('logs');
 
-        // Settings routes
+          // Settings routes
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])
             ->name('settings.index');
+
+        Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])
+            ->name('settings.update');
+
         Route::post('/settings/{id}/options', [\App\Http\Controllers\Admin\SettingsController::class, 'addOption'])
             ->name('settings.addOption');
+
         Route::delete('/settings/options/{id}', [\App\Http\Controllers\Admin\SettingsController::class, 'deleteOption'])
             ->name('settings.deleteOption');
+
         Route::put('/settings/{id}/options/{optionId}/default', [\App\Http\Controllers\Admin\SettingsController::class, 'setDefault'])
             ->name('settings.setDefault');
+
     });

@@ -259,33 +259,40 @@ class QueueController extends Controller
      * Display waiting room screen
      */
     public function show()
-{
-    try {
-        $queuesResponse = Http::timeout($this->timeout)
-            ->get("{$this->apiUrl}/queues");
+    {
+        try {
+            $queuesResponse = Http::timeout($this->timeout)
+                ->get("{$this->apiUrl}/queues");
 
-        $statusResponse = Http::timeout($this->timeout)
-            ->get("{$this->apiUrl}/queues/status");
+            $statusResponse = Http::timeout($this->timeout)
+                ->get("{$this->apiUrl}/queues/status");
+            
+            // Get marquee banner default option
+            $marqueeResponse = Http::timeout($this->timeout)
+                ->get("{$this->apiUrl}/settings/default/marquee_banner");
 
-        $queues = $queuesResponse->successful() ? $queuesResponse->json() : ['reception' => [], 'blood_draw' => []];
-        $status = $statusResponse->successful() ? $statusResponse->json() : null;
+            $queues = $queuesResponse->successful() ? $queuesResponse->json() : ['reception' => [], 'blood_draw' => []];
+            $status = $statusResponse->successful() ? $statusResponse->json() : null;
+            $marqueeText = $marqueeResponse->successful() 
+                ? $marqueeResponse->json()['value'] 
+                : "L'ÉTABLISSEMENT \"ABDELATIF LAB\" LABORATOIRE D''ANALYSES DE SANG CONVENTIONNÉ AVEC LE LABORATOIRE CERBA EN FRANCE VOUS SOUHAITE LA BIENVENUE, LE LABORATOIRE EST OUVERT DU SAMEDI AU JEUDI DE 7H30 à 16H30.";
 
-        // 
-        return view('queues.show', [
-            'bloodDrawQueue' => $queues['blood_draw'] ?? [],
-            'status' => $status
-        ]);
+            return view('queues.show', [
+                'bloodDrawQueue' => $queues['blood_draw'] ?? [],
+                'status' => $status,
+                'marqueeText' => $marqueeText
+            ]);
 
-    } catch (\Exception $e) {
-        Log::error('Waiting room display error', ['error' => $e->getMessage()]);
-        
-        // Fix: Change here too
-        return view('queues.show', [
-            'bloodDrawQueue' => [],
-            'status' => null
-        ]);
+        } catch (\Exception $e) {
+            Log::error('Waiting room display error', ['error' => $e->getMessage()]);
+            
+            return view('queues.show', [
+                'bloodDrawQueue' => [],
+                'status' => null,
+                'marqueeText' => "L'ÉTABLISSEMENT \"ABDELATIF LAB\" LABORATOIRE D''ANALYSES DE SANG CONVENTIONNÉ AVEC LE LABORATOIRE CERBA EN FRANCE VOUS SOUHAITE LA BIENVENUE, LE LABORATOIRE EST OUVERT DU SAMEDI AU JEUDI DE 7H30 à 16H30."
+            ]);
+        }
     }
-}
 
     /**
      * Get queue status (AJAX endpoint)
