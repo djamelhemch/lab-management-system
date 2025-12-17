@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.lab_formulas import LabFormula
 from pydantic import BaseModel
 from app.routers.auth import get_current_user
-from app.utils.logging import log_action, log_route  
+from app.utils.app_logging import log_action, log_route  
 from app.models.user import User
 router = APIRouter(prefix="/lab-formulas", tags=["Lab Formulas"])
 

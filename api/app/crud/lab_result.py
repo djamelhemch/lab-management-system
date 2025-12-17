@@ -4,7 +4,8 @@ from app.models.quotation import Quotation, QuotationItem
 from app.models.analysis import AnalysisCatalog, NormalRange, Unit
 from app.models.patient import Patient
 from app.models.lab_device import LabDevice as Device
-from app.schemas.lab_result import LabResultCreate
+
+from app.schemas.lab_result import LabResultCreate, BulkLabResultCreate
 from datetime import date
 from typing import Optional
 import logging
@@ -16,18 +17,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def compute_interpretation(result_value: float, normal_range: Optional[NormalRange]) -> str:
-    """Determines if the result value is low, normal, or high based on normal range."""
-    if not normal_range:
-        return "n/a"
-    try:
-        value = float(result_value)
-    except (ValueError, TypeError):
-        return "n/a"
 
-    if normal_range.normal_min is not None and value < normal_range.normal_min:
+def compute_interpretation(value: Optional[float], normal_min: Optional[float], normal_max: Optional[float]) -> str:
+    if value is None or normal_min is None or normal_max is None:
+        return "n/a"
+    if value < 0.5 * normal_min or value > 1.5 * normal_max:
+        return "critical"
+    if value < normal_min:
         return "low"
-    if normal_range.normal_max is not None and value > normal_range.normal_max:
+    if value > normal_max:
         return "high"
     return "normal"
 
@@ -41,86 +39,71 @@ def calculate_age(dob: date):
     months = (today.year - dob.year) * 12 + today.month - dob.month
     return years, months
 
-
-def create_lab_result(db: Session, data):
-    logging.info(f"🧪 Creating lab result for quotation_item_id={data.quotation_item_id}")
-
-    quotation_item = db.query(QuotationItem).filter(QuotationItem.id == data.quotation_item_id).first()
-    if not quotation_item:
-        raise ValueError("Quotation item not found")
-    logging.debug(f"Quotation item found → analysis_id={quotation_item.analysis_id}, quotation_id={quotation_item.quotation_id}")
-
-    quotation = db.query(Quotation).filter(Quotation.id == quotation_item.quotation_id).first()
-    if not quotation:
-        raise ValueError("Quotation not found")
-    logging.debug(f"Quotation found → patient_id={quotation.patient_id}")
-
-    patient = db.query(Patient).filter(Patient.id == quotation.patient_id).first()
-    if not patient:
-        raise ValueError("Patient not found")
-
-    # Normalize gender
-    g = (patient.gender or "").strip().upper()
-    if g in ["H", "M"]:
-        sex = "M"
-    elif g == "F":
-        sex = "F"
-    else:
-        sex = "All"
-
-    # Calculate age
-    age_years, age_months = calculate_age(patient.dob)
-    logging.debug(f"Patient → name={patient.first_name} {patient.last_name}, gender={g}, normalized={sex}, age={age_years} years ({age_months} months)")
-
-    analysis = db.query(AnalysisCatalog).filter(AnalysisCatalog.id == quotation_item.analysis_id).first()
-    if not analysis:
-        raise ValueError("Analysis not found")
-    logging.debug(f"Analysis → id={analysis.id}, name={analysis.name}, device_id={analysis.device_id}, unit_id={analysis.unit_id}")
-
-    # Resolve device name
-    device_name = None
+def resolve_device_name(db: Session, analysis: AnalysisCatalog):
+    """Return device name from analysis.device_id if available"""
     if analysis.device_id:
         try:
-            device = db.query(Device).filter(Device.id == int(analysis.device_id)).first()
-            device_name = device.name if device else None
+            # If it's a numeric ID pointing to Device table
+            device_id = int(analysis.device_id)
+            device = db.query(Device).filter(Device.id == device_id).first()
+            return device.name if device else None
         except ValueError:
-            device_name = analysis.device_id
-    logging.debug(f"✅ Device resolved → {device_name}")
+            # If it's a text name
+            return analysis.device_id
+    return None
 
-    # Try to find a normal range match
+# === SINGLE LAB RESULT ===
+def create_lab_result(db: Session, data: LabResultCreate):
+    """Create a single lab result"""
+    quotation_item = db.query(QuotationItem).filter(
+        QuotationItem.id == data.quotation_item_id
+    ).first()
+    if not quotation_item:
+        raise ValueError("Quotation item not found")
+
+    analysis = quotation_item.analysis
+    if not analysis:
+        raise ValueError("Analysis not found")
+
+    quotation = quotation_item.quotation
+    if not quotation or not quotation.patient:
+        raise ValueError("Quotation or patient not found")
+    patient = quotation.patient
+
+    # Normalize sex
+    g = (patient.gender or "").strip().upper()
+    sex = "M" if g in ["H", "M"] else ("F" if g == "F" else "All")
+    age_years, _ = calculate_age(patient.dob)
+
+    # Resolve normal range
     normal_range = (
         db.query(NormalRange)
         .filter(
-            NormalRange.analysis_id == quotation_item.analysis_id,
+            NormalRange.analysis_id == analysis.id,
             ((NormalRange.sex_applicable == sex) | (NormalRange.sex_applicable == "All")),
-            ((NormalRange.age_min == None) | (age_years is None) | (age_years >= NormalRange.age_min)),
-            ((NormalRange.age_max == None) | (age_years is None) | (age_years <= NormalRange.age_max)),
+            ((NormalRange.age_min == None) | (age_years >= NormalRange.age_min)),
+            ((NormalRange.age_max == None) | (age_years <= NormalRange.age_max)),
         )
         .first()
     )
 
-    # Fallback if none found — try "All" ranges only
     if not normal_range:
         normal_range = (
             db.query(NormalRange)
             .filter(
-                NormalRange.analysis_id == quotation_item.analysis_id,
+                NormalRange.analysis_id == analysis.id,
                 NormalRange.sex_applicable == "All",
             )
             .first()
         )
-        if normal_range:
-            logging.debug("🩸 Used fallback 'All' normal range")
-        else:
-            logging.warning("⚠️ No normal range found for this patient and analysis")
-
-    normal_min = normal_range.normal_min if normal_range else None
-    normal_max = normal_range.normal_max if normal_range else None
 
     # Determine interpretation
+    result_value = data.result_value
+    normal_min = normal_range.normal_min if normal_range else None
+    normal_max = normal_range.normal_max if normal_range else None
     interpretation = "n/a"
     try:
-        value = float(data.result_value)
+        value = float(result_value)
         if normal_min is not None and normal_max is not None:
             if value < 0.5 * normal_min or value > 1.5 * normal_max:
                 interpretation = "critical"
@@ -130,31 +113,131 @@ def create_lab_result(db: Session, data):
                 interpretation = "high"
             else:
                 interpretation = "normal"
-        else:
-            logging.warning("⚠️ Cannot interpret result → missing normal range bounds")
-    except (TypeError, ValueError):
-        logging.warning("⚠️ Invalid result value, cannot interpret")
+    except:
+        interpretation = "n/a"
 
-    result = LabResult(
-        quotation_id=quotation_item.quotation_id,
-        quotation_item_id=data.quotation_item_id,
+    # Resolve device
+    device_name = resolve_device_name(db, analysis)
+
+    # Save result
+    lab_result = LabResult(
+        quotation_id=quotation.id,
+        quotation_item_id=quotation_item.id,
         normal_range_id=normal_range.id if normal_range else None,
-        result_value=data.result_value,
+        result_value=result_value,
         interpretation=interpretation,
-        status="final",
         device_name=device_name,
         normal_min=normal_min,
         normal_max=normal_max,
+        status="final",
         created_at=datetime.utcnow(),
     )
-
-    db.add(result)
+    db.add(lab_result)
     db.commit()
-    db.refresh(result)
+    db.refresh(lab_result)
 
-    logging.info(f"✅ Lab result created successfully → id={result.id}, interpretation={result.interpretation}")
-    return result
+    return lab_result
 
+
+def create_lab_results_for_quotation(db: Session, quotation_id: int, result_values: dict):
+    """Create lab results for all analyses inside a quotation"""
+    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+    if not quotation or not quotation.patient:
+        raise ValueError("Quotation or patient not found")
+    patient = quotation.patient
+
+    # Normalize sex
+    g = (patient.gender or "").strip().upper()
+    sex = "M" if g in ["H", "M"] else ("F" if g == "F" else "All")
+    age_years, _ = calculate_age(patient.dob)
+
+    created_results = []
+    missing_items = []
+
+    for item in quotation.analysis_items:
+        analysis = item.analysis
+        if not analysis:
+            continue
+
+        # Get result value
+        result_value = result_values.get(item.id)
+        try:
+            value = float(result_value) if result_value is not None else None
+        except ValueError:
+            value = None
+
+        interpretation = compute_interpretation(value, normal_range.normal_min if normal_range else None,
+                                                normal_range.normal_max if normal_range else None)
+
+        # Resolve normal range
+        normal_range = (
+            db.query(NormalRange)
+            .filter(
+                NormalRange.analysis_id == analysis.id,
+                ((NormalRange.sex_applicable == sex) | (NormalRange.sex_applicable == "All")),
+                ((NormalRange.age_min == None) | (age_years >= NormalRange.age_min)),
+                ((NormalRange.age_max == None) | (age_years <= NormalRange.age_max)),
+            )
+            .first()
+        )
+        if not normal_range:
+            normal_range = (
+                db.query(NormalRange)
+                .filter(
+                    NormalRange.analysis_id == analysis.id,
+                    NormalRange.sex_applicable == "All",
+                )
+                .first()
+            )
+
+        # Interpretation
+        normal_min = normal_range.normal_min if normal_range else None
+        normal_max = normal_range.normal_max if normal_range else None
+        interpretation = "n/a"
+        try:
+            value = float(result_value)
+            if normal_min is not None and normal_max is not None:
+                if value < 0.5 * normal_min or value > 1.5 * normal_max:
+                    interpretation = "critical"
+                elif value < normal_min:
+                    interpretation = "low"
+                elif value > normal_max:
+                    interpretation = "high"
+                else:
+                    interpretation = "normal"
+        except:
+            interpretation = "n/a"
+
+        # Resolve device
+        device_name = resolve_device_name(db, analysis)
+
+        # Save result
+        lab_result = LabResult(
+            quotation_id=quotation.id,
+            quotation_item_id=item.id,
+            normal_range_id=normal_range.id if normal_range else None,
+            result_value=result_value,
+            interpretation=interpretation,
+            device_name=device_name,
+            normal_min=normal_min,
+            normal_max=normal_max,
+            status="final",
+            created_at=datetime.utcnow(),
+        )
+        db.add(lab_result)
+        created_results.append(lab_result)
+
+    db.commit()
+    for r in created_results:
+        db.refresh(r)
+
+    if missing_items:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Missing quotation items: {missing_items}"
+        )
+
+    return created_results
 
 def get_lab_result(db: Session, result_id: int):
     result = (

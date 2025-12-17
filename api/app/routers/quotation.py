@@ -9,7 +9,7 @@ from typing import List, Optional
 import math
 from app.crud.quotation import get_revenue_stats
 from app.routers.auth import get_current_user  # Add this import
-from app.utils.logging import log_route  # Import the logging decorator
+from app.utils.app_logging import log_route  # Import the logging decorator
 from app.models.user import User  # Import User model for current_user dependency
 from app.models.patient import Patient  # Import Patient model for search
 router = APIRouter(prefix="/quotations", tags=["Quotations"])

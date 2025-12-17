@@ -12,7 +12,7 @@ from app.models.doctor import Doctor
 from app.models.sample import Sample
 from app.models.quotation import Quotation  
 from app.models.queue import Queue, QueueLog
-from app.schemas.queue import QueueCreate, QueueUpdate, QueueOut, QueuesResponse, QueueStats, QueueStatusResponse
+from app.schemas.queue import QueueCreate, QueueUpdate, QueueOut, QueuesResponse, QueueStats, QueueStatusResponse, QueueType
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 

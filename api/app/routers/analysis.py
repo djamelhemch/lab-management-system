@@ -9,7 +9,7 @@ from app.schemas.analysis import CategoryAnalyseCreate, CategoryAnalyseResponse,
 from app.crud.partial_analysis import category_analyse_crud, sample_type_crud, unit_crud
 from app.models.user import User
 from app.routers.auth import get_current_user
-from app.utils.logging import log_action, log_route  # Add this import, adjust path if needed
+from app.utils.app_logging import log_action, log_route  # Add this import, adjust path if needed
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

@@ -14,7 +14,7 @@ from datetime import date
 from typing import Optional
 from app.routers.auth import get_current_user
 import logging
-from app.utils.logging import log_action, log_route
+from app.utils.app_logging import log_action, log_route
 from app.models.lab_result import LabResult
 from app.models.quotation import Quotation, QuotationItem
 from app.models.analysis import AnalysisCatalog, CategoryAnalyse, Unit

@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from sqlalchemy.orm import Session
 from app.database import get_db
 from fastapi import Request
-from app.utils.logging import _insert_log,log_route    # Ensure this path is correct
+from app.utils.app_logging import _insert_log,log_route    # Ensure this path is correct
 import logging
 logger = logging.getLogger("uvicorn.error")
 

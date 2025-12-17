@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator, root_validator, ConfigDict
+from typing import Dict, Union
 from typing import Optional
 from datetime import datetime
 
@@ -27,3 +28,7 @@ class LabResultResponse(LabResultBase):
     analysis_name: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+class BulkLabResultCreate(BaseModel):
+    quotation_id: int
+    result_values: Dict[int, Union[float, str]]   
