@@ -446,6 +446,13 @@
 </audio>
 
 <script>
+    window.routes = {
+        moveNext: @json(route('queues.moveNext')),
+        queuesIndex: @json(route('queues.index'))
+    };
+</script>
+
+<script>
 const audio = document.getElementById('notification-sound');
 
 // Override pause() to log who's calling it
@@ -526,12 +533,12 @@ document.getElementById('moveNextForm')?.addEventListener('submit', function(e) 
     }
     
     // Call API
-    fetch('{{ route("queues.moveNext") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
+    fetch(window.routes.moveNext, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        'Accept': 'application/json'
         }
     })
     .then(response => response.json())
@@ -600,7 +607,7 @@ document.getElementById('moveNextForm')?.addEventListener('submit', function(e) 
 function refreshQueues() {
     console.log('🔄 Actualisation des files...');
     
-    fetch('{{ route("queues.index") }}', {
+    fetch(window.routes.queuesIndex, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'text/html'
