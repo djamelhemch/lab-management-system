@@ -18,7 +18,7 @@ class ProfileCreate(ProfileBase):
     user_id: int
 
 class ProfileUpdate(ProfileBase):
-    pass
+    photo_url: Optional[str] = None
 
 class ProfileResponse(BaseModel):
     id: int

@@ -31,30 +31,16 @@ def create_profile(db: Session, profile_in: ProfileCreate) -> Profile:
     return db_profile
 
 
-def update_profile(db: Session, user_id: int, updates: ProfileUpdate) -> Profile:
-    """
-    Updates an existing Profile ORM object, or creates one if it doesn't exist.
-    """
-    db_profile = get_profile(db, user_id)
-    allowed_fields = {c.name for c in Profile.__table__.columns}
+def update_profile(db: Session, user_id: int, updates: ProfileUpdate):
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+    if not profile:
+        return None
+
     update_data = updates.model_dump(exclude_unset=True)
 
-    if not db_profile:
-        # Create new profile if it doesn't exist
-        update_data["user_id"] = user_id
-        db_profile = Profile(**{k: v for k, v in update_data.items() if k in allowed_fields})
-        db.add(db_profile)
-    else:
-        # Update only allowed fields
-        for key, value in update_data.items():
-            if key in allowed_fields:
-                setattr(db_profile, key, value)
+    for key, value in update_data.items():
+        setattr(profile, key, value)
 
     db.commit()
-    db.refresh(db_profile)
-
-    # Attach email dynamically
-    user = db.query(User).filter(User.id == db_profile.user_id).first()
-    db_profile.email = user.email if user else None
-
-    return db_profile
+    db.refresh(profile)
+    return profile

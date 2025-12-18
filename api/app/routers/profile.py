@@ -3,6 +3,7 @@ import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from fastapi.staticfiles import StaticFiles
 from types import SimpleNamespace
+from app.schemas.profile import ProfileUpdate
 
 from sqlalchemy.orm import Session
 from app.schemas.profile import ProfileResponse, ProfileCreate, ProfileUpdate
@@ -20,8 +21,8 @@ router = APIRouter(prefix="/profiles", tags=["Profiles"])
 UPLOAD_DIR = "uploads/profile_photos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Serve uploaded files
-router.mount("/static", StaticFiles(directory=UPLOAD_DIR), name="static")
+# file_path is constructed per-upload inside the upload_profile_photo endpoint,
+# so the top-level filename variable is not defined and this line is removed.
 
 
 @router.get("/{user_id}", response_model=ProfileResponse)
@@ -65,15 +66,18 @@ async def upload_profile_photo(
 
     ext = os.path.splitext(file.filename)[1]
     filename = f"user_{current_user.id}{ext}"
-    upload_dir = "static"  # make sure this folder exists
-    os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, filename)
+
+    file_path = os.path.join(UPLOAD_DIR, filename)
 
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     # Update profile in DB
-    profile = crud_profile.update_profile(db, current_user.id, {"photo_url": filename})
+    profile = crud_profile.update_profile(
+    db,
+    current_user.id,
+    ProfileUpdate(photo_url=filename)
+)
 
     # Build full URL dynamically
     base_url = str(request.base_url).rstrip("/")
