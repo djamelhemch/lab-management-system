@@ -270,9 +270,13 @@ class QueueController extends Controller
             // Get marquee banner default option
             $marqueeResponse = Http::timeout($this->timeout)
                 ->get("{$this->apiUrl}/settings/default/marquee_banner");
-
+            $videoResponse = Http::timeout($this->timeout)
+                ->get("{$this->apiUrl}/settings/default/queue_video");
             $queues = $queuesResponse->successful() ? $queuesResponse->json() : ['reception' => [], 'blood_draw' => []];
             $status = $statusResponse->successful() ? $statusResponse->json() : null;
+            $videoSrc = $videoResponse->successful()
+                ? $videoResponse->json()['value']
+                : '/videos/lab_video.mp4';
             $marqueeText = $marqueeResponse->successful() 
                 ? $marqueeResponse->json()['value'] 
                 : "L'ÉTABLISSEMENT \"ABDELATIF LAB\" LABORATOIRE D''ANALYSES DE SANG CONVENTIONNÉ AVEC LE LABORATOIRE CERBA EN FRANCE VOUS SOUHAITE LA BIENVENUE, LE LABORATOIRE EST OUVERT DU SAMEDI AU JEUDI DE 7H30 à 16H30.";
@@ -280,7 +284,8 @@ class QueueController extends Controller
             return view('queues.show', [
                 'bloodDrawQueue' => $queues['blood_draw'] ?? [],
                 'status' => $status,
-                'marqueeText' => $marqueeText
+                'marqueeText' => $marqueeText,
+                'videoSrc' => $videoSrc,
             ]);
 
         } catch (\Exception $e) {

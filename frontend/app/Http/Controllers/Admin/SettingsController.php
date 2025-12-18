@@ -17,18 +17,53 @@ class SettingsController extends Controller
     {
         $this->api = $api;
     }
-
     public function index()
-    {
-        $response = $this->api->get('/settings');
+{
+    $response = $this->api->get('/settings');
 
-        if (!$response->ok()) {
-            return back()->with('error', 'Failed to fetch settings.');
-        }
-
-        $settings = $response->json();
-        return view('admin.settings.index', compact('settings'));
+    if (!$response->ok()) {
+        return back()->with('error', 'Failed to fetch settings.');
     }
+
+    $settings = $response->json();
+
+    // Grouping logic
+    $grouped = [
+        'general' => [],
+        'queue' => [],
+        'other' => [],
+    ];
+
+    foreach ($settings as $setting) {
+        switch ($setting['name']) {
+            case 'marquee_banner':
+            case 'queue_video':
+                $grouped['queue'][] = $setting;
+                break;
+
+            case 'currency':
+                $grouped['general'][] = $setting;
+                break;
+
+            default:
+                $grouped['other'][] = $setting;
+                break;
+        }
+    }
+
+    // Labels for groups
+    $groupLabels = [
+        'queue'   => 'Queue settings',
+        'general' => 'General settings',
+        'other'   => 'Other settings',
+    ];
+
+    return view('admin.settings.index', [
+        'groupedSettings' => $grouped,
+        'groupLabels'     => $groupLabels,
+    ]);
+}
+
 
     public function addOption(Request $request, $id)
     {
@@ -96,4 +131,53 @@ class SettingsController extends Controller
             return back()->with('error', 'Service unavailable');
         }
     }
+    public function updateVideo(Request $request)
+{
+    $request->validate([
+        'setting_id' => 'required|integer',
+        'option_id'  => 'required|integer',
+        'video'      => 'required|file|mimetypes:video/mp4|max:51200', // 50MB
+    ]);
+
+    try {
+        $file = $request->file('video');
+
+        // 1. Delete any existing queue videos
+        //    (all mp4 files in videos/queue/ for example)
+        $disk = \Storage::disk('public'); // storage/app/public
+        $directory = 'videos/queue';
+        $existingFiles = $disk->files($directory);
+        foreach ($existingFiles as $existing) {
+            // delete only .mp4 files
+            if (strtolower(pathinfo($existing, PATHINFO_EXTENSION)) === 'mp4') {
+                $disk->delete($existing);
+            }
+        }
+
+        // 2. Store new video with its original name
+        $originalName = $file->getClientOriginalName(); // e.g. my_video.mp4
+        $path = $file->storeAs($directory, $originalName, 'public'); // videos/queue/my_video.mp4
+
+        // 3. Build public URL
+        // make sure you ran: php artisan storage:link
+        $publicUrl = asset('storage/' . $path);
+
+        // 4. Update FastAPI setting option value
+        $response = $this->api->put("/settings/{$request->setting_id}/options/{$request->option_id}", [
+            'value' => $publicUrl,
+        ]);
+
+        if (!$response->ok()) {
+            return back()->with('error', 'Failed to update queue video setting.');
+        }
+
+        return back()->with('success', 'Queue video updated successfully.');
+
+    } catch (\Exception $e) {
+        Log::error('Queue video update error', ['error' => $e->getMessage()]);
+        return back()->with('error', 'Service unavailable');
+    }
+}
+
+
 }

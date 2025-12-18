@@ -45,7 +45,7 @@
         {{-- Left: Video --}}
         <div class="flex-grow mr-16 max-w-[1380px]">
             <video autoplay loop muted playsinline class="lab-video">
-                <source src="/videos/lab_video.mp4" type="video/mp4">
+                <source src="{{ $videoSrc }}" type="video/mp4">
                 Votre navigateur ne supporte pas la lecture vidéo.
             </video>
         </div>
