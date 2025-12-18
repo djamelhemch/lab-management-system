@@ -442,7 +442,7 @@
 
 {{-- Audio for notifications --}}
 <audio id="notification-sound" preload="auto">
-    <source src="/audio/notify.mp3" type="audio/mpeg">
+    <source src="{{ asset('audio/notify.mp3') }}" type="audio/mpeg">
 </audio>
 
 <script>
@@ -533,7 +533,7 @@ document.getElementById('moveNextForm')?.addEventListener('submit', function(e) 
     }
     
     // Call API
-    fetch(window.routes.moveNext, {
+    fetch('/queues/move-next', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
