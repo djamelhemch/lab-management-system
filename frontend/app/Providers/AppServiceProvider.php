@@ -17,8 +17,14 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    public function boot(): void
+    public function boot(SettingService $settings): void
     {
+        $logoUrl = $settings->get('logo', asset('/images/logo_lab.PNG'));
+
+        // available in ALL views
+        View::share('logoUrl', $logoUrl);
+
+       
         View::composer('*', function ($view) {
             $authUser = null;
             $currency = 'DZD'; // ✅ fallback default currency

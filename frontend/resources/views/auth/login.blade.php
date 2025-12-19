@@ -9,7 +9,7 @@
     <div class="flex flex-col items-center mb-8">
         <div class="w-24 h-24 mb-4 rounded-full bg-gradient-to-br from-red-500 to-rose-600 p-1 shadow-lg">
             <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                <img src="{{ asset('images/logo_lab.png') }}" 
+                <img src="{{ $logoUrl }}" 
                      alt="Abdelatif Lab Logo" 
                      class="w-20 h-20 object-contain">
             </div>

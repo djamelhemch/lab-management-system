@@ -4,7 +4,7 @@
 <div id="sidebar" class="bg-white w-64 flex flex-col space-y-6 py-7 px-2 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out z-50 shadow-2xl md:shadow-none">
     <div class="flex items-center justify-between px-4 mb-2">
         <a href="#" class="logo-link">
-            <img src="/images/logo_lab.PNG" alt="Abdelatif Lab" class="logo-img">
+            <img src="{{ $logoUrl }}" alt="Abdelatif Lab" class="logo-img">
         </a>
         <button id="closeSidebar" class="md:hidden text-gray-600 focus:outline-none">
             <i class="fas fa-times text-xl"></i>

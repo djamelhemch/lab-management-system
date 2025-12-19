@@ -120,6 +120,9 @@ Route::middleware(['auth.api', 'admin'])
 
         Route::post('/settings/video/update', [\App\Http\Controllers\Admin\SettingsController::class, 'updateVideo'])
             ->name('settings.updateVideo');
+
+        Route::post('/settings/logo/update', [\App\Http\Controllers\Admin\SettingsController::class, 'updateLogo'])
+            ->name('settings.updateLogo');
             
         Route::post('/settings/{id}/options', [\App\Http\Controllers\Admin\SettingsController::class, 'addOption'])
             ->name('settings.addOption');

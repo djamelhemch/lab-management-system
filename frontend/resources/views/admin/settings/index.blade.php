@@ -2,13 +2,6 @@
 @extends('layouts.app')
 
 @section('content')
-@php
-    $labels = [
-        'marquee_banner' => 'Queue marquee banner',
-        'queue_video'    => 'Queue video',
-    ];
-@endphp
-
 <div class="max-w-6xl mx-auto px-6 py-10">
 
     {{-- Page Header --}}
@@ -52,6 +45,7 @@
             'marquee_banner' => 'Queue marquee banner',
             'queue_video'    => 'Queue video',
             'currency'       => 'Default currency',
+            'logo'           => 'System Logo',
         ];
     @endphp
 
@@ -100,40 +94,28 @@
 
                             {{-- Collapsible Content --}}
                             <div x-show="open" x-collapse class="border-t border-gray-100 p-6 bg-gray-50">
-
-                                    @if($setting['name'] === 'queue_video')
+                    @if($setting['name'] === 'logo')
     @foreach($setting['options'] as $option)
         @if($option['is_default'])
             <div x-data="{ uploading: false, fileName: '', hasFile: false }" class="space-y-5">
-                {{-- Current path --}}
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Current video path
-                    </label>
-                    <div class="bg-white border border-gray-200 rounded-xl p-3 text-sm text-gray-800">
-                        {{ $option['value'] }}
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">
-                        This URL is used on the waiting room display screen.
-                    </p>
-                </div>
 
-                {{-- Preview --}}
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Preview
-                    </label>
-                    <div class="bg-black rounded-xl overflow-hidden">
-                        <video controls muted class="w-full">
-                            <source src="{{ $option['value'] }}" type="video/mp4">
-                            Video preview not available.
-                        </video>
+                {{-- current logo preview --}}
+                <div class="flex items-center gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Current logo
+                        </label>
+                        <div class="bg-white border border-gray-200 rounded-xl p-3 inline-flex items-center">
+                            <img src="{{ $option['value'] }}"
+                                 alt="Current logo"
+                                 class="h-10 object-contain">
+                        </div>
                     </div>
                 </div>
 
-                {{-- Upload form with spinner --}}
+                {{-- upload form --}}
                 <form method="POST"
-                      action="{{ route('admin.settings.updateVideo') }}"
+                      action="{{ route('admin.settings.updateLogo') }}"
                       enctype="multipart/form-data"
                       class="space-y-3"
                       x-on:submit="if (!hasFile) { $event.preventDefault(); return; } uploading = true;">
@@ -143,7 +125,7 @@
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Upload new video (mp4)
+                            Upload new logo (PNG/JPG/SVG)
                         </label>
 
                         <label class="flex items-center justify-between border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-[#bc1622] hover:bg-red-50/40 transition">
@@ -156,18 +138,18 @@
                                 </div>
                                 <div class="flex flex-col">
                                     <span class="text-sm font-medium text-gray-800">
-                                        <span x-text="fileName || 'Choose a video file'"></span>
+                                        <span x-text="fileName || 'Choose a logo file'"></span>
                                     </span>
                                     <span class="text-xs text-gray-500">
-                                        MP4 only, max 50 MB
+                                        Max 2 MB
                                     </span>
                                 </div>
                             </div>
                             <span class="text-xs text-[#bc1622] font-semibold" x-show="!hasFile">Browse</span>
                             <span class="text-xs text-green-600 font-semibold" x-show="hasFile">Ready</span>
                             <input type="file"
-                                   name="video"
-                                   accept="video/mp4"
+                                   name="logo"
+                                   accept="image/png,image/jpeg,image/jpg,image/svg+xml"
                                    class="hidden"
                                    x-on:change="
                                         if ($event.target.files.length) {
@@ -180,7 +162,7 @@
                                    ">
                         </label>
 
-                        @error('video')
+                        @error('logo')
                             <span class="text-red-600 text-xs mt-1 block">{{ $message }}</span>
                         @enderror
                     </div>
@@ -191,8 +173,7 @@
                                 class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white 
                                        transition
                                        disabled:opacity-60 disabled:cursor-not-allowed
-                                       bg-[#bc1622] hover:bg-red-700"
-                        >
+                                       bg-[#bc1622] hover:bg-red-700">
                             <svg x-show="uploading"
                                  class="w-4 h-4 mr-2 animate-spin text-white"
                                  fill="none" viewBox="0 0 24 24">
@@ -201,23 +182,135 @@
                                 <path class="opacity-75" fill="currentColor"
                                       d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"></path>
                             </svg>
-                            <span x-show="!uploading">Upload & replace video</span>
+                            <span x-show="!uploading">Upload & replace logo</span>
                             <span x-show="uploading">Uploading...</span>
                         </button>
 
                         <p class="text-xs text-gray-500" x-show="!uploading">
-                            Existing video will be removed before saving the new one.
-                        </p>
-                        <p class="text-xs text-gray-500" x-show="uploading">
-                            Please wait, this may take a few seconds depending on file size.
+                            Previous logo file will be deleted automatically.
                         </p>
                     </div>
                 </form>
             </div>
         @endif
-         @endforeach
+    @endforeach
+                    @elseif($setting['name'] === 'queue_video')
+                    @foreach($setting['options'] as $option)
+                    @if($option['is_default'])
+                        <div x-data="{ uploading: false, fileName: '', hasFile: false }" class="space-y-5">
+                            {{-- Current path --}}
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Current video path
+                                </label>
+                                <div class="bg-white border border-gray-200 rounded-xl p-3 text-sm text-gray-800">
+                                    {{ $option['value'] }}
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    This URL is used on the waiting room display screen.
+                                </p>
+                            </div>
 
-                                 @elseif($setting['name'] === 'marquee_banner')
+                            {{-- Preview --}}
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Preview
+                                </label>
+                                <div class="bg-black rounded-xl overflow-hidden">
+                                    <video controls muted class="w-full">
+                                        <source src="{{ $option['value'] }}" type="video/mp4">
+                                        Video preview not available.
+                                    </video>
+                                </div>
+                            </div>
+
+                            {{-- Upload form with spinner --}}
+                            <form method="POST"
+                                action="{{ route('admin.settings.updateVideo') }}"
+                                enctype="multipart/form-data"
+                                class="space-y-3"
+                                x-on:submit="if (!hasFile) { $event.preventDefault(); return; } uploading = true;">
+                                @csrf
+                                <input type="hidden" name="setting_id" value="{{ $setting['id'] }}">
+                                <input type="hidden" name="option_id" value="{{ $option['id'] }}">
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Upload new video (mp4)
+                                    </label>
+
+                                    <label class="flex items-center justify-between border border-dashed border-gray-300 rounded-xl px-4 py-3 cursor-pointer hover:border-[#bc1622] hover:bg-red-50/40 transition">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 rounded-full bg-[#bc1622]/10 flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-[#bc1622]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4-4m0 0l-4 4m4-4v12"/>
+                                                </svg>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-sm font-medium text-gray-800">
+                                                    <span x-text="fileName || 'Choose a video file'"></span>
+                                                </span>
+                                                <span class="text-xs text-gray-500">
+                                                    MP4 only, max 50 MB
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-[#bc1622] font-semibold" x-show="!hasFile">Browse</span>
+                                        <span class="text-xs text-green-600 font-semibold" x-show="hasFile">Ready</span>
+                                        <input type="file"
+                                            name="video"
+                                            accept="video/mp4"
+                                            class="hidden"
+                                            x-on:change="
+                                                    if ($event.target.files.length) {
+                                                        fileName = $event.target.files[0].name;
+                                                        hasFile = true;
+                                                    } else {
+                                                        fileName = '';
+                                                        hasFile = false;
+                                                    }
+                                            ">
+                                    </label>
+
+                                    @error('video')
+                                        <span class="text-red-600 text-xs mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <button type="submit"
+                                            :disabled="uploading || !hasFile"
+                                            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white 
+                                                transition
+                                                disabled:opacity-60 disabled:cursor-not-allowed
+                                                bg-[#bc1622] hover:bg-red-700"
+                                    >
+                                        <svg x-show="uploading"
+                                            class="w-4 h-4 mr-2 animate-spin text-white"
+                                            fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                    stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"></path>
+                                        </svg>
+                                        <span x-show="!uploading">Upload & replace video</span>
+                                        <span x-show="uploading">Uploading...</span>
+                                    </button>
+
+                                    <p class="text-xs text-gray-500" x-show="!uploading">
+                                        Existing video will be removed before saving the new one.
+                                    </p>
+                                    <p class="text-xs text-gray-500" x-show="uploading">
+                                        Please wait, this may take a few seconds depending on file size.
+                                    </p>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
+                    @endforeach
+                
+                @elseif($setting['name'] === 'marquee_banner')
                     {{-- Special handling for marquee banner - inline edit --}}
                     @foreach($setting['options'] as $option)
                         @if($option['is_default'])

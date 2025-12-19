@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;  
 use Illuminate\Http\Request;
 use App\Services\ApiService;
+use App\Services\SettingService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 
@@ -42,6 +43,7 @@ class SettingsController extends Controller
                 break;
 
             case 'currency':
+            case 'logo':
                 $grouped['general'][] = $setting;
                 break;
 
@@ -176,6 +178,49 @@ class SettingsController extends Controller
     } catch (\Exception $e) {
         Log::error('Queue video update error', ['error' => $e->getMessage()]);
         return back()->with('error', 'Service unavailable');
+    }
+}
+
+
+
+public function updateLogo(Request $request, SettingService $settings)
+{
+    $request->validate([
+        'setting_id' => 'required|integer',
+        'option_id'  => 'required|integer',
+        'logo'       => 'required|image|mimes:png,jpg,jpeg,svg|max:2048',
+    ]);
+
+    try {
+        $file = $request->file('logo');
+
+        $disk = \Storage::disk('public');
+        $directory = 'images/logo';
+        foreach ($disk->files($directory) as $existing) {
+            $disk->delete($existing);
+        }
+
+        $originalName = $file->getClientOriginalName();
+        $path = $file->storeAs($directory, $originalName, 'public');
+
+        $publicUrl = asset('storage/' . $path);
+
+        $response = $this->api->put("/settings/{$request->setting_id}/options/{$request->option_id}", [
+            'value' => $publicUrl,
+        ]);
+
+        if (!$response->ok()) {
+            return back()->with('error', 'Failed to update logo setting.');
+        }
+
+        // Clear cached logo so sidebar picks up new URL
+        $settings->clearCache('logo');
+
+        return back()->with('success', 'Logo updated successfully.');
+
+    } catch (\Exception $e) {
+        Log::error('Logo update error', ['error' => $e->getMessage()]);
+        return back()->with('error', 'Service unavailable.');
     }
 }
 
