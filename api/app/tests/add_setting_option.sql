@@ -24,3 +24,17 @@ VALUES (
     NOW(),
     NOW()
 );
+
+-- Insert another setting option
+INSERT INTO settings (name) VALUES ('logo');
+
+SET @setting_id = LAST_INSERT_ID();
+
+INSERT INTO setting_options (setting_id, value, is_default, created_at, updated_at)
+VALUES (
+    @setting_id,
+    '/images/logo_lab.PNG',
+    1,
+    NOW(),
+    NOW()
+)
