@@ -26,7 +26,10 @@ class ProfileController extends Controller
 
         $name = $user['full_name'] ?? 'User Name';
         $profile = $profileResponse->successful() ? $profileResponse->json() : null;
-
+        $filename = $profile['photo_url'] ?? null;
+        $photoUrl = $filename
+            ? asset('storage/profile_photos/' . $filename)
+            : 'https://ui-avatars.com/api/?name=User&size=150';
         $leaveResponse = $this->api->get("/leave-requests");
         Log::info("Leave requests API response", ['response' => $leaveResponse->body()]);
         
@@ -39,77 +42,84 @@ class ProfileController extends Controller
             Log::info("Profile photo URL", ['photo' => $profile['photo_url'] ?? null]);
         }
         $theme = session('theme', $profile['theme'] ?? 'light');
-
-        return view('profiles.show', compact('profile', 'leaveRequests', 'theme', 'name'));
+        Log::info("photoUrl computed", ['photoUrl' => $photoUrl]);
+        return view('profiles.show', compact('profile', 'leaveRequests', 'theme', 'name', 'photoUrl'));
     }
 
 public function update(Request $request, $userId)
 {
     Log::info("Update called", ['userId' => $userId, 'requestKeys' => array_keys($request->all())]);
 
+
     $data = $request->except('_token', '_method');
+
 
     // Fetch current profile from API
     $profileResponse = $this->api->get("/profiles/{$userId}");
     $profile = $profileResponse->successful() ? $profileResponse->json() : null;
+
 
     if (!$profile) {
         Log::error("Profile not found for userId {$userId}");
         return back()->withErrors(['error' => 'Profile not found.']);
     }
 
-    // Handle photo upload
+
+    // Handle photo upload: Laravel storage ONLY
     if ($request->hasFile('photo_file')) {
         $file = $request->file('photo_file');
         Log::info("Photo detected in request", [
             'originalName' => $file->getClientOriginalName(),
-            'mimeType' => $file->getMimeType(),
-            'size' => $file->getSize()
+            'mimeType'     => $file->getMimeType(),
+            'size'         => $file->getSize(),
         ]);
 
-        $path = $file->store('profile_photos', 'public');
-        $data['photo_url'] = asset('storage/' . $path);
+
+        // user-specific filename, e.g. user_5.png
+        $extension = $file->getClientOriginalExtension();
+        $filename  = 'user_' . $userId . '.' . $extension;
+
+
+        // store in storage/app/public/profile_photos/user_X.ext
+        $path = $file->storeAs('profile_photos', $filename, 'public');
         Log::info("Photo stored at", ['path' => $path]);
 
-        // Prepare multipart form data for FastAPI
-        $multipartData = [
-            [
-                'name'     => 'file',
-                'contents' => fopen($file->getPathname(), 'r'),
-                'filename' => $file->getClientOriginalName(),
-            ]
-        ];
 
-        Log::info("Sending photo to API", ['multipart' => $multipartData]);
-
-        $photoResponse = $this->api->multipart("/profiles/photo", $multipartData);
-
-
-        Log::info("Photo API response", ['body' => $photoResponse->body()]);
-
-        if ($photoResponse->successful()) {
-            $photoData = $photoResponse->json();
-            $data['photo_url'] = $photoData['photo_url'] ?? $data['photo_url'];
-        }
+        // send ONLY the filename to FastAPI (not a full URL)
+        // make sure FastAPI's ProfileUpdate has photo_url: str | None
+        $data['photo_url'] = $filename;
+        Log::info("Photo filename set for API update", ['photo_url' => $data['photo_url']]);
     } else {
         Log::warning("No photo found in request");
     }
 
-    // Handle goals and checklist
+
+    // Handle goals/checklist/theme as before...
     if (!empty($request->goals)) {
         $data['goals'] = array_map('trim', explode(',', $request->goals));
     }
+
+
     if (!empty($request->checklist)) {
         $data['checklist'] = array_map('trim', explode(',', $request->checklist));
     }
+
+
     if (isset($data['theme'])) {
         session(['theme' => $data['theme']]);
     }
-    // Send update to API
+
+
+    // Update profile in FastAPI
     $updateResponse = $this->api->put("/profiles/{$userId}", $data);
-    Log::info("Profile update API response", ['userId' => $userId, 'response' => $updateResponse->body()]);
+    Log::info("Profile update API response", [
+        'userId'   => $userId,
+        'response' => $updateResponse->body(),
+    ]);
+
 
     return back()->with('success', 'Profile updated successfully!');
 }
+
 
 }

@@ -1,4 +1,10 @@
 @extends('layouts.app')
+@php
+    $filename = $profile['photo_url'] ?? null; // "user_5.png"
+    $photoUrl = $filename
+        ? asset('storage/profile_photos/' . $filename)
+        : 'https://ui-avatars.com/api/?name=' . urlencode($name ?? 'User') . '&size=150&background=6366f1&color=fff';
+@endphp
 
 @section('content')
 <div class="max-w-6xl mx-auto px-6 py-10">
@@ -8,8 +14,8 @@
         <div class="flex flex-col md:flex-row items-center md:items-start gap-8 mb-8 pb-8 border-b border-gray-200">
             <div class="relative w-36 h-36 rounded-full border-4 border-indigo-100 overflow-hidden shrink-0 shadow-lg">
                 <img id="profile_preview"
-                     src="{{ $profile['photo_url'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($name ?? 'User') . '&size=150&background=6366f1&color=fff' }}"
-                     class="w-full h-full object-cover">
+                        src="{{ $photoUrl }}"
+                        class="w-full h-full object-cover">
             </div>
 
             <div class="flex-1 text-center md:text-left">

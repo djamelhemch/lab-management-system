@@ -9,10 +9,16 @@
         @if(isset($authUser))
             <p>{{ $authUser['username'] }} ({{ $authUser['role'] }})</p>
         @endif
+        @php
+        $filename = $authUser['photo_url'] ?? null;
+        $avatarUrl = $filename 
+            ? asset('storage/profile_photos/' . $filename)
+            : 'https://placehold.co/32x32';
+        @endphp
 
         {{-- Use the uploaded photo or fallback to placeholder --}}
 <a href="{{ route('profiles.show', $authUser['id']) }}">
-    <img src="{{ $authUser['photo_url'] ?? 'https://placehold.co/32x32' }}" 
+    <img src="{{ $avatarUrl }}" 
          alt="Avatar" 
          class="rounded-full border border-gray-200 shadow-sm w-8 h-8 object-cover cursor-pointer">
 </a>
