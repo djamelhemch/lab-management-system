@@ -38,3 +38,12 @@ VALUES (
     NOW(),
     NOW()
 )
+
+-- photo update
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE profiles 
+SET photo_url = SUBSTRING_INDEX(photo_url, '/', -1)
+WHERE photo_url LIKE 'http://%' OR photo_url LIKE 'https://%';
+
+SET SQL_SAFE_UPDATES = 1;

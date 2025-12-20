@@ -35,13 +35,9 @@ def read_profile(
     profile = crud_profile.get_profile(db, user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-
-    # If photo_url exists, build full URL
-    if profile.photo_url and not profile.photo_url.startswith("http"):
-        base_url = str(request.base_url).rstrip("/") if request else ""
-        profile.photo_url = f"{base_url}/static/{profile.photo_url}"
-
+    
     return ProfileResponse.model_validate(profile)
+
 
 @router.post("/", response_model=ProfileResponse)
 def create_profile(profile_in: ProfileCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
@@ -66,21 +62,27 @@ async def upload_profile_photo(
 
     ext = os.path.splitext(file.filename)[1]
     filename = f"user_{current_user.id}{ext}"
-
     file_path = os.path.join(UPLOAD_DIR, filename)
 
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    # Update profile in DB
+    # IMPORTANT: store only filename in DB
     profile = crud_profile.update_profile(
-    db,
-    current_user.id,
-    ProfileUpdate(photo_url=filename)
-)
+        db,
+        current_user.id,
+        ProfileUpdate(photo_url=filename)  # Store only filename
+    )
+    # Return only filename, not full URL
+    return {"photo_url": filename}
 
-    # Build full URL dynamically
-    base_url = str(request.base_url).rstrip("/")
-    profile.photo_url = f"{base_url}/static/{filename}"
 
-    return {"photo_url": profile.photo_url}
+
+
+
+
+
+
+
+
+
