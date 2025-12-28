@@ -561,22 +561,183 @@ function showToast(message, type = "info") {
 <script>
 let rangeCounter = 0;
 
+// Temporary storage
+let tempCategories = [];
+let tempSampleTypes = [];
+let tempUnits = [];
+let tempIdCounter = -1;
+
+// ✅ All initialization and event listeners inside DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('normalRangesContainer');
-    rangeCounter = container.querySelectorAll('.normal-range-item').length;
-    updateNoRangesMessage();
-
-    container.querySelectorAll('.normal-range-item').forEach(item => {
-        attachSexChangeListener(item);
-    });
+    if (container) {
+        rangeCounter = container.querySelectorAll('.normal-range-item').length;
+        updateNoRangesMessage();
+        
+        container.querySelectorAll('.normal-range-item').forEach(item => {
+            attachSexChangeListener(item);
+        });
+    }
 
     // Load devices
     loadCompatibleDevices();
+    
+    // ✅ Category Form
+    const categoryForm = document.getElementById('categoryForm');
+    if (categoryForm) {
+        categoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('categoryName');
+            const errorDiv = document.getElementById('categoryError');
+            
+            if (!nameInput || !errorDiv) return;
+            
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                errorDiv.textContent = 'Category name is required';
+                return;
+            }
+            
+            const select = document.querySelector('select[name="category_analyse_id"]');
+            if (!select) {
+                console.error('Category select not found');
+                return;
+            }
+            
+            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+            if (existingOptions.includes(name.toLowerCase())) {
+                errorDiv.textContent = 'Category already exists';
+                return;
+            }
+            
+            const tempCategory = { id: tempIdCounter--, name: name, isTemp: true };
+            tempCategories.push(tempCategory);
+            
+            const option = new Option(name + ' (New)', tempCategory.id, true, true);
+            option.className = 'text-emerald-600 font-medium';
+            select.add(option);
+            
+            closeCategoryModal();
+        });
+    }
+    
+    // ✅ Sample Type Form
+    const sampleTypeForm = document.getElementById('sampleTypeForm');
+    if (sampleTypeForm) {
+        sampleTypeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('sampleTypeName');
+            const errorDiv = document.getElementById('sampleTypeError');
+            
+            if (!nameInput || !errorDiv) return;
+            
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                errorDiv.textContent = 'Sample type name is required';
+                return;
+            }
+            
+            const select = document.querySelector('select[name="sample_type_id"]');
+            if (!select) {
+                console.error('Sample type select not found');
+                return;
+            }
+            
+            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+            if (existingOptions.includes(name.toLowerCase())) {
+                errorDiv.textContent = 'Sample type already exists';
+                return;
+            }
+            
+            const tempSampleType = { id: tempIdCounter--, name: name, isTemp: true };
+            tempSampleTypes.push(tempSampleType);
+            
+            const option = new Option(name + ' (New)', tempSampleType.id, true, true);
+            option.className = 'text-emerald-600 font-medium';
+            select.add(option);
+            
+            closeSampleTypeModal();
+        });
+    }
+    
+    // ✅ Unit Form
+    const unitForm = document.getElementById('unitForm');
+    if (unitForm) {
+        unitForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('unitName');
+            const errorDiv = document.getElementById('unitError');
+            
+            if (!nameInput || !errorDiv) return;
+            
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                errorDiv.textContent = 'Unit name is required';
+                return;
+            }
+            
+            const select = document.querySelector('select[name="unit_id"]');
+            if (!select) {
+                console.error('Unit select not found');
+                return;
+            }
+            
+            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+            if (existingOptions.includes(name.toLowerCase())) {
+                errorDiv.textContent = 'Unit already exists';
+                return;
+            }
+            
+            const tempUnit = { id: tempIdCounter--, name: name, isTemp: true };
+            tempUnits.push(tempUnit);
+            
+            const option = new Option(name + ' (New)', tempUnit.id, true, true);
+            option.className = 'text-emerald-600 font-medium';
+            select.add(option);
+            
+            closeUnitModal();
+        });
+    }
+    
+    // ✅ Main form submission
+    const mainForm = document.querySelector('form[action="{{ route('analyses.store') }}"]');
+    if (mainForm) {
+        mainForm.addEventListener('submit', function(e) {
+            tempCategories.forEach(category => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'temp_categories[]';
+                input.value = JSON.stringify(category);
+                this.appendChild(input);
+            });
+            
+            tempSampleTypes.forEach(sampleType => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'temp_sample_types[]';
+                input.value = JSON.stringify(sampleType);
+                this.appendChild(input);
+            });
+            
+            tempUnits.forEach(unit => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'temp_units[]';
+                input.value = JSON.stringify(unit);
+                this.appendChild(input);
+            });
+        });
+    }
 });
 
 function updateNoRangesMessage() {
     const container = document.getElementById('normalRangesContainer');
     const noRangesMsg = document.getElementById('noRangesMessage');
+    
+    if (!container || !noRangesMsg) return;
     
     if (container.children.length === 0) {
         noRangesMsg.classList.remove('hidden');
@@ -587,6 +748,8 @@ function updateNoRangesMessage() {
 
 function addNormalRange(data = {}) {
     const container = document.getElementById('normalRangesContainer');
+    if (!container) return;
+    
     const index = rangeCounter++;
 
     const wrapper = document.createElement('div');
@@ -643,7 +806,7 @@ function addNormalRange(data = {}) {
             </div>
 
             <div class="flex justify-end pt-2">
-                <button type="button" onclick="if (confirm('Remove this normal range?')) this.closest('.normal-range-item').remove()" 
+                <button type="button" onclick="if (confirm('Remove this normal range?')) { this.closest('.normal-range-item').remove(); updateNoRangesMessage(); }" 
                         class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:scale-95 transition-all duration-200 shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -683,6 +846,8 @@ async function loadCompatibleDevices() {
     const summary = document.getElementById('deviceSelectionSummary');
     const countSpan = document.getElementById('selectedDeviceCount');
     
+    if (!container) return;
+    
     try {
         const res = await fetch("{{ route('lab-devices.index') }}", {
             headers: {
@@ -693,15 +858,12 @@ async function loadCompatibleDevices() {
         
         if (!res.ok) throw new Error('Device list fetch failed');
         
-        // The controller returns HTML for AJAX, so we need JSON
-        // Let's get the raw JSON response
         const text = await res.text();
         let devices;
         
         try {
             devices = JSON.parse(text);
         } catch {
-            // If it's HTML, we need to modify the controller response
             console.error('Received HTML instead of JSON');
             throw new Error('Invalid response format');
         }
@@ -760,7 +922,7 @@ async function loadCompatibleDevices() {
             container.appendChild(typeSection);
         });
 
-        summary.classList.remove('hidden');
+        if (summary) summary.classList.remove('hidden');
         updateDeviceCount();
 
     } catch (err) {
@@ -776,147 +938,63 @@ async function loadCompatibleDevices() {
         `;
     }
 }
+
 function updateDeviceCount() {
-    const checkboxes = document.querySelectorAll('input[name="compatible_device_ids[]"]:checked');
+    const checkboxes = document.querySelectorAll('input[name="device_ids[]"]:checked');
     const countSpan = document.getElementById('selectedDeviceCount');
-    countSpan.textContent = checkboxes.length;
+    if (countSpan) {
+        countSpan.textContent = checkboxes.length;
+    }
 }
+
 // Modal Functions
-function openCategoryModal() { document.getElementById('categoryModal').classList.remove('hidden'); }
+function openCategoryModal() { 
+    const modal = document.getElementById('categoryModal');
+    if (modal) modal.classList.remove('hidden'); 
+}
+
 function closeCategoryModal() { 
-    document.getElementById('categoryModal').classList.add('hidden');
-    document.getElementById('categoryName').value = '';
-    document.getElementById('categoryError').textContent = '';
+    const modal = document.getElementById('categoryModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        const nameInput = document.getElementById('categoryName');
+        const errorDiv = document.getElementById('categoryError');
+        if (nameInput) nameInput.value = '';
+        if (errorDiv) errorDiv.textContent = '';
+    }
 }
 
-function openSampleTypeModal() { document.getElementById('sampleTypeModal').classList.remove('hidden'); }
+function openSampleTypeModal() { 
+    const modal = document.getElementById('sampleTypeModal');
+    if (modal) modal.classList.remove('hidden'); 
+}
+
 function closeSampleTypeModal() { 
-    document.getElementById('sampleTypeModal').classList.add('hidden');
-    document.getElementById('sampleTypeName').value = '';
-    document.getElementById('sampleTypeError').textContent = '';
+    const modal = document.getElementById('sampleTypeModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        const nameInput = document.getElementById('sampleTypeName');
+        const errorDiv = document.getElementById('sampleTypeError');
+        if (nameInput) nameInput.value = '';
+        if (errorDiv) errorDiv.textContent = '';
+    }
 }
 
-function openUnitModal() { document.getElementById('unitModal').classList.remove('hidden'); }
+function openUnitModal() { 
+    const modal = document.getElementById('unitModal');
+    if (modal) modal.classList.remove('hidden'); 
+}
+
 function closeUnitModal() { 
-    document.getElementById('unitModal').classList.add('hidden');
-    document.getElementById('unitName').value = '';
-    document.getElementById('unitError').textContent = '';
+    const modal = document.getElementById('unitModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        const nameInput = document.getElementById('unitName');
+        const errorDiv = document.getElementById('unitError');
+        if (nameInput) nameInput.value = '';
+        if (errorDiv) errorDiv.textContent = '';
+    }
 }
-
-// Temporary storage
-let tempCategories = [];
-let tempSampleTypes = [];
-let tempUnits = [];
-let tempIdCounter = -1;
-
-// Form submissions
-document.getElementById('categoryForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('categoryName').value.trim();
-    const errorDiv = document.getElementById('categoryError');
-    
-    if (!name) {
-        errorDiv.textContent = 'Category name is required';
-        return;
-    }
-    
-    const select = document.getElementById('category_analyse_id');
-    const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-    if (existingOptions.includes(name.toLowerCase())) {
-        errorDiv.textContent = 'Category already exists';
-        return;
-    }
-    
-    const tempCategory = { id: tempIdCounter--, name: name, isTemp: true };
-    tempCategories.push(tempCategory);
-    
-    const option = new Option(name + ' (New)', tempCategory.id, true, true);
-    option.className = 'text-emerald-600 font-medium';
-    select.add(option);
-    
-    closeCategoryModal();
-});
-
-document.getElementById('sampleTypeForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('sampleTypeName').value.trim();
-    const errorDiv = document.getElementById('sampleTypeError');
-    
-    if (!name) {
-        errorDiv.textContent = 'Sample type name is required';
-        return;
-    }
-    
-    const select = document.getElementById('sample_type_id');
-    const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-    if (existingOptions.includes(name.toLowerCase())) {
-        errorDiv.textContent = 'Sample type already exists';
-        return;
-    }
-    
-    const tempSampleType = { id: tempIdCounter--, name: name, isTemp: true };
-    tempSampleTypes.push(tempSampleType);
-    
-    const option = new Option(name + ' (New)', tempSampleType.id, true, true);
-    option.className = 'text-emerald-600 font-medium';
-    select.add(option);
-    
-    closeSampleTypeModal();
-});
-
-document.getElementById('unitForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('unitName').value.trim();
-    const errorDiv = document.getElementById('unitError');
-    
-    if (!name) {
-        errorDiv.textContent = 'Unit name is required';
-        return;
-    }
-    
-    const select = document.getElementById('unit_id');
-    const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-    if (existingOptions.includes(name.toLowerCase())) {
-        errorDiv.textContent = 'Unit already exists';
-        return;
-    }
-    
-    const tempUnit = { id: tempIdCounter--, name: name, isTemp: true };
-    tempUnits.push(tempUnit);
-    
-    const option = new Option(name + ' (New)', tempUnit.id, true, true);
-    option.className = 'text-emerald-600 font-medium';
-    select.add(option);
-    
-    closeUnitModal();
-});
-
-// Main form submission
-document.querySelector('form[action="{{ route('analyses.store') }}"]').addEventListener('submit', function(e) {
-    tempCategories.forEach(category => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'temp_categories[]';
-        input.value = JSON.stringify(category);
-        this.appendChild(input);
-    });
-    
-    tempSampleTypes.forEach(sampleType => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'temp_sample_types[]';
-        input.value = JSON.stringify(sampleType);
-        this.appendChild(input);
-    });
-    
-    tempUnits.forEach(unit => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'temp_units[]';
-        input.value = JSON.stringify(unit);
-        this.appendChild(input);
-    });
-});
 
 // Close modals on outside click
 document.addEventListener('click', function(e) {
@@ -925,4 +1003,5 @@ document.addEventListener('click', function(e) {
     if (e.target.id === 'unitModal') closeUnitModal();
 });
 </script>
+
 @endsection
