@@ -682,12 +682,29 @@ async function loadCompatibleDevices() {
     const container = document.getElementById('deviceSelectionContainer');
     const summary = document.getElementById('deviceSelectionSummary');
     const countSpan = document.getElementById('selectedDeviceCount');
-    const apiBase = '{{ env("FASTAPI_URL") }}';
     
     try {
-        const res = await fetch(`${apiBase}/lab-devices`);
+        const res = await fetch("{{ route('lab-devices.index') }}", {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
         if (!res.ok) throw new Error('Device list fetch failed');
-        const devices = await res.json();
+        
+        // The controller returns HTML for AJAX, so we need JSON
+        // Let's get the raw JSON response
+        const text = await res.text();
+        let devices;
+        
+        try {
+            devices = JSON.parse(text);
+        } catch {
+            // If it's HTML, we need to modify the controller response
+            console.error('Received HTML instead of JSON');
+            throw new Error('Invalid response format');
+        }
 
         container.innerHTML = '';
         
@@ -715,7 +732,7 @@ async function loadCompatibleDevices() {
         // Create grouped checkbox lists
         Object.entries(devicesByType).forEach(([type, typeDevices]) => {
             const typeSection = document.createElement('div');
-            typeSection.className = 'space-y-2';
+            typeSection.className = 'space-y-2 p-4';
             
             typeSection.innerHTML = `
                 <h5 class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 flex items-center gap-2">

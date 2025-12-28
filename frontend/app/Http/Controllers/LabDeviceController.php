@@ -28,7 +28,10 @@ class LabDeviceController extends Controller
             ]);
             
             $devices = $resp->json() ?? [];
-            
+             // ✅ Return JSON if Accept header is application/json
+            if ($request->wantsJson() || $request->header('Accept') === 'application/json') {
+                return response()->json($devices);
+            }   
             if ($request->ajax()) {
                 return view('lab_devices.partials.device_table_rows', compact('devices'))->render();
             }
@@ -37,8 +40,11 @@ class LabDeviceController extends Controller
             
         } catch (\Exception $e) {
             \Log::error('Lab devices error', ['error' => $e->getMessage()]);
-            
-            // Return empty view instead of error
+                
+            if ($request->wantsJson() || $request->header('Accept') === 'application/json') {
+            return response()->json([], 500);
+         }
+        
             $devices = [];
             return view('lab_devices.index', compact('devices'));
         }

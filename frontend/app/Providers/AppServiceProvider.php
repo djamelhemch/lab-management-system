@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(SettingService $settings): void
     {
+        URL::forceScheme('https');       
         $logoUrl = $settings->get('logo', asset('/images/logo_lab.PNG'));
 
         // available in ALL views
