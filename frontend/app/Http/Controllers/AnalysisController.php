@@ -275,6 +275,22 @@ class AnalysisController extends Controller
             return redirect()->back()->with('error', 'Failed to update analysis.')->withInput();
         }
     }
+
+    public function labFormulas()
+    {   
+        $response = $this->api->get('lab-formulas'); // HTTP client response object
+        
+        // Check if request succeeded
+        if ($response->successful()) {
+            return response()->json($response->json(), 200);
+        }
+        
+        // Forward error status from FastAPI
+        return response()->json([
+            'error' => 'Failed to fetch formulas',
+            'message' => $response->body()
+        ], $response->status());
+    }
     private function handleTempCategory($request)  
     {  
         if ($request->category_analyse_id < 0) { // Temporary category  

@@ -59,7 +59,9 @@ Route::middleware(['auth.api'])->group(function () {
     Route::post('/analyses/sample-types', [AnalysisController::class, 'storeSampleType']);  
     Route::post('/analyses/units', [AnalysisController::class, 'storeUnit']);  
     Route::resource('analyses', AnalysisController::class);
-    
+    // Lab formulas for analyses
+    Route::get('/lab-formulas', [AnalysisController::class, 'labFormulas'])->name('lab.formulas');
+
     // Lab devices
     Route::resource('lab-devices', LabDeviceController::class);
     
