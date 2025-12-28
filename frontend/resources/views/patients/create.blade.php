@@ -181,6 +181,123 @@
     </div>
 </div>
  
+{{-- Doctor Modal --}}
+<div id="doctorModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        {{-- Modal Header --}}
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+            <h3 class="text-xl font-bold text-gray-900">Nouveau Médecin</h3>
+            <button type="button" id="closeDoctorModal" class="text-gray-400 hover:text-gray-600 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Modal Body --}}
+        <div class="p-6">
+            {{-- Error Message --}}
+            <div id="doctorError" class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <!-- Error will be inserted here -->
+            </div>
+
+            <form id="doctorForm" class="space-y-4">
+                @csrf
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Prénom --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">
+                            Prénom <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="first_name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500"
+                            placeholder="Jean">
+                    </div>
+
+                    {{-- Nom --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">
+                            Nom <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="last_name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500"
+                            placeholder="Dupont">
+                    </div>
+
+                    {{-- Specialty --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">
+                            Spécialité
+                        </label>
+                        <input type="text" name="specialty"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500"
+                            placeholder="Cardiologue, Généraliste, etc.">
+                    </div>
+
+                    {{-- Phone --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">
+                            Téléphone
+                        </label>
+                        <input type="text" name="phone"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500"
+                            placeholder="+213 555 123 456">
+                    </div>
+
+                    {{-- Email --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">
+                            Email
+                        </label>
+                        <input type="email" name="email"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500"
+                            placeholder="doctor@example.com">
+                    </div>
+
+                    {{-- Address --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">
+                            Adresse
+                        </label>
+                        <textarea name="address" rows="2"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-300 focus:border-red-500"
+                            placeholder="123 Rue de la Santé, Alger"></textarea>
+                    </div>
+
+                    {{-- Is Prescriber --}}
+                    <div class="md:col-span-2">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" name="is_prescriber" value="1"
+                                class="w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-2 focus:ring-red-300">
+                            <span class="text-sm font-semibold text-gray-700">
+                                Ce médecin peut prescrire des ordonnances
+                            </span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1 ml-8">
+                            Cochez cette case si le médecin est autorisé à rédiger des prescriptions médicales
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Action Buttons --}}
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+                    <button type="button" id="closeDoctorModalBtn"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+                        Annuler
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Créer le Médecin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 
 {{-- Toast Notification Container --}}
@@ -198,16 +315,18 @@
 </div>
 @endsection
 
-
 @push('scripts')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
- {{-- DOCTOR MODAL SUBMIT SCRIPT --}}
+
+{{-- DOCTOR MODAL SUBMIT SCRIPT --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // ========== TOAST NOTIFICATION SYSTEM ==========
     function showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
+        if (!container) return;
+        
         const toast = document.createElement('div');
         
         const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
@@ -228,12 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         container.appendChild(toast);
         
-        // Animate in
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full', 'opacity-0');
-        }, 10);
-        
-        // Auto remove after 4 seconds
+        setTimeout(() => toast.classList.remove('translate-x-full', 'opacity-0'), 10);
         setTimeout(() => {
             toast.classList.add('translate-x-full', 'opacity-0');
             setTimeout(() => toast.remove(), 300);
@@ -244,21 +358,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const spinnerOverlay = document.getElementById('spinnerOverlay');
     
     function showSpinner() {
-        spinnerOverlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden'; // Prevent scrolling
+        if (spinnerOverlay) {
+            spinnerOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
     }
     
     function hideSpinner() {
-        spinnerOverlay.classList.add('hidden');
-        document.body.style.overflow = ''; // Restore scrolling
+        if (spinnerOverlay) {
+            spinnerOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
     }
 
     // ========== MODAL & FORM LOGIC ==========
     const modal = document.getElementById('doctorModal');
     const openModalBtn = document.getElementById('openDoctorModal');
     const closeModalBtn = document.getElementById('closeDoctorModal');
+    const closeModalBtn2 = document.getElementById('closeDoctorModalBtn');
     const doctorForm = document.getElementById('doctorForm');
     const doctorSelect = document.getElementById('doctor_id');
+    
+    if (!modal || !doctorForm || !doctorSelect) {
+        console.error('Required elements not found');
+        return;
+    }
+    
     const submitBtn = doctorForm.querySelector('button[type="submit"]');
     let doctorChoices;
 
@@ -273,24 +398,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
     refreshDoctorChoices();
 
-    openModalBtn.addEventListener('click', () => {
-        modal.classList.remove('hidden');
-        document.getElementById('doctorError').classList.add('hidden');
+    // ✅ Single close function
+    function closeModal() {
+        modal.classList.add('hidden');
+        doctorForm.reset();
+        const errorDiv = document.getElementById('doctorError');
+        if (errorDiv) errorDiv.classList.add('hidden');
+    }
+
+    // Open modal
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', function() {
+            modal.classList.remove('hidden');
+            const errorDiv = document.getElementById('doctorError');
+            if (errorDiv) errorDiv.classList.add('hidden');
+        });
+    }
+
+    // ✅ Attach close to BOTH buttons
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+    }
+    if (closeModalBtn2) {
+        closeModalBtn2.addEventListener('click', closeModal);
+    }
+
+    // Close on outside click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
     });
-    
-    closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
 
     // ========== AJAX FORM SUBMISSION ==========
     doctorForm.addEventListener('submit', function (e) {
         e.preventDefault();
 
-        // Show spinner & disable submit button
         showSpinner();
-        submitBtn.disabled = true;
-        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
 
         const formData = new FormData(doctorForm);
-
+         
+        // ✅ Combine first_name + last_name into full_name
+        const firstName = formData.get('first_name');
+        const lastName = formData.get('last_name');
+        
+        if (firstName && lastName) {
+            formData.set('full_name', `${firstName} ${lastName}`);
+            // Keep first_name and last_name for potential future use, or remove them:
+            formData.delete('first_name');
+            formData.delete('last_name');
+        }
         fetch("{{ route('doctors.store') }}", {
             method: "POST",
             headers: {
@@ -309,72 +468,71 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error("Réponse invalide du serveur");
             }
 
-            // Hide spinner
             hideSpinner();
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
 
             if (!res.ok) {
-                // Show error in modal
                 const errorMsg = data.message || data.detail || "Erreur lors de la création";
-                document.getElementById('doctorError').textContent = errorMsg;
-                document.getElementById('doctorError').classList.remove('hidden');
-                
-                // Also show error toast
+                const errorDiv = document.getElementById('doctorError');
+                if (errorDiv) {
+                    errorDiv.textContent = errorMsg;
+                    errorDiv.classList.remove('hidden');
+                }
                 showToast(errorMsg, 'error');
                 return;
             }
 
-            // SUCCESS!
             if (data.success && data.doctor) {
-                // Add new doctor to select
                 const newOption = new Option(data.doctor.full_name, data.doctor.id, true, true);
                 doctorSelect.appendChild(newOption);
                 refreshDoctorChoices();
 
-                // Close modal & reset form
-                modal.classList.add('hidden');
-                doctorForm.reset();
-                document.getElementById('doctorError').classList.add('hidden');
-
-                // Show success toast
-                showToast(`✓ Médecin "${data.doctor.full_name}" créé avec succès`, 'success');
+                closeModal();
+                showToast(`Le Médecin "${data.doctor.full_name}" créé avec succès`, 'success');
             }
         })
         .catch(err => {
             console.error('Fetch error:', err);
             
-            // Hide spinner
             hideSpinner();
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
 
-            // Show error
             const errorMsg = err.message || "Erreur de connexion";
-            document.getElementById('doctorError').textContent = errorMsg;
-            document.getElementById('doctorError').classList.remove('hidden');
+            const errorDiv = document.getElementById('doctorError');
+            if (errorDiv) {
+                errorDiv.textContent = errorMsg;
+                errorDiv.classList.remove('hidden');
+            }
             showToast(errorMsg, 'error');
         });
     });
 });
 </script>
 
+{{-- Searchable Doctor Select --}}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const doctorSelect = document.querySelector('.searchable-select');
-        if(doctorSelect) {
-            new Choices(doctorSelect, {
-                searchEnabled: true,
-                itemSelectText: '',
-                shouldSort: false,
-                placeholder: true,
-                placeholderValue: 'Choisissez un médecin',
-            });
-        }
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    const doctorSelect = document.querySelector('.searchable-select');
+    if (doctorSelect) {
+        new Choices(doctorSelect, {
+            searchEnabled: true,
+            itemSelectText: '',
+            shouldSort: false,
+            placeholder: true,
+            placeholderValue: 'Choisissez un médecin',
+        });
+    }
+});
 </script>
 @endpush
 
+{{-- Phone Popup Script --}}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById('patientForm');
@@ -383,24 +541,33 @@ document.addEventListener("DOMContentLoaded", function () {
     const ignoreBtn = document.getElementById('ignoreBtn');
     const addBtn = document.getElementById('addBtn');
 
+    if (!form || !phone || !popup) return;
+
     form.addEventListener('submit', function (e) {
-        const requiredFields = ['first_name', 'last_name', 'dob', 'gender'];
-        let allFilled = requiredFields.every(id => document.getElementById(id).value.trim() !== "");
+        const requiredFields = ['first_name', 'last_name', 'dob', 'gender', 'blood_type'];
+        let allFilled = requiredFields.every(id => {
+            const el = document.getElementById(id);
+            return el && el.value.trim() !== "";
+        });
 
         if (allFilled && phone.value.trim() === "") {
-            e.preventDefault(); // stop submission
+            e.preventDefault();
             popup.classList.remove('hidden');
         }
     });
 
-    ignoreBtn.addEventListener('click', function () {
-        popup.classList.add('hidden');
-        form.submit(); // submit normally
-    });
+    if (ignoreBtn) {
+        ignoreBtn.addEventListener('click', function () {
+            popup.classList.add('hidden');
+            form.submit();
+        });
+    }
 
-    addBtn.addEventListener('click', function () {
-        popup.classList.add('hidden');
-        phone.focus();
-    });
+    if (addBtn) {
+        addBtn.addEventListener('click', function () {
+            popup.classList.add('hidden');
+            phone.focus();
+        });
+    }
 });
 </script>
