@@ -278,19 +278,53 @@ class AnalysisController extends Controller
 
     public function labFormulas()
     {   
-        $response = $this->api->get('lab-formulas'); // HTTP client response object
+        $response = $this->api->get('lab-formulas'); // Calls FastAPI GET /lab-formulas
         
-        // Check if request succeeded
         if ($response->successful()) {
-            return response()->json($response->json(), 200);
+            return response()->json($response->json());
         }
         
-        // Forward error status from FastAPI
         return response()->json([
-            'error' => 'Failed to fetch formulas',
-            'message' => $response->body()
+            'error' => 'Failed to fetch formulas'
         ], $response->status());
     }
+    public function createFormula(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'formula' => 'required|string',
+        ]);
+
+        // Pass the authenticated Laravel user's token to FastAPI
+        $response = $this->api->post('lab-formulas', [
+            'name' => $validated['name'],
+            'formula' => $validated['formula'],
+        ]);
+        
+        if ($response->successful()) {
+            return response()->json($response->json(), 201);
+        }
+        
+        return response()->json([
+            'error' => 'Failed to create formula',
+            'message' => $response->json()['detail'] ?? 'Unknown error'
+        ], $response->status());
+    }
+    public function deleteFormula($id)
+    {
+        $response = $this->api->delete("lab-formulas/{$id}");
+        
+        if ($response->successful()) {
+            return response()->json(['message' => 'Formula deleted successfully']);
+        }
+        
+        return response()->json([
+            'error' => 'Failed to delete formula'
+        ], $response->status());
+    }
+
+
+
     private function handleTempCategory($request)  
     {  
         if ($request->category_analyse_id < 0) { // Temporary category  

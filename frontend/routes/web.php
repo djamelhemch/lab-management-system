@@ -61,7 +61,8 @@ Route::middleware(['auth.api'])->group(function () {
     Route::resource('analyses', AnalysisController::class);
     // Lab formulas for analyses
     Route::get('/lab-formulas', [AnalysisController::class, 'labFormulas'])->name('lab.formulas');
-
+    Route::post('/lab-formulas', [AnalysisController::class, 'createFormula'])->name('lab.formulas.store');
+    Route::delete('/lab-formulas/{id}', [AnalysisController::class, 'deleteFormula'])->name('lab.formulas.destroy');
     // Lab devices
     Route::resource('lab-devices', LabDeviceController::class);
     

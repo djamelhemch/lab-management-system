@@ -57,7 +57,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-900">Category</label>
               <div class="mt-2 flex gap-2">
-                <select name="category_analyse_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
+                <select id="category_analyse_id" name="category_analyse_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
                   <option value="">Select category</option>
                   @foreach($categories as $category)
                     <option value="{{ $category['id'] }}" {{ old('category_analyse_id') == $category['id'] ? 'selected' : '' }}>
@@ -87,7 +87,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-900">Unit</label>
               <div class="mt-2 flex gap-2">
-                <select name="unit_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
+                <select id="unit_id" name="unit_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
                   <option value="">Select unit</option>
                   @foreach($units as $unit)
                     <option value="{{ $unit['id'] }}" {{ old('unit_id') == $unit['id'] ? 'selected' : '' }}>
@@ -126,7 +126,7 @@
             </div>
             <div id="normalRangesContainer" class="divide-y divide-gray-200 border border-gray-200 rounded-md"></div>
             <div id="noRangesMessage" class="text-center py-8 text-gray-500 text-sm border border-dashed border-gray-200 rounded-md mt-3">
-              No ranges defined yet. Click “Add Range” to begin.
+              No ranges defined yet. Click "Add Range" to begin.
             </div>
           </div>
 
@@ -138,7 +138,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-900">Sample Type</label>
               <div class="mt-2 flex gap-2">
-                <select name="sample_type_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
+                <select id="sample_type_id" name="sample_type_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
                   <option value="">Select type</option>
                   @foreach($sampleTypes as $sampleType)
                     <option value="{{ $sampleType['id'] }}" {{ old('sample_type_id') == $sampleType['id'] ? 'selected' : '' }}>
@@ -188,148 +188,150 @@
           </div>
         </div>
       </section>
-<div class="border-2 border-gray-300 rounded-2xl p-6 bg-white shadow-md mt-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-      🧮 Formule de calcul
-    </h3>
-    <button 
-      type="button" 
-      onclick="openSavedFormulas()"
-      class="text-sm text-indigo-600 hover:underline"
-    >
-      📚 Formules enregistrées
-    </button>
-  </div>
 
-  <!-- Formula Name -->
-  <div class="mb-4">
-    <label for="formula_name" class="block text-sm font-medium text-gray-700 mb-1">
-      Nom de la formule :
-    </label>
-    <input 
-      type="text" 
-      id="formula_name" 
-      class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" 
-      placeholder="Ex : Formule de Friedewald"
-    >
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- LEFT: Editor -->
-    <div>
-      <label for="formula" class="block text-sm font-medium text-gray-700 mb-2">
-        Expression mathématique :
-      </label>
-      <div class="border-2 border-blue-400 rounded-xl p-3 bg-blue-50 focus-within:ring-2 focus-within:ring-blue-300 transition">
-        <textarea 
-          id="formula" 
-          rows="4" 
-          class="w-full bg-transparent outline-none text-gray-800 text-sm font-mono"
-          placeholder="Exemple : LDL-C = CT - HDL-C - TG / 5"
-        ></textarea>
-      </div>
-
-      <div id="formulaPreview" class="mt-3 text-sm font-mono text-gray-600 bg-gray-100 border border-gray-300 rounded-lg p-2">
-        🧠 Aperçu : <span id="formulaDisplay" class="text-gray-800"></span>
-      </div>
-
-      <div class="flex gap-2 mt-3">
-        <button 
-          type="button" 
-          onclick="clearFormula()"
-          class="bg-red-50 border border-red-300 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition"
-        >
-          Effacer
-        </button>
-        <button 
-          id="saveFormulaBtn"
-          type="button"
-          onclick="saveFormula()"
-          class="bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
-        >
-          💾 Enregistrer la formule
-        </button>
-      </div>
-    </div>
-
-    <!-- RIGHT: Tools -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">🔢 Opérateurs et fonctions :</label>
-      <div class="border-2 border-gray-300 bg-gray-50 rounded-xl p-3 flex flex-wrap gap-2">
-        @php
-          $ops = [
-            ['+', 'Addition'],
-            ['-', 'Soustraction'],
-            ['*', 'Multiplication'],
-            ['/', 'Division'],
-            ['=', 'Égal (assignation du résultat)'],
-            ['(', 'Parenthèse ouvrante'],
-            [')', 'Parenthèse fermante'],
-            ['^', 'Puissance'],
-            ['√', 'Racine carrée'],
-            ['ln()', 'Logarithme naturel'],
-            ['exp()', 'Exponentielle'],
-            ['mean()', 'Moyenne'],
-            ['sd()', 'Écart-type'],
-            ['zscore()', 'Score Z : (val - moyenne) / écart-type'],
-            ['min()', 'Valeur minimale'],
-            ['max()', 'Valeur maximale']
-          ];
-        @endphp
-        @foreach($ops as [$symbol, $desc])
+      {{-- FORMULA SECTION --}}
+      <div class="border-2 border-gray-300 rounded-2xl p-6 bg-white shadow-md">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            🧮 Formule de calcul
+          </h3>
           <button 
             type="button" 
-            class="bg-white hover:bg-blue-100 border border-blue-400 text-blue-700 text-xs px-2 py-1 rounded-md transition relative"
-            onclick="insertFormula('{{ $symbol }}')"
-            title="{{ $desc }}"
+            onclick="openSavedFormulas()"
+            class="text-sm text-indigo-600 hover:underline"
           >
-            {{ $symbol }}
+            📚 Formules enregistrées
           </button>
-        @endforeach
-      </div>
+        </div>
 
-      <!-- Search analyses -->
-      <div class="mt-5">
-        <label class="block text-sm font-medium text-gray-700 mb-1">🔍 Rechercher une analyse :</label>
-        <input 
-          type="text" 
-          id="analysisSearch" 
-          placeholder="Code ou nom..." 
-          class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
-          oninput="filterAnalyses()"
-        />
-      </div>
+        <!-- Formula Name -->
+        <div class="mb-4">
+          <label for="formula_name" class="block text-sm font-medium text-gray-700 mb-1">
+            Nom de la formule :
+          </label>
+          <input 
+            type="text" 
+            id="formula_name" 
+            class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" 
+            placeholder="Ex : Formule de Friedewald"
+          >
+        </div>
 
-        <!-- Analysis codes -->
-        <div class="border-2 border-gray-300 rounded-xl p-2 mt-3 max-h-44 overflow-y-auto bg-gray-50">
-          <div id="analysisButtons" class="flex flex-wrap gap-2">
-            @foreach($analyses as $analysis)
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- LEFT: Editor -->
+          <div>
+            <label for="formula" class="block text-sm font-medium text-gray-700 mb-2">
+              Expression mathématique :
+            </label>
+            <div class="border-2 border-blue-400 rounded-xl p-3 bg-blue-50 focus-within:ring-2 focus-within:ring-blue-300 transition">
+              <textarea 
+                id="formula" 
+                rows="4" 
+                class="w-full bg-transparent outline-none text-gray-800 text-sm font-mono"
+                placeholder="Exemple : LDL-C = CT - HDL-C - TG / 5"
+              ></textarea>
+            </div>
+
+            <div id="formulaPreview" class="mt-3 text-sm font-mono text-gray-600 bg-gray-100 border border-gray-300 rounded-lg p-2">
+              🧠 Aperçu : <span id="formulaDisplay" class="text-gray-800">—</span>
+            </div>
+
+            <div class="flex gap-2 mt-3">
               <button 
                 type="button" 
-                class="bg-white hover:bg-gray-100 text-xs px-2 py-1 border border-gray-300 rounded-md transition"
-                onclick="insertFormula('{{ $analysis['code'] }}')"
-                title="{{ $analysis['name'] ?? 'Analyse' }}"
+                onclick="clearFormula()"
+                class="bg-red-50 border border-red-300 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition"
               >
-                {{ $analysis['code'] }}
+                Effacer
               </button>
-            @endforeach
+              <button 
+                id="saveFormulaBtn"
+                type="button"
+                onclick="saveFormula()"
+                class="bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
+              >
+                💾 Enregistrer la formule
+              </button>
+            </div>
+          </div>
+
+          <!-- RIGHT: Tools -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">🔢 Opérateurs et fonctions :</label>
+            <div class="border-2 border-gray-300 bg-gray-50 rounded-xl p-3 flex flex-wrap gap-2">
+              @php
+                $ops = [
+                  ['+', 'Addition'],
+                  ['-', 'Soustraction'],
+                  ['*', 'Multiplication'],
+                  ['/', 'Division'],
+                  ['=', 'Égal (assignation du résultat)'],
+                  ['(', 'Parenthèse ouvrante'],
+                  [')', 'Parenthèse fermante'],
+                  ['^', 'Puissance'],
+                  ['√', 'Racine carrée'],
+                  ['ln()', 'Logarithme naturel'],
+                  ['exp()', 'Exponentielle'],
+                  ['mean()', 'Moyenne'],
+                  ['sd()', 'Écart-type'],
+                  ['zscore()', 'Score Z : (val - moyenne) / écart-type'],
+                  ['min()', 'Valeur minimale'],
+                  ['max()', 'Valeur maximale']
+                ];
+              @endphp
+              @foreach($ops as [$symbol, $desc])
+                <button 
+                  type="button" 
+                  class="bg-white hover:bg-blue-100 border border-blue-400 text-blue-700 text-xs px-2 py-1 rounded-md transition relative"
+                  onclick="insertFormula('{{ $symbol }}')"
+                  title="{{ $desc }}"
+                >
+                  {{ $symbol }}
+                </button>
+              @endforeach
+            </div>
+
+            <!-- Search analyses -->
+            <div class="mt-5">
+              <label class="block text-sm font-medium text-gray-700 mb-1">🔍 Rechercher une analyse :</label>
+              <input 
+                type="text" 
+                id="analysisSearch" 
+                placeholder="Code ou nom..." 
+                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                oninput="filterAnalyses()"
+              />
+            </div>
+
+            <!-- Analysis codes -->
+            <div class="border-2 border-gray-300 rounded-xl p-2 mt-3 max-h-44 overflow-y-auto bg-gray-50">
+              <div id="analysisButtons" class="flex flex-wrap gap-2">
+                @foreach($analyses as $analysis)
+                  <button 
+                    type="button" 
+                    class="bg-white hover:bg-gray-100 text-xs px-2 py-1 border border-gray-300 rounded-md transition"
+                    onclick="insertFormula('{{ $analysis['code'] }}')"
+                    title="{{ $analysis['name'] ?? 'Analyse' }}"
+                  >
+                    {{ $analysis['code'] }}
+                  </button>
+                @endforeach
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Saved formulas modal -->
+        <div id="savedFormulasModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 border border-gray-300">
+            <div class="flex justify-between items-center mb-3">
+              <h4 class="text-lg font-semibold text-gray-800">📘 Formules enregistrées</h4>
+              <button onclick="closeSavedFormulas()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div id="savedFormulasList" class="space-y-2 max-h-64 overflow-y-auto"></div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Saved formulas modal -->
-    <div id="savedFormulasModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 border border-gray-300">
-        <div class="flex justify-between items-center mb-3">
-          <h4 class="text-lg font-semibold text-gray-800">📘 Formules enregistrées</h4>
-          <button onclick="closeSavedFormulas()" class="text-gray-400 hover:text-gray-600">&times;</button>
-        </div>
-        <div id="savedFormulasList" class="space-y-2 max-h-64 overflow-y-auto"></div>
-      </div>
-    </div>
-  </div>
 
       {{-- ACTIONS --}}
       <div class="flex justify-end gap-3">
@@ -350,17 +352,25 @@
 @include('analyses.partials.category-modal')
 @include('analyses.partials.sample-type-modal')
 @include('analyses.partials.unit-modal')
+
 <script>
-const API_URL = "{{ route('lab.formulas') }}"; // Adjust if needed
+// ✅ FIXED: Use route() helper for HTTPS URL
+const API_URL = "{{ route('lab.formulas') }}";
 let savedFormulas = [];
 
 // 🧭 Load formulas from API
 async function loadFormulas() {
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_URL, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
     if (res.ok) {
       savedFormulas = await res.json();
       localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
+      console.log('✅ Formulas loaded:', savedFormulas.length);
     } else {
       console.warn("⚠️ Unable to fetch formulas from API, using local data.");
       savedFormulas = JSON.parse(localStorage.getItem('savedFormulas') || '[]');
@@ -388,6 +398,7 @@ function updateFormulaPreview() {
 
 function clearFormula() {
   document.getElementById('formula').value = '';
+  document.getElementById('formula_name').value = '';
   updateFormulaPreview();
 }
 
@@ -396,11 +407,12 @@ function filterAnalyses() {
   const buttons = document.querySelectorAll('#analysisButtons button');
   buttons.forEach(btn => {
     const text = btn.textContent.toLowerCase();
-    btn.style.display = text.includes(search) ? 'inline-flex' : 'none';
+    const title = (btn.title || '').toLowerCase();
+    btn.style.display = (text.includes(search) || title.includes(search)) ? 'inline-flex' : 'none';
   });
 }
 
-// 💾 Save formula to API with loader + toast
+// 💾 Save formula to API
 async function saveFormula() {
   const name = document.getElementById('formula_name').value.trim();
   const formula = document.getElementById('formula').value.trim();
@@ -412,12 +424,16 @@ async function saveFormula() {
 
   const btn = document.getElementById('saveFormulaBtn');
   btn.disabled = true;
-  btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>Saving...`;
+  btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>Saving...`;
 
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ name, formula })
     });
 
@@ -426,20 +442,25 @@ async function saveFormula() {
       savedFormulas.unshift(saved);
       localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
       showToast(`✅ Formula "${name}" saved successfully!`, "success");
-      document.getElementById('formula_name').value = '';
       clearFormula();
     } else {
-      throw new Error("API Error");
+      const error = await res.json();
+      throw new Error(error.detail || "API Error");
     }
   } catch (err) {
     console.warn("⚠️ API error, saving locally:", err);
-    const newFormula = { name, formula, date: new Date().toISOString() };
-    savedFormulas.push(newFormula);
+    const newFormula = { 
+      id: Date.now(), 
+      name, 
+      formula, 
+      created_at: new Date().toISOString() 
+    };
+    savedFormulas.unshift(newFormula);
     localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
     showToast(`✅ Formula "${name}" saved locally (offline).`, "info");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = "Save Formula";
+    btn.innerHTML = "💾 Enregistrer la formule";
   }
 }
 
@@ -455,13 +476,13 @@ function openSavedFormulas() {
       const div = document.createElement('div');
       div.className = 'p-3 border border-gray-200 rounded-md flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition';
       div.innerHTML = `
-        <div>
+        <div class="flex-1">
           <p class="font-semibold text-gray-800">${f.name}</p>
-          <p class="text-sm text-gray-600 font-mono">${f.formula}</p>
+          <p class="text-sm text-gray-600 font-mono break-all">${f.formula}</p>
         </div>
-        <div class="flex gap-2">
-          <button onclick="useSavedFormula(${index})" class="text-indigo-600 hover:underline text-sm">Use</button>
-          <button onclick="deleteSavedFormula(${index})" class="text-red-500 hover:underline text-sm">Delete</button>
+        <div class="flex gap-2 ml-3">
+          <button onclick="useSavedFormula(${index})" class="text-indigo-600 hover:underline text-sm whitespace-nowrap">Use</button>
+          <button onclick="deleteSavedFormula(${index})" class="text-red-500 hover:underline text-sm whitespace-nowrap">Delete</button>
         </div>
       `;
       list.appendChild(div);
@@ -481,21 +502,29 @@ function useSavedFormula(index) {
   document.getElementById('formula').value = f.formula;
   updateFormulaPreview();
   closeSavedFormulas();
+  showToast(`📋 Formula "${f.name}" loaded.`, "info");
 }
 
-// 🗑️ Delete from API + local
+// 🗑️ Delete formula
 async function deleteSavedFormula(index) {
   const f = savedFormulas[index];
   if (!confirm(`Delete formula "${f.name}"?`)) return;
 
   try {
-    if (f.id) {
-      const res = await fetch(`${API_URL}/${f.id}`, { method: 'DELETE' });
+    if (f.id && f.id > 0) { // Only call API for server-saved formulas
+      const res = await fetch(`${API_URL}/${f.id}`, { 
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Accept': 'application/json'
+        }
+      });
       if (!res.ok) throw new Error("API Error");
     }
+    
     savedFormulas.splice(index, 1);
     localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
-    openSavedFormulas();
+    openSavedFormulas(); // Refresh the list
     showToast(`🗑️ Formula "${f.name}" deleted.`, "info");
   } catch (err) {
     console.error("Delete error:", err);
@@ -503,8 +532,13 @@ async function deleteSavedFormula(index) {
   }
 }
 
+// Event listeners
 document.getElementById('formula').addEventListener('input', updateFormulaPreview);
-document.addEventListener('DOMContentLoaded', loadFormulas);
+document.addEventListener('DOMContentLoaded', () => {
+  loadFormulas();
+  loadCompatibleDevices();
+  updateNoRangesMessage();
+});
 
 // 🎉 Toast notifications
 function showToast(message, type = "info") {
@@ -516,34 +550,20 @@ function showToast(message, type = "info") {
   };
 
   const toast = document.createElement("div");
-  toast.className = `fixed bottom-4 right-4 px-4 py-2 text-white rounded-lg shadow-lg text-sm flex items-center gap-2 transition transform translate-y-2 opacity-0 ${colors[type]}`;
+  toast.className = `fixed bottom-4 right-4 px-4 py-3 text-white rounded-lg shadow-lg text-sm flex items-center gap-2 transition transform translate-y-2 opacity-0 z-50 ${colors[type]}`;
   toast.innerHTML = message;
 
   document.body.appendChild(toast);
 
   setTimeout(() => toast.classList.remove("translate-y-2", "opacity-0"), 100);
   setTimeout(() => {
-    toast.classList.add("opacity-0");
+    toast.classList.add("opacity-0", "translate-y-2");
     setTimeout(() => toast.remove(), 500);
   }, 3000);
 }
-</script>
 
-<script>
+// Normal Ranges
 let rangeCounter = 0;
-
-document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('normalRangesContainer');
-    rangeCounter = container.querySelectorAll('.normal-range-item').length;
-    updateNoRangesMessage();
-
-    container.querySelectorAll('.normal-range-item').forEach(item => {
-        attachSexChangeListener(item);
-    });
-
-    // Load devices
-    loadCompatibleDevices();
-});
 
 function updateNoRangesMessage() {
     const container = document.getElementById('normalRangesContainer');
@@ -614,7 +634,7 @@ function addNormalRange(data = {}) {
             </div>
 
             <div class="flex justify-end pt-2">
-                <button type="button" onclick="if (confirm('Remove this normal range?')) this.closest('.normal-range-item').remove()" 
+                <button type="button" onclick="if (confirm('Remove this normal range?')) { this.closest('.normal-range-item').remove(); updateNoRangesMessage(); }" 
                         class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:scale-95 transition-all duration-200 shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -649,14 +669,19 @@ function attachSexChangeListener(item) {
     });
 }
 
+// ✅ FIXED: Use relative URL for devices API
 async function loadCompatibleDevices() {
     const container = document.getElementById('deviceSelectionContainer');
     const summary = document.getElementById('deviceSelectionSummary');
     const countSpan = document.getElementById('selectedDeviceCount');
-    const apiBase = '{{ env("FASTAPI_URL") }}';
     
     try {
-        const res = await fetch(`${apiBase}/lab-devices`);
+        const res = await fetch('{{ config("app.url") }}/api/lab-devices', {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
         if (!res.ok) throw new Error('Device list fetch failed');
         const devices = await res.json();
 
@@ -686,7 +711,7 @@ async function loadCompatibleDevices() {
         // Create grouped checkbox lists
         Object.entries(devicesByType).forEach(([type, typeDevices]) => {
             const typeSection = document.createElement('div');
-            typeSection.className = 'space-y-2';
+            typeSection.className = 'space-y-2 p-4';
             
             typeSection.innerHTML = `
                 <h5 class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 flex items-center gap-2">
@@ -730,11 +755,13 @@ async function loadCompatibleDevices() {
         `;
     }
 }
+
 function updateDeviceCount() {
-    const checkboxes = document.querySelectorAll('input[name="compatible_device_ids[]"]:checked');
+    const checkboxes = document.querySelectorAll('input[name="device_ids[]"]:checked');
     const countSpan = document.getElementById('selectedDeviceCount');
     countSpan.textContent = checkboxes.length;
 }
+
 // Modal Functions
 function openCategoryModal() { document.getElementById('categoryModal').classList.remove('hidden'); }
 function closeCategoryModal() { 
@@ -774,7 +801,7 @@ document.getElementById('categoryForm').addEventListener('submit', function(e) {
         return;
     }
     
-    const select = document.getElementById('category_analyse_id');
+    const select = document.querySelector('select[name="category_analyse_id"]');
     const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
     if (existingOptions.includes(name.toLowerCase())) {
         errorDiv.textContent = 'Category already exists';
@@ -789,6 +816,7 @@ document.getElementById('categoryForm').addEventListener('submit', function(e) {
     select.add(option);
     
     closeCategoryModal();
+    showToast(`✅ Category "${name}" added temporarily.`, "success");
 });
 
 document.getElementById('sampleTypeForm').addEventListener('submit', function(e) {
@@ -801,7 +829,7 @@ document.getElementById('sampleTypeForm').addEventListener('submit', function(e)
         return;
     }
     
-    const select = document.getElementById('sample_type_id');
+    const select = document.querySelector('select[name="sample_type_id"]');
     const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
     if (existingOptions.includes(name.toLowerCase())) {
         errorDiv.textContent = 'Sample type already exists';
@@ -816,6 +844,7 @@ document.getElementById('sampleTypeForm').addEventListener('submit', function(e)
     select.add(option);
     
     closeSampleTypeModal();
+    showToast(`✅ Sample type "${name}" added temporarily.`, "success");
 });
 
 document.getElementById('unitForm').addEventListener('submit', function(e) {
@@ -828,7 +857,7 @@ document.getElementById('unitForm').addEventListener('submit', function(e) {
         return;
     }
     
-    const select = document.getElementById('unit_id');
+    const select = document.querySelector('select[name="unit_id"]');
     const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
     if (existingOptions.includes(name.toLowerCase())) {
         errorDiv.textContent = 'Unit already exists';
@@ -843,6 +872,7 @@ document.getElementById('unitForm').addEventListener('submit', function(e) {
     select.add(option);
     
     closeUnitModal();
+    showToast(`✅ Unit "${name}" added temporarily.`, "success");
 });
 
 // Main form submission
@@ -877,6 +907,7 @@ document.addEventListener('click', function(e) {
     if (e.target.id === 'categoryModal') closeCategoryModal();
     if (e.target.id === 'sampleTypeModal') closeSampleTypeModal();
     if (e.target.id === 'unitModal') closeUnitModal();
+    if (e.target.id === 'savedFormulasModal') closeSavedFormulas();
 });
 </script>
 @endsection
