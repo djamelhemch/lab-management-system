@@ -351,7 +351,7 @@
 @include('analyses.partials.sample-type-modal')
 @include('analyses.partials.unit-modal')
 <script>
-const API_URL = "{{ env('FASTAPI_URL') }}/lab-formulas"; // Adjust if needed
+const API_URL = "/api/lab-formulas"; // Adjust if needed
 let savedFormulas = [];
 
 // 🧭 Load formulas from API
