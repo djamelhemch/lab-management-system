@@ -16,111 +16,58 @@ class AnalysisController extends Controller
         $this->api = $api;
     }
 
-    public function index(Request $request)  
-    {  
-        Log::info('Index method called', [  
-            'all_request_data' => $request->all(),  
-            'q' => $request->input('q'),  
-            'category_analyse_id' => $request->input('category_analyse_id'),  
-            'q_filled' => $request->filled('q'),  
-            'category_filled' => $request->filled('category_analyse_id')  
-        ]);  
-        
-        $params = [];  
-        if ($request->filled('q')) {  
-            $params['q'] = $request->input('q');  
-        }  
-        if ($request->filled('category_analyse_id')) {  
-            $params['category_analyse_id'] = (int) $request->input('category_analyse_id');  
-        }  
-  
-        Log::info('Fetching analyses from API', [  
-            'endpoint' => 'analyses',  
-            'params' => $params  
-        ]);  
-  
-        $analysesResponse = $this->api->get('analyses', $params);  
-  
-        Log::info('API Response received', [  
-            'status' => $analysesResponse->status(),  
-            'successful' => $analysesResponse->successful(),  
-            'headers' => $analysesResponse->headers(),  
-        ]);  
-  
-        if (!$analysesResponse->successful()) {  
-            Log::error('API analyses fetch failed', [  
-                'status' => $analysesResponse->status(),  
-                'body' => $analysesResponse->body(),  
-                'json' => $analysesResponse->json()  
-            ]);  
-        }  
-  
-        $analyses = $analysesResponse->successful() ? $analysesResponse->json() : [];  
-  
-        // Fetch categories  
-        Log::info('Fetching categories from API');  
-        $categoriesResponse = $this->api->get('analyses/category-analyse');  
-  
-        if (!$categoriesResponse->successful()) {  
-            Log::error('API categories fetch failed', [  
-                'status' => $categoriesResponse->status(),  
-                'body' => $categoriesResponse->body()  
-            ]);  
-        }  
-        $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];  
-  
-        Log::info('Returning view', [  
-            'analyses_count' => count($analyses),  
-            'categories_count' => count($categories)  
-        ]);  
-        
-        return view('analyses.index', compact('analyses', 'categories'));  
-    }
-    
-   public function table(Request $request)  
-    {  
-        Log::info('Table method called', [  
-            'all_request_data' => $request->all(),  
-            'q' => $request->input('q'),  
-            'category_analyse_id' => $request->input('category_analyse_id'),  
-            'q_filled' => $request->filled('q'),  
-            'category_filled' => $request->filled('category_analyse_id')  
-        ]);  
-  
-        $params = [];  
-        if ($request->filled('q')) {  
-            $params['q'] = $request->input('q');  
-        }  
-        if ($request->filled('category_analyse_id')) {  
-            $params['category_analyse_id'] = (int) $request->input('category_analyse_id');  
-        }  
-        
-        $analysesResponse = $this->api->get('analyses/table', $params); 
-  
-        Log::info('API Response received (table)', [  
-            'status' => $analysesResponse->status(),  
-            'successful' => $analysesResponse->successful(),  
-        ]);  
-  
-        if (!$analysesResponse->successful()) {  
-            Log::error('API analyses fetch (table) failed', [  
-                'status' => $analysesResponse->status(),  
-                'body' => $analysesResponse->body(),  
-                'json' => $analysesResponse->json()  
-            ]);  
-        }  
-  
-        $analyses = $analysesResponse->successful() ? $analysesResponse->json() : [];  
-  
-        Log::info('Returning table partial', [  
-            'analyses_count' => count($analyses)  
-        ]);  
-  
-        return view('analyses.partials.table', compact('analyses'))->render();  
+    private function buildAnalysisParams(Request $request): array
+    {
+        $params = [];
+
+        if ($request->filled('q')) {
+            $params['q'] = $request->input('q');
+        }
+
+        if ($request->filled('category_analyse_id')) {
+            $params['category_analyse_id'] = (int) $request->input('category_analyse_id');
+        }
+
+        $showAll = $request->input('show') === 'all';
+        if (!$showAll) {
+            // Only active when show!=all
+            $params['is_active'] = 1;
+        }
+        if ($request->filled('sort')) {
+            $params['sort'] = $request->input('sort');
+        }
+        if ($request->filled('direction')) {
+            $params['direction'] = $request->input('direction');
+        }
+        return $params;
     }
 
-   
-    public function create()
+    public function index(Request $request)
+    {
+        $params  = $this->buildAnalysisParams($request);
+        $showAll = $request->input('show') === 'all';
+
+        $analysesResponse = $this->api->get('analyses', $params);
+        $analyses         = $analysesResponse->successful() ? $analysesResponse->json() : [];
+
+        $categoriesResponse = $this->api->get('analyses/category-analyse');
+        $categories         = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
+
+        return view('analyses.index', compact('analyses', 'categories', 'showAll'));
+    }
+
+    public function table(Request $request)
+    {
+        $params  = $this->buildAnalysisParams($request);
+        $showAll = $request->input('show') === 'all';
+
+        $analysesResponse = $this->api->get('analyses/table', $params);
+        $analyses         = $analysesResponse->successful() ? $analysesResponse->json() : [];
+
+        return view('analyses.partials.table', compact('analyses', 'showAll'))->render();
+    }
+
+   public function create()
     {
         $categories = $this->api->get('analyses/category-analyse')->json();
         $sampleTypes = $this->api->get('analyses/sample-types')->json();
@@ -191,8 +138,21 @@ class AnalysisController extends Controller
         $response = $this->api->post('analyses', $data, ['json' => true]);
 
         if ($response->successful()) {
-            return redirect()->route('analyses.index')->with('success', 'Analysis created successfully.');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Analysis created successfully.',
+                'redirect' => route('analyses.index'),
+            ], 201);
+        }
+
+        return redirect()->route('analyses.index')->with('success', 'Analysis created successfully.');
         } else {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Failed to create analysis.',
+                ], 500);
+            }
+
             return redirect()->back()->with('error', 'Failed to create analysis.')->withInput();
         }
     }
@@ -265,7 +225,15 @@ class AnalysisController extends Controller
         ]);
 
         // Attach the normal ranges (array)
-        $data['normal_ranges'] = $request->input('normal_ranges', []);
+        if ($request->has('normal_ranges')) {
+            $data['normal_ranges'] = $request->normal_ranges;
+        }
+
+        $user = session('user');
+        if (!$user || empty($user['id'])) {
+            return back()->with('error', 'User session expired, please log in again.');
+        }
+        $data['user_id'] = $user['id'];
 
         $response = $this->api->put("analyses/{$id}", $data, ['json' => true]);
 

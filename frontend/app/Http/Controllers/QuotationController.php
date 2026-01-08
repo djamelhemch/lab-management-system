@@ -61,7 +61,7 @@ class QuotationController extends Controller
     public function create()
     {
         $patients   = $this->api->get('patients')->json();
-        $analyses   = $this->api->get('analyses')->json();
+        $analyses   = $this->api->get('analyses', ['is_active' => true])->json();
         $agreements = $this->api->get('agreements', ['status' => 'active'])->json();
         $doctors    = $this->api->get('doctors')->json() ?? [];
 
