@@ -15,7 +15,7 @@
       <p class="mt-1 text-sm text-gray-600">Define a new laboratory analysis including its category, unit, pricing, and device compatibility.</p>
     </header>
 
-    <form action="{{ route('analyses.store') }}" method="POST" class="space-y-8" novalidate>
+    <form id="analysisCreateForm" action="{{ route('analyses.store') }}" method="POST" class="space-y-8" novalidate>
       @csrf
 
       {{-- BASIC INFORMATION --}}
@@ -577,10 +577,11 @@ document.addEventListener('DOMContentLoaded', () => {
         container.querySelectorAll('.normal-range-item').forEach(item => {
             attachSexChangeListener(item);
         });
-    }
 
-    // Load devices
+    }
+            // Load devices
     loadCompatibleDevices();
+
     
     // ✅ Category Form
     const categoryForm = document.getElementById('categoryForm');
@@ -703,35 +704,83 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // ✅ Main form submission
-    const mainForm = document.querySelector('form[action="{{ route('analyses.store') }}"]');
-    if (mainForm) {
-        mainForm.addEventListener('submit', function(e) {
-            tempCategories.forEach(category => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'temp_categories[]';
-                input.value = JSON.stringify(category);
-                this.appendChild(input);
-            });
-            
-            tempSampleTypes.forEach(sampleType => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'temp_sample_types[]';
-                input.value = JSON.stringify(sampleType);
-                this.appendChild(input);
-            });
-            
-            tempUnits.forEach(unit => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'temp_units[]';
-                input.value = JSON.stringify(unit);
-                this.appendChild(input);
-            });
-        });
+const mainForm = document.getElementById('analysisCreateForm');
+if (mainForm) {
+  mainForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    // 1) append temp entities as hidden inputs (same as you did)
+    tempCategories.forEach(category => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'temp_categories[]';
+      input.value = JSON.stringify(category);
+      this.appendChild(input);
+    });
+
+    tempSampleTypes.forEach(sampleType => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'temp_sample_types[]';
+      input.value = JSON.stringify(sampleType);
+      this.appendChild(input);
+    });
+
+    tempUnits.forEach(unit => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'temp_units[]';
+      input.value = JSON.stringify(unit);
+      this.appendChild(input);
+    });
+
+    // 2) submit via fetch
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+      const res = await fetch(this.action, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json',              // makes Laravel send JSON/422 [web:45]
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new FormData(this),
+      });
+
+      if (res.status === 422) {
+        const data = await res.json();
+        // show first error as toast (or build a list)
+        const firstKey = Object.keys(data.errors || {})[0];
+        const firstMsg = firstKey ? data.errors[firstKey][0] : 'Validation error';
+        showToast(`⚠️ ${firstMsg}`, "warning");
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(`❌ ${data.message || 'Failed to save.'}`, "error");
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+
+      const data = await res.json();
+      showToast(`✅ ${data.message || 'Saved successfully.'}`, "success");
+
+      setTimeout(() => {
+        window.location.href = data.redirect || "{{ route('analyses.index') }}";
+      }, 700);
+
+    } catch (err) {
+      console.error(err);
+      showToast("❌ Network error. Please try again.", "error");
+      if (submitBtn) submitBtn.disabled = false;
     }
-});
+  });
+}
+
 
 function updateNoRangesMessage() {
     const container = document.getElementById('normalRangesContainer');
@@ -745,7 +794,6 @@ function updateNoRangesMessage() {
         noRangesMsg.classList.add('hidden');
     }
 }
-
 function addNormalRange(data = {}) {
     const container = document.getElementById('normalRangesContainer');
     if (!container) return;
@@ -775,18 +823,53 @@ function addNormalRange(data = {}) {
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Minimum</label>
-                    <input type="number" name="normal_ranges[${index}][age_min]" value="${data.age_min ?? ''}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
-                           placeholder="0">
+            {{-- Age Minimum --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Minimum</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <input type="number" name="normal_ranges[${index}][age_min_years]" value="${data.age_min_years ?? ''}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               placeholder="Years" min="0">
+                        <span class="text-xs text-gray-500 mt-0.5 block">Years</span>
+                    </div>
+                    <div>
+                        <input type="number" name="normal_ranges[${index}][age_min_months]" value="${data.age_min_months ?? ''}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               placeholder="Months" min="0" max="11">
+                        <span class="text-xs text-gray-500 mt-0.5 block">Months</span>
+                    </div>
+                    <div>
+                        <input type="number" name="normal_ranges[${index}][age_min_days]" value="${data.age_min_days ?? ''}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               placeholder="Days" min="0" max="30">
+                        <span class="text-xs text-gray-500 mt-0.5 block">Days</span>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Maximum</label>
-                    <input type="number" name="normal_ranges[${index}][age_max]" value="${data.age_max ?? ''}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
-                           placeholder="100">
+            </div>
+
+            {{-- Age Maximum --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Maximum</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <input type="number" name="normal_ranges[${index}][age_max_years]" value="${data.age_max_years ?? ''}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               placeholder="Years" min="0">
+                        <span class="text-xs text-gray-500 mt-0.5 block">Years</span>
+                    </div>
+                    <div>
+                        <input type="number" name="normal_ranges[${index}][age_max_months]" value="${data.age_max_months ?? ''}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               placeholder="Months" min="0" max="11">
+                        <span class="text-xs text-gray-500 mt-0.5 block">Months</span>
+                    </div>
+                    <div>
+                        <input type="number" name="normal_ranges[${index}][age_max_days]" value="${data.age_max_days ?? ''}" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               placeholder="Days" min="0" max="30">
+                        <span class="text-xs text-gray-500 mt-0.5 block">Days</span>
+                    </div>
                 </div>
             </div>
 
@@ -821,7 +904,6 @@ function addNormalRange(data = {}) {
     attachSexChangeListener(wrapper);
     updateNoRangesMessage();
 }
-
 function attachSexChangeListener(item) {
     const sexSelect = item.querySelector('.sex-select');
     const pregWrapper = item.querySelector('.pregnancy-wrapper');
@@ -908,8 +990,7 @@ async function loadCompatibleDevices() {
                             <input type="checkbox" 
                                    name="device_ids[]" 
                                    value="${device.id}"
-                                   onchange="updateDeviceCount()"
-                                   class="mt-0.5 h-4 w-4 text-amber-600 border-gray-300 rounded focus:ring-2 focus:ring-amber-500 transition">
+                                   class="device-checkbox mt-0.5 h-4 w-4 text-amber-600 border-gray-300 rounded">
                             <div class="ml-3 flex-1">
                                 <span class="text-sm font-medium text-gray-900 group-hover:text-amber-900">${device.name}</span>
                                 <p class="text-xs text-gray-500 mt-0.5">${device.model || 'Unknown Model'}</p>
@@ -923,6 +1004,7 @@ async function loadCompatibleDevices() {
         });
 
         if (summary) summary.classList.remove('hidden');
+        attachDeviceListeners();
         updateDeviceCount();
 
     } catch (err) {
@@ -940,13 +1022,26 @@ async function loadCompatibleDevices() {
 }
 
 function updateDeviceCount() {
-    const checkboxes = document.querySelectorAll('input[name="device_ids[]"]:checked');
+    const checked = document.querySelectorAll(
+        'input[name="device_ids[]"]:checked'
+    );
     const countSpan = document.getElementById('selectedDeviceCount');
     if (countSpan) {
-        countSpan.textContent = checkboxes.length;
+        countSpan.textContent = checked.length;
     }
+    console.log('Checked devices:', checked.length);
+
 }
 
+function attachDeviceListeners() {
+    const checkboxes = document.querySelectorAll('.device-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            updateDeviceCount();
+        });
+    });
+    
+}
 // Modal Functions
 function openCategoryModal() { 
     const modal = document.getElementById('categoryModal');
@@ -996,11 +1091,13 @@ function closeUnitModal() {
     }
 }
 
-// Close modals on outside click
-document.addEventListener('click', function(e) {
-    if (e.target.id === 'categoryModal') closeCategoryModal();
-    if (e.target.id === 'sampleTypeModal') closeSampleTypeModal();
-    if (e.target.id === 'unitModal') closeUnitModal();
+  // Close modals on outside click
+  document.addEventListener('click', function(e) {
+      if (e.target.id === 'categoryModal') closeCategoryModal();
+      if (e.target.id === 'sampleTypeModal') closeSampleTypeModal();
+      if (e.target.id === 'unitModal') closeUnitModal();
+  });
+
 });
 </script>
 
