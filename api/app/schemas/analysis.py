@@ -95,7 +95,7 @@ class AnalysisBase(BaseModel):
     price: Optional[float] = 0.0
     device_ids: Optional[List[int]] = []
     tube_type: Optional[str] = None 
-    
+    is_active: Optional[bool] = True
 class AnalysisCreate(AnalysisBase):
     name: str
     price: float
@@ -121,7 +121,7 @@ class AnalysisResponse(AnalysisBase):
     normal_ranges: List[NormalRangeResponse] = []
     device_ids: Optional[List[int]] = []
     tube_type: Optional[str] = None          # ✅ ensure this exists
-    device_id: Optional[str]
+    device_id: Optional[str]    = None  # Raw string from DB
     device_names: Optional[List[str]] = []
     
     @validator("device_ids", pre=True, always=True)

@@ -35,7 +35,8 @@ class AnalysisCRUD:
 
         db_analysis = AnalysisCatalog(
             **analysis_data.dict(exclude={"normal_ranges", "device_ids"}),
-            device_id=device_id_str  # ✅ store as text
+            device_id=device_id_str,
+            is_active=True  # ✅ FORCE DEFAULT ACTIVE
         )
 
         db.add(db_analysis)
@@ -93,6 +94,7 @@ class AnalysisCRUD:
         limit: int = 100,
         category_analyse_id: Optional[int] = None,
         search: Optional[str] = None,
+        is_active: Optional[bool] = True,  # default only active
     ):
         query = db.query(AnalysisCatalog).options(joinedload(AnalysisCatalog.normal_ranges))
 
@@ -109,6 +111,43 @@ class AnalysisCRUD:
                 )
             )
 
+        if is_active is not None:
+            query = query.filter(AnalysisCatalog.is_active == is_active)
+
+        return query.offset(skip).limit(limit).all()
+
+
+
+        
+    def get_active(
+        self,
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        category_analyse_id: Optional[int] = None,
+        search: Optional[str] = None,
+    ):
+        query = (
+            db.query(AnalysisCatalog)
+            .options(joinedload(AnalysisCatalog.normal_ranges))
+            .filter(AnalysisCatalog.is_active == True)
+        )
+
+        if category_analyse_id:
+            query = query.filter(AnalysisCatalog.category_analyse_id == category_analyse_id)
+
+        if search:
+            search_filter = f"%{search}%"
+            query = query.filter(
+                or_(
+                    AnalysisCatalog.name.ilike(search_filter),
+                    AnalysisCatalog.code.ilike(search_filter),
+                    AnalysisCatalog.category_analyse.has(
+                        CategoryAnalyse.name.ilike(search_filter)
+                    ),
+                )
+            )
+
         return query.offset(skip).limit(limit).all()
 
     def update(self, db: Session, analysis_id: int, analysis_data: AnalysisUpdate) -> Optional[AnalysisCatalog]:
@@ -116,9 +155,12 @@ class AnalysisCRUD:
         if not db_analysis:
             return None
 
-        update_data = analysis_data.dict(exclude_unset=True, exclude={"normal_ranges", "device_ids"})
+        update_data = analysis_data.dict(
+            exclude_unset=True,
+            exclude={"normal_ranges", "device_ids"}
+        )
 
-        # ✅ Handle device_ids list
+        # ✅ Handle device_ids
         if analysis_data.device_ids is not None:
             device_ids = analysis_data.device_ids
             if device_ids:
@@ -131,12 +173,12 @@ class AnalysisCRUD:
                 device_id_str = None
             update_data["device_id"] = device_id_str
 
-        # ✅ Apply updates
+        # ✅ APPLY ALL FIELDS (including is_active = False)
         for field, value in update_data.items():
             setattr(db_analysis, field, value)
 
-        # ✅ Handle normal ranges if provided
-        if analysis_data.normal_ranges is not None:
+        # ✅ Handle normal ranges
+        if "normal_ranges" in analysis_data.__fields_set__:
             db.query(NormalRange).filter(NormalRange.analysis_id == analysis_id).delete()
             for r in analysis_data.normal_ranges:
                 db_range = NormalRange(analysis_id=analysis_id, **r.dict())
@@ -148,11 +190,12 @@ class AnalysisCRUD:
 
     def delete(self, db: Session, analysis_id: int) -> bool:
         db_analysis = self.get(db, analysis_id)
-        if db_analysis:
-            db.delete(db_analysis)
-            db.commit()
-            return True
-        return False
+        if not db_analysis:
+            return False
+
+        db_analysis.is_active = False
+        db.commit()
+        return True
 
 
 analysis_crud = AnalysisCRUD()

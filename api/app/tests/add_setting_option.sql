@@ -39,7 +39,7 @@ VALUES (
     NOW()
 )
 
--- photo update
+    -- photo update
 SET SQL_SAFE_UPDATES = 0;
 
 UPDATE profiles 
@@ -47,3 +47,9 @@ SET photo_url = SUBSTRING_INDEX(photo_url, '/', -1)
 WHERE photo_url LIKE 'http://%' OR photo_url LIKE 'https://%';
 
 SET SQL_SAFE_UPDATES = 1;
+
+-- analysis status
+ALTER TABLE analysis_catalog
+ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1
+AFTER price;
+ALTER TABLE analysis_catalog MODIFY is_active BOOLEAN NOT NULL DEFAULT TRUE	

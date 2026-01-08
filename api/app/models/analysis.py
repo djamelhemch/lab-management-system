@@ -55,6 +55,7 @@ class AnalysisCatalog(Base):
     price = Column(Float, default=0.0)
     tube_type = Column(String(50), nullable=True)  # New field for tube type
     # Relationships
+    is_active = Column(Boolean, nullable=False, default=True) 
     category_analyse = relationship("CategoryAnalyse", back_populates="analyses")
     unit = relationship("Unit", back_populates="analyses")
     sample_type = relationship("SampleType", back_populates="analyses")

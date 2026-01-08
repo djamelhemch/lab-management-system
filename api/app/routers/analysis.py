@@ -89,6 +89,7 @@ def get_analyses_table(
     limit: int = 100,  
     category_analyse_id: Optional[int] = Query(None),  
     q: Optional[str] = Query(None),  
+    is_active: Optional[bool] = Query(None),
     db: Session = Depends(get_db),  
 ):  
     logger.info(f"=== GET /analyses/table called ===")  
@@ -107,6 +108,7 @@ def get_analyses_table(
             limit=limit,  
             category_analyse_id=category_analyse_id,  
             search=q,  
+            is_active=is_active,
         )  
         logger.info(f"analysis_crud.get_all returned {len(results)} results")  
         logger.info(f"=== GET /analyses/table completed successfully ===")  
@@ -154,9 +156,10 @@ def get_analyses(
     limit: int = 100,
     category_analyse_id: Optional[int] = Query(None),
     search: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    is_active: Optional[bool] = Query(None)
 ):
-    return analysis_crud.get_all(db, skip=skip, limit=limit, category_analyse_id=category_analyse_id, search=search)
+    return analysis_crud.get_all(db, skip=skip, limit=limit, category_analyse_id=category_analyse_id, search=search, is_active=is_active)
 
 
 @router.get("/{analysis_id}", response_model=AnalysisResponse)  
@@ -168,7 +171,7 @@ def get_analysis(analysis_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{analysis_id}", response_model=AnalysisResponse)
 @log_route("update_analysis")
-def update_analysis(analysis_id: int, analysis: AnalysisUpdate, db: Session = Depends(get_db)):
+def update_analysis(analysis_id: int, analysis: AnalysisUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user), request: Request = None):
     db_analysis = analysis_crud.update(db, analysis_id, analysis)
     if not db_analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
