@@ -63,6 +63,7 @@ Route::middleware(['auth.api'])->group(function () {
     Route::get('/lab-formulas', [AnalysisController::class, 'labFormulas'])->name('lab.formulas');
     Route::post('/lab-formulas', [AnalysisController::class, 'createFormula'])->name('lab.formulas.store');
     Route::delete('/lab-formulas/{id}', [AnalysisController::class, 'deleteFormula'])->name('lab.formulas.destroy');
+    
     // Lab devices
     Route::resource('lab-devices', LabDeviceController::class);
     
@@ -100,7 +101,12 @@ Route::middleware(['auth.api'])->group(function () {
     Route::prefix('lab-results')->group(function () {
         Route::get('/', [LabResultController::class, 'index'])->name('lab-results.index');
         Route::get('/patient/{patientId}', [LabResultController::class, 'patientResults'])->name('lab-results.patient');
-        Route::post('/', [LabResultController::class, 'store'])->name('lab-results.store');
+        Route::get('/lab-results/create', [LabResultController::class, 'create'])
+            ->name('lab-results.create');
+        Route::post('/lab-results', [LabResultController::class, 'store'])
+            ->name('lab-results.store');
+        Route::post('/lab-results/bulk', [LabResultController::class, 'storeBulk'])
+            ->name('lab-results.store-bulk');
         Route::get('/{id}', [LabResultController::class, 'show'])->name('lab-results.show');
         Route::get('/{id}/download', [LabResultController::class, 'download'])->name('lab-results.download');
     });  

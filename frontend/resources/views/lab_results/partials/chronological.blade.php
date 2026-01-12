@@ -9,15 +9,64 @@
                placeholder="Rechercher un résultat, patient, analyse..." 
                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition">
     </div>
-    <button onclick="window.location.reload()" 
+    
+   
+</div>
+{{-- Filters --}}
+<div class="mb-6 flex flex-wrap items-center gap-4">
+    <form method="GET" action="{{ route('lab-results.index') }}" class="flex flex-wrap gap-2 items-center">
+
+
+        <input type="date" name="from_date" value="{{ request('from_date') }}"
+               class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+
+        <input type="date" name="to_date" value="{{ request('to_date') }}"
+               class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+
+        <button type="submit"
+                class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+            Filtrer
+        </button>
+
+        <a href="{{ route('lab-results.index') }}" 
+           class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+           Réinitialiser
+        </a>
+         <button onclick="window.location.reload()" 
             class="inline-flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
         </svg>
         Actualiser
     </button>
+    
+    </form>
 </div>
+{{-- Sorting controls --}}
+<div class="mb-4 flex flex-wrap items-center gap-4">
+    <span class="font-medium text-gray-700">Trier par :</span>
 
+    <a href="{{ route('lab-results.index', array_merge(request()->all(), ['sort' => 'date_desc'])) }}"
+       class="px-3 py-1 rounded-md text-sm font-medium {{ request('sort') === 'date_desc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800' }}">
+        Date ↓
+    </a>
+
+    <a href="{{ route('lab-results.index', array_merge(request()->all(), ['sort' => 'date_asc'])) }}"
+       class="px-3 py-1 rounded-md text-sm font-medium {{ request('sort') === 'date_asc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800' }}">
+        Date ↑
+    </a>
+
+    <a href="{{ route('lab-results.index', array_merge(request()->all(), ['sort' => 'file_number_asc'])) }}"
+       class="px-3 py-1 rounded-md text-sm font-medium {{ request('sort') === 'file_number_asc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800' }}">
+        N° Dossier ↑
+    </a>
+
+    <a href="{{ route('lab-results.index', array_merge(request()->all(), ['sort' => 'file_number_desc'])) }}"
+       class="px-3 py-1 rounded-md text-sm font-medium {{ request('sort') === 'file_number_desc' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800' }}">
+        N° Dossier ↓
+    </a>
+    
+</div>
 {{-- Results Table --}}
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
     <div class="overflow-x-auto">
