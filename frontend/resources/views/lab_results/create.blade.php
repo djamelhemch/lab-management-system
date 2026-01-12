@@ -41,10 +41,10 @@
         {{-- Step 1: Select quotation --}}
         <div class="mb-8 p-6 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:border-red-300 transition-all">
             <label for="quotation_select" class="block text-sm font-semibold text-gray-700 mb-3">
-                📋 Sélectionner un devis
+                📋 Sélectionner une visite
             </label>
             <select id="quotation_select" class="w-full p-3 rounded-lg border-2 border-gray-200 shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none text-sm bg-white transition-all hover:shadow-md">
-                <option value="">🔍 Choisir un devis (patient & date)</option>
+                <option value="">🔍 Choisir une visite (patient & date)</option>
                 @foreach($quotations as $q)
                     @php
                         $patient = $q['patient'] ?? null;
@@ -95,11 +95,11 @@
                     <div class="flex space-x-3">
                         <button type="button" onclick="clearForm()" 
                                 class="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-gray-500">
-                            🗑️ Effacer
+                             Effacer
                         </button>
                         <button type="submit" id="submitBtn" disabled
                                 class="inline-flex items-center px-8 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                            💾 Enregistrer <span id="submitCount" class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs font-bold">0</span>
+                             Enregistrer <span id="submitCount" class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs font-bold">0</span>
                         </button>
                     </div>
                 </div>
