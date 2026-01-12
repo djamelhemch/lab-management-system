@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-
+from app.schemas.analysis import AnalysisResponse
 class AnalysisBase(BaseModel):
     id: int
     name: str
@@ -24,8 +24,8 @@ class QuotationItemCreate(QuotationItemBase):
 class QuotationItem(QuotationItemBase):
     id: int
     quotation_id: int
-    analysis: Optional[AnalysisBase] 
-
+    analysis: Optional[AnalysisResponse] = None  
+    
     class Config:
         orm_mode = True
 

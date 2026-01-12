@@ -72,7 +72,13 @@ def get_quotation(db: Session, quotation_id: int):
     return (
         db.query(Quotation)
         .options(
-            joinedload(Quotation.analysis_items).joinedload(QuotationItem.analysis),
+            # load analysis items
+            joinedload(Quotation.analysis_items)
+            .joinedload(QuotationItem.analysis)  # load the analysis
+            .joinedload(AnalysisCatalog.normal_ranges),  # load its normal ranges
+            joinedload(Quotation.analysis_items)
+            .joinedload(QuotationItem.analysis)
+            .joinedload(AnalysisCatalog.unit),  # load the unit of the analysis
             joinedload(Quotation.patient),
             joinedload(Quotation.agreement),
             joinedload(Quotation.payments)
@@ -80,7 +86,6 @@ def get_quotation(db: Session, quotation_id: int):
         .filter(Quotation.id == quotation_id)
         .first()
     )
-
 def get_all_quotations(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Quotation).offset(skip).limit(limit).all()
 

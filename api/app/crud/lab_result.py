@@ -138,7 +138,6 @@ def create_lab_result(db: Session, data: LabResultCreate):
 
     return lab_result
 
-
 def create_lab_results_for_quotation(db: Session, quotation_id: int, result_values: dict):
     """Create lab results for all analyses inside a quotation"""
     quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
@@ -152,7 +151,6 @@ def create_lab_results_for_quotation(db: Session, quotation_id: int, result_valu
     age_years, _ = calculate_age(patient.dob)
 
     created_results = []
-    missing_items = []
 
     for item in quotation.analysis_items:
         analysis = item.analysis
@@ -162,14 +160,11 @@ def create_lab_results_for_quotation(db: Session, quotation_id: int, result_valu
         # Get result value
         result_value = result_values.get(item.id)
         try:
-            value = float(result_value) if result_value is not None else None
+            value_float = float(result_value) if result_value is not None else None
         except ValueError:
-            value = None
+            value_float = None
 
-        interpretation = compute_interpretation(value, normal_range.normal_min if normal_range else None,
-                                                normal_range.normal_max if normal_range else None)
-
-        # Resolve normal range
+        # ✅ RESOLVE NORMAL RANGE FIRST
         normal_range = (
             db.query(NormalRange)
             .filter(
@@ -190,18 +185,17 @@ def create_lab_results_for_quotation(db: Session, quotation_id: int, result_valu
                 .first()
             )
 
-        # Interpretation
+        # ✅ COMPUTE INTERPRETATION (normal_range now exists)
         normal_min = normal_range.normal_min if normal_range else None
         normal_max = normal_range.normal_max if normal_range else None
         interpretation = "n/a"
         try:
-            value = float(result_value)
-            if normal_min is not None and normal_max is not None:
-                if value < 0.5 * normal_min or value > 1.5 * normal_max:
+            if value_float is not None and normal_min is not None and normal_max is not None:
+                if value_float < 0.5 * normal_min or value_float > 1.5 * normal_max:
                     interpretation = "critical"
-                elif value < normal_min:
+                elif value_float < normal_min:
                     interpretation = "low"
-                elif value > normal_max:
+                elif value_float > normal_max:
                     interpretation = "high"
                 else:
                     interpretation = "normal"
@@ -231,13 +225,8 @@ def create_lab_results_for_quotation(db: Session, quotation_id: int, result_valu
     for r in created_results:
         db.refresh(r)
 
-    if missing_items:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Missing quotation items: {missing_items}"
-        )
-
     return created_results
+
 
 def get_lab_result(db: Session, result_id: int):
     result = (

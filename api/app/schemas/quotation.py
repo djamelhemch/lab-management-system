@@ -8,6 +8,7 @@ from pydantic import BaseModel, computed_field, Field
 from typing import List, Optional
 from datetime import datetime
 import enum
+from app.schemas.analysis import NormalRangeResponse
 
 class AnalysisBase(BaseModel):
     id: int
@@ -18,6 +19,25 @@ class AnalysisBase(BaseModel):
 
     class Config:
         orm_mode = True
+
+class UnitResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
+class AnalysisWithRangesSchema(BaseModel):
+    id: int
+    code: Optional[str] = None
+    name: str
+    unit: Optional[UnitResponse] = None  # <-- add unit here
+    normal_ranges: List[NormalRangeResponse] = []
+
+    class Config:
+        orm_mode = True
+        
 class AgreementSummary(BaseModel):
     id: int
     discount_type: Optional[str] = None
@@ -39,7 +59,7 @@ class QuotationItemSchema(QuotationItemBase):
     id: int
     analysis_id: int
     price: float
-    analysis: Optional[AnalysisBase]
+    analysis: Optional[AnalysisWithRangesSchema] = None
     class Config:
         orm_mode = True
 
