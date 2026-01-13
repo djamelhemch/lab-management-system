@@ -32,7 +32,7 @@ class AnalysisWithRangesSchema(BaseModel):
     id: int
     code: Optional[str] = None
     name: str
-    unit: Optional[UnitResponse] = None  # <-- add unit here
+    unit: Optional[UnitResponse] = None  
     normal_ranges: List[NormalRangeResponse] = []
 
     class Config:

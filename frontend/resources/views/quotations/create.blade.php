@@ -38,7 +38,110 @@
                 </ul>
             </div>
         @endif
+                
+        {{-- Today's Latest Visits - NEW SECTION --}}
+        @if($todayVisits->isNotEmpty())
+            <div class="mb-6">
+                <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
 
+                    {{-- Header --}}
+                    <div class="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                Today's Visits ({{ $todayVisits->count() }})
+                            </h3>
+                        </div>
+
+                        <p class="text-xs text-gray-500 mt-1">
+                            Latest quotations today – Click to quick-select patient
+                        </p>
+                    </div>
+
+                    {{-- Table --}}
+                    <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase w-20">
+                                        Time
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase w-12">
+                                        Date
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                                        Patient
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase w-32">
+                                        File #
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="divide-y divide-gray-200">
+                                @foreach($todayVisits->take(15) as $visit)
+                                    <tr
+                                        class="hover:bg-blue-50 cursor-pointer transition-all duration-200 group
+                                            border-l-4 border-l-transparent hover:border-l-blue-400 hover:shadow-sm"
+                                        onclick="quickSelectPatient({{ $visit['patient_id'] ?? 'null' }})"
+                                    >
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900">
+                                            {{ \Carbon\Carbon::parse($visit['visit_time'])->format('H:i') }}
+                                        </td>
+
+                                        <td class="px-4 py-3 text-xs font-mono text-gray-600">
+                                            {{ \Carbon\Carbon::parse($visit['visit_date'])->format('d/m') }}
+                                        </td>
+
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            <div class="truncate group-hover:underline max-w-[200px]">
+                                                {{ trim($visit['patient_first_name'].' '.$visit['patient_last_name']) ?: 'N/A' }}
+                                            </div>
+                                        </td>
+
+                                        <td class="px-4 py-3 text-xs font-mono bg-gray-50 text-gray-800 rounded truncate">
+                                            {{ $visit['file_number'] ?? 'N/A' }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Footer --}}
+                    @if($todayVisits->count() > 15)
+                        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-center text-gray-500 font-medium">
+                            +{{ $todayVisits->count() - 15 }} more today
+                        </div>
+                    @endif
+
+                </div>
+            </div>
+        @else
+            {{-- Empty state --}}
+            <div class="mb-6">
+                <div class="bg-white rounded-xl border border-dashed border-gray-300 p-8 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+
+                    <h3 class="mt-4 text-lg font-semibold text-gray-900">
+                        Aucun devis aujourd’hui
+                    </h3>
+
+                    <p class="mt-2 text-sm text-gray-500">
+                        Aucune visite n’a encore été créé aujourd’hui.<br>
+                        Les nouveaux devis apparaîtront ici automatiquement.
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        {{-- Quotation Form --}}
         <form action="{{ route('quotations.store') }}" method="POST" id="quotation-form" class="space-y-6">
             @csrf
 
@@ -1069,5 +1172,28 @@ function updatePaymentSummary() {
     // Initialize with one row
     addAnalysisRow();
 });
+</script>
+{{-- JavaScript function for quick patient selection --}}
+<script>
+function quickSelectPatient(patientId) {
+    const select = document.getElementById('patient_id');
+    select.value = patientId;
+    select.dispatchEvent(new Event('change'));
+    
+    // Optional: Trigger Alpine.js patient form update
+    if (window.Alpine) {
+        const patientComponent = Alpine.$data(document.querySelector('[x-data="patientForm()"]'));
+        if (patientComponent) {
+            patientComponent.showNewPatient = false;
+        }
+    }
+    
+    // Optional: Show success feedback
+    const row = event.currentTarget;
+    row.style.backgroundColor = '#dbeafe';
+    setTimeout(() => {
+        row.style.backgroundColor = '';
+    }, 1500);
+}
 </script>
 @endpush

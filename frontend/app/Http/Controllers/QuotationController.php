@@ -9,7 +9,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AnalysisController;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
-
+use Illuminate\Support\Facades\Log;
 class QuotationController extends Controller
 {
     protected $api;
@@ -65,7 +65,43 @@ class QuotationController extends Controller
         $agreements = $this->api->get('agreements', ['status' => 'active'])->json();
         $doctors    = $this->api->get('doctors')->json() ?? [];
 
-        return view('quotations.create', compact('patients', 'analyses', 'agreements', 'doctors'));
+        // TODAY'S QUOTATIONS
+        try {
+            $todayResponse = $this->api->get('/quotations/today', ['limit' => 50]);
+            Log::info("Today quotations API called", [
+                'status' => $todayResponse->status(),
+                'body' => $todayResponse->body()
+            ]);
+
+            $todayVisits = collect($todayResponse->json())->map(function ($patient) {
+                $quotations = collect($patient['quotations'] ?? []);
+
+                if ($quotations->isEmpty()) {
+                    return null;
+                }
+
+                $latest = $quotations->first();
+
+                return [
+                    'patient_id' => $patient['patient_id'] ?? null,
+                    'patient_first_name' => $patient['first_name'] ?? '',
+                    'patient_last_name' => $patient['last_name'] ?? '',
+                    'file_number' => $patient['file_number'] ?? null,
+                    'visit_date' => \Carbon\Carbon::parse($latest['created_at'])->format('Y-m-d'),
+                    'visit_time' => \Carbon\Carbon::parse($latest['created_at'])->format('H:i:s'),
+                    'quotations_count' => $quotations->count(),
+                ];
+            })->filter();
+
+            Log::info("Today visits processed", ['count' => $todayVisits->count()]);
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch today's quotations", [
+                'error' => $e->getMessage()
+            ]);
+            $todayVisits = collect();
+        }
+
+        return view('quotations.create', compact('patients', 'analyses', 'agreements', 'doctors', 'todayVisits'));
     }
 
     public function store(Request $request)

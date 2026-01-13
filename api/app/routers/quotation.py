@@ -5,6 +5,8 @@ from app.database import get_db
 from app.crud import quotation as crud_quotation
 from app.models.quotation import Quotation
 from app.schemas.quotation import QuotationWithPatientSchema, QuotationCreate, QuotationStatusEnum, QuotationItem
+from app.schemas.quotation_dashboard import PatientTodayQuotations, QuotationTodayItem
+from datetime import datetime
 from typing import List, Optional
 import math
 from app.crud.quotation import get_revenue_stats
@@ -12,12 +14,57 @@ from app.routers.auth import get_current_user  # Add this import
 from app.utils.app_logging import log_route  # Import the logging decorator
 from app.models.user import User  # Import User model for current_user dependency
 from app.models.patient import Patient  # Import Patient model for search
+from sqlalchemy import func
+import logging
 router = APIRouter(prefix="/quotations", tags=["Quotations"])
-
+logger = logging.getLogger("uvicorn") 
 
 @router.get("/stats")
 def quotation_stats(db: Session = Depends(get_db)):
     return get_revenue_stats(db)
+
+@router.get("/today", response_model=list[dict])
+def list_today_quotations_dashboard(
+    db: Session = Depends(get_db),
+    limit: int = Query(50, le=100),
+):
+    today = datetime.now().date()
+    logger.info(f"Fetching today's quotations for {today} with limit {limit}")
+
+    quotations = (
+        db.query(Quotation)
+        .options(joinedload(Quotation.patient))
+        .filter(func.date(Quotation.created_at) == today)
+        .order_by(Quotation.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    logger.info(f"Fetched {len(quotations)} quotations from DB")
+
+    grouped: dict[int, dict] = {}
+    for q in quotations:
+        if not q.patient:
+            logger.warning(f"Quotation {q.id} has no patient")
+            continue
+
+        pid = q.patient.id
+        if pid not in grouped:
+            grouped[pid] = {
+                "patient_id": pid,
+                "first_name": q.patient.first_name,
+                "last_name": q.patient.last_name,
+                "file_number": q.patient.file_number,
+                "quotations": [],
+            }
+        grouped[pid]["quotations"].append({
+            "quotation_id": q.id,
+            "created_at": q.created_at.isoformat(),
+        })
+
+    grouped_list = list(grouped.values())
+    logger.info(f"Returning {len(grouped_list)} patients with quotations")
+    return grouped_list
 
 @router.get("/", response_model=dict)  # return structured dict instead of plain list
 def list_quotations(
@@ -68,6 +115,8 @@ def read_quotation(quotation_id: int, db: Session = Depends(get_db), current_use
     if not quotation:
         raise HTTPException(status_code=404, detail="Quotation not found")
     return quotation
+
+
 
 @router.post("/", response_model=QuotationWithPatientSchema)
 @log_route("create_quotation")
