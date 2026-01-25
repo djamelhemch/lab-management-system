@@ -27,7 +27,6 @@ def log_action(
     db.add(log_entry)
     db.commit()
     
-
 def log_route(action_type: str):
     def decorator(func):
         @wraps(func)
@@ -40,52 +39,77 @@ def log_route(action_type: str):
                 result = await func(*args, **kwargs) if inspect.iscoroutinefunction(func) else func(*args, **kwargs)
             except Exception as e:
                 # Log failed attempt
-                if db:
-                    user_identifier = getattr(current_user, "id", None) or kwargs.get("form_data", {}).get("username")
+                if db and current_user:
                     _insert_log(
                         db, 
-                        user_identifier, 
-                        action_type, 
+                        current_user.id, 
+                        f"{action_type}_failed", 
                         f"{action_type} failed: {str(e)}", 
-                        request
+                        request  # ✅ Pass request
                     )
                 raise
 
-            # Build a detailed description
+            # ✅ Build description...
             description = action_type
+            if result and hasattr(result, "id"):
+                description += f" (ID: {result.id})"
 
-            # Try to enhance description based on returned object
-            if result:
-                # Patient
-                if hasattr(result, "file_number") and hasattr(result, "first_name") and hasattr(result, "last_name"):
-                    description += f" (file_number: {result.file_number}, name: {result.first_name} {result.last_name})"
-
-                # Quotation
-                elif hasattr(result, "id") and hasattr(result, "patient"):
-                    patient = getattr(result, "patient")
-                    if hasattr(patient, "full_name"):
-                        description += f" (Quotation ID: {result.id}, Patient: {patient.full_name})"
-
-                # Analysis
-                elif hasattr(result, "id") and hasattr(result, "name"):
-                    description += f" (Analysis ID: {result.id}, name: {result.name})"
-
-            # Fallback username info
-            if kwargs.get("form_data") and hasattr(kwargs["form_data"], "username"):
-                description += f" (username: {kwargs['form_data'].username})"
-
-            # Determine user_id
-            user_id = getattr(current_user, "id", None) or 0
-
-            if db:
-                _insert_log(db, user_id, action_type, description, request)
+            if db and current_user:
+                _insert_log(db, current_user.id, action_type, description, request)  # ✅ Pass request
 
             return result
-
         return wrapper
     return decorator
 
 
+def get_real_client_ip(request: Request) -> str:
+    """
+    Get real client IP through Cloudflare/Proxy headers
+    Priority order: CF-Connecting-IP > X-Forwarded-For > X-Real-IP > request.client.host
+    """
+    if request is None:
+        return "unknown"
+    
+    # ✅ Cloudflare specific
+    cf_connecting_ip = request.headers.get("cf-connecting-ip")
+    if cf_connecting_ip:
+        return cf_connecting_ip
+    
+    # ✅ Standard proxy headers
+    x_forwarded_for = request.headers.get("x-forwarded-for")
+    if x_forwarded_for:
+        # Take first IP (real client, not proxies)
+        return x_forwarded_for.split(",")[0].strip()
+    
+    x_real_ip = request.headers.get("x-real-ip")
+    if x_real_ip:
+        return x_real_ip
+    
+    # Fallback
+    return request.client.host
+
+def get_real_user_agent(request: Request) -> str:
+    """Get real User-Agent, fallback to generic desktop/mobile detection"""
+    if request is None:
+        return "Unknown"
+    
+    ua = request.headers.get("user-agent", "")
+    if not ua:
+        return "Unknown"
+    
+    ua_lower = ua.lower()
+    
+    # ✅ Detect device type from UA
+    if "mobile" in ua_lower or "android" in ua_lower or "iphone" in ua_lower or "ipad" in ua_lower:
+        return "Mobile Browser"
+    elif "chrome" in ua_lower:
+        return "Chrome Desktop"
+    elif "firefox" in ua_lower:
+        return "Firefox Desktop"
+    elif "safari" in ua_lower:
+        return "Safari Desktop"
+    else:
+        return ua[:100] + "..."  # Truncate long UAs
 async def _handle_log(func, args, kwargs, action_type, is_async: bool):
     request: Request = kwargs.get("request", None)
     db: Session = kwargs.get("db", None)
@@ -132,8 +156,8 @@ async def _handle_log(func, args, kwargs, action_type, is_async: bool):
     return result
 
 def _insert_log(db: Session, user_id: Optional[int], action_type: str, description: str, request: Request = None):
-    ip_address = request.client.host if request else None
-    user_agent = request.headers.get("user-agent") if request else None
+    ip_address = get_real_client_ip(request)
+    user_agent = get_real_user_agent(request)
 
     db.execute(
         text(
@@ -141,7 +165,7 @@ def _insert_log(db: Session, user_id: Optional[int], action_type: str, descripti
             "VALUES (:user_id, :action_type, :description, :ip_address, :user_agent, :created_at)"
         ),
         {
-            "user_id": user_id,  # This can now be None and insert as NULL in DB
+            "user_id": user_id,
             "action_type": action_type,
             "description": description,
             "ip_address": ip_address,
