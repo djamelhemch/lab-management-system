@@ -33,11 +33,12 @@ class AnalysisCRUD:
         else:
             device_id_str = None
 
-        db_analysis = AnalysisCatalog(
-            **analysis_data.dict(exclude={"normal_ranges", "device_ids"}),
-            device_id=device_id_str,
-            is_active=True  # ✅ FORCE DEFAULT ACTIVE
-        )
+        # ✅ FIX: Extract dict and update is_active before creating instance
+        analysis_dict = analysis_data.dict(exclude={"normal_ranges", "device_ids"})
+        analysis_dict['device_id'] = device_id_str
+        analysis_dict['is_active'] = analysis_dict.get('is_active', True)  # Default to True if not provided
+
+        db_analysis = AnalysisCatalog(**analysis_dict)
 
         db.add(db_analysis)
         db.commit()
@@ -51,6 +52,7 @@ class AnalysisCRUD:
         db.commit()
         db.refresh(db_analysis)
         return db_analysis
+
 
 
     def get(self, db: Session, analysis_id: int):

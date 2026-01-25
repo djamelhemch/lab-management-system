@@ -55,6 +55,10 @@
                 </button>
             </div>
         </div>
+            {{-- REQUIRED FOR SORT --}}
+        <input type="hidden" name="sort_by" value="{{ request('sort_by', '') }}">
+        <input type="hidden" name="sort_dir" value="{{ request('sort_dir', 'desc') }}">
+
     </form>
 
     <!-- Loading Indicator -->
@@ -122,45 +126,50 @@ document.addEventListener("DOMContentLoaded", function() {
         loadingIndicator.classList.add('hidden');
     }
 
-    function fetchTable() {
-        if (currentRequest) currentRequest.abort();
+    function fetchTable(extra = {}) {
+    if (currentRequest) currentRequest.abort();
 
-        const q = searchInput.value.trim();
-        const params = new URLSearchParams();
-        if (q) params.append('q', q);
-        if (categoryFilter && categoryFilter.value) params.append(categoryFilter.name, categoryFilter.value);
+    const formData = new FormData(form);
 
-        showLoading();
+    // Override / inject extra params (page, sort, etc.)
+    Object.entries(extra).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+            formData.set(key, value);
+        }
+    });
 
-        const controller = new AbortController();
-        currentRequest = controller;
+    const params = new URLSearchParams(formData);
 
-        fetch(`${route}?${params.toString()}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
-            signal: controller.signal
-        })
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
-            return res.text();
-        })
-        .then(html => {
-            container.innerHTML = html;
-            hideLoading();
-            currentRequest = null;
-        })
-        .catch(err => {
-            if (err.name !== 'AbortError') {
-                container.innerHTML = `
-                    <div class="text-center text-red-600 bg-white p-8 rounded-lg shadow">
-                        <h3 class="text-lg font-medium text-red-900 mb-2">Error loading data</h3>
-                        <p class="text-sm">Please try again or refresh the page.</p>
-                    </div>
-                `;
-            }
-            hideLoading();
-            currentRequest = null;
-        });
-    }
+    showLoading();
+
+    const controller = new AbortController();
+    currentRequest = controller;
+
+    fetch(`${route}?${params.toString()}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html'
+        },
+        signal: controller.signal
+    })
+    .then(res => {
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+        return res.text();
+    })
+    .then(html => {
+        container.innerHTML = html;
+        hideLoading();
+        currentRequest = null;
+    })
+    .catch(err => {
+        if (err.name !== 'AbortError') {
+            console.error(err);
+        }
+        hideLoading();
+        currentRequest = null;
+    });
+}
+
 
     // Debounced live search
     searchInput.addEventListener('input', function() {

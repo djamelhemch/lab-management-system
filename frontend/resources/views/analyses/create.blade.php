@@ -508,7 +508,7 @@ async function deleteSavedFormula(index) {
   if (!confirm(`Delete formula "${f.name}"?`)) return;
 
   try {
-    if (f.id && f.id > 0) { // Only call API for server-saved formulas
+    if (f.id && f.id > 0) {
       const res = await fetch(`${API_URL}/${f.id}`, { 
         method: 'DELETE',
         headers: {
@@ -521,19 +521,13 @@ async function deleteSavedFormula(index) {
     
     savedFormulas.splice(index, 1);
     localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
-    openSavedFormulas(); // Refresh the list
+    openSavedFormulas();
     showToast(`🗑️ Formula "${f.name}" deleted.`, "info");
   } catch (err) {
     console.error("Delete error:", err);
     showToast("❌ Failed to delete formula.", "error");
   }
 }
-
-// Event listeners
-document.getElementById('formula').addEventListener('input', updateFormulaPreview);
-document.addEventListener('DOMContentLoaded', () => {
-  loadFormulas();
-});
 
 // 🎉 Toast notifications
 function showToast(message, type = "info") {
@@ -559,251 +553,51 @@ function showToast(message, type = "info") {
 </script>
 
 <script>
+// ✅ GLOBAL SCOPE - Functions accessible from onclick attributes
 let rangeCounter = 0;
-
-// Temporary storage
 let tempCategories = [];
 let tempSampleTypes = [];
 let tempUnits = [];
 let tempIdCounter = -1;
 
-// ✅ All initialization and event listeners inside DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('normalRangesContainer');
-    if (container) {
-        rangeCounter = container.querySelectorAll('.normal-range-item').length;
-        updateNoRangesMessage();
-        
-        container.querySelectorAll('.normal-range-item').forEach(item => {
-            attachSexChangeListener(item);
-        });
-
-    }
-            // Load devices
-    loadCompatibleDevices();
-
-    
-    // ✅ Category Form
-    const categoryForm = document.getElementById('categoryForm');
-    if (categoryForm) {
-        categoryForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('categoryName');
-            const errorDiv = document.getElementById('categoryError');
-            
-            if (!nameInput || !errorDiv) return;
-            
-            const name = nameInput.value.trim();
-            
-            if (!name) {
-                errorDiv.textContent = 'Category name is required';
-                return;
-            }
-            
-            const select = document.querySelector('select[name="category_analyse_id"]');
-            if (!select) {
-                console.error('Category select not found');
-                return;
-            }
-            
-            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-            if (existingOptions.includes(name.toLowerCase())) {
-                errorDiv.textContent = 'Category already exists';
-                return;
-            }
-            
-            const tempCategory = { id: tempIdCounter--, name: name, isTemp: true };
-            tempCategories.push(tempCategory);
-            
-            const option = new Option(name + ' (New)', tempCategory.id, true, true);
-            option.className = 'text-emerald-600 font-medium';
-            select.add(option);
-            
-            closeCategoryModal();
-        });
-    }
-    
-    // ✅ Sample Type Form
-    const sampleTypeForm = document.getElementById('sampleTypeForm');
-    if (sampleTypeForm) {
-        sampleTypeForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('sampleTypeName');
-            const errorDiv = document.getElementById('sampleTypeError');
-            
-            if (!nameInput || !errorDiv) return;
-            
-            const name = nameInput.value.trim();
-            
-            if (!name) {
-                errorDiv.textContent = 'Sample type name is required';
-                return;
-            }
-            
-            const select = document.querySelector('select[name="sample_type_id"]');
-            if (!select) {
-                console.error('Sample type select not found');
-                return;
-            }
-            
-            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-            if (existingOptions.includes(name.toLowerCase())) {
-                errorDiv.textContent = 'Sample type already exists';
-                return;
-            }
-            
-            const tempSampleType = { id: tempIdCounter--, name: name, isTemp: true };
-            tempSampleTypes.push(tempSampleType);
-            
-            const option = new Option(name + ' (New)', tempSampleType.id, true, true);
-            option.className = 'text-emerald-600 font-medium';
-            select.add(option);
-            
-            closeSampleTypeModal();
-        });
-    }
-    
-    // ✅ Unit Form
-    const unitForm = document.getElementById('unitForm');
-    if (unitForm) {
-        unitForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('unitName');
-            const errorDiv = document.getElementById('unitError');
-            
-            if (!nameInput || !errorDiv) return;
-            
-            const name = nameInput.value.trim();
-            
-            if (!name) {
-                errorDiv.textContent = 'Unit name is required';
-                return;
-            }
-            
-            const select = document.querySelector('select[name="unit_id"]');
-            if (!select) {
-                console.error('Unit select not found');
-                return;
-            }
-            
-            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-            if (existingOptions.includes(name.toLowerCase())) {
-                errorDiv.textContent = 'Unit already exists';
-                return;
-            }
-            
-            const tempUnit = { id: tempIdCounter--, name: name, isTemp: true };
-            tempUnits.push(tempUnit);
-            
-            const option = new Option(name + ' (New)', tempUnit.id, true, true);
-            option.className = 'text-emerald-600 font-medium';
-            select.add(option);
-            
-            closeUnitModal();
-        });
-    }
-    
-    // ✅ Main form submission
-const mainForm = document.getElementById('analysisCreateForm');
-if (mainForm) {
-  mainForm.addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    // 1) append temp entities as hidden inputs (same as you did)
-    tempCategories.forEach(category => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'temp_categories[]';
-      input.value = JSON.stringify(category);
-      this.appendChild(input);
+// ✅ Update range badges (#1, #2, ...)
+function updateRangeNumbers() {
+    const items = document.querySelectorAll('.normal-range-item');
+    items.forEach((item, i) => {
+        const badge = item.querySelector('.range-badge');
+        if (badge) badge.textContent = i + 1;
     });
-
-    tempSampleTypes.forEach(sampleType => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'temp_sample_types[]';
-      input.value = JSON.stringify(sampleType);
-      this.appendChild(input);
-    });
-
-    tempUnits.forEach(unit => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'temp_units[]';
-      input.value = JSON.stringify(unit);
-      this.appendChild(input);
-    });
-
-    // 2) submit via fetch
-    const submitBtn = this.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.disabled = true;
-
-    try {
-      const res = await fetch(this.action, {
-        method: 'POST',
-        headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-          'Accept': 'application/json',              // makes Laravel send JSON/422 [web:45]
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: new FormData(this),
-      });
-
-      if (res.status === 422) {
-        const data = await res.json();
-        // show first error as toast (or build a list)
-        const firstKey = Object.keys(data.errors || {})[0];
-        const firstMsg = firstKey ? data.errors[firstKey][0] : 'Validation error';
-        showToast(`⚠️ ${firstMsg}`, "warning");
-        if (submitBtn) submitBtn.disabled = false;
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        showToast(`❌ ${data.message || 'Failed to save.'}`, "error");
-        if (submitBtn) submitBtn.disabled = false;
-        return;
-      }
-
-      const data = await res.json();
-      showToast(`✅ ${data.message || 'Saved successfully.'}`, "success");
-
-      setTimeout(() => {
-        window.location.href = data.redirect || "{{ route('analyses.index') }}";
-      }, 700);
-
-    } catch (err) {
-      console.error(err);
-      showToast("❌ Network error. Please try again.", "error");
-      if (submitBtn) submitBtn.disabled = false;
-    }
-  });
 }
 
-
-function updateNoRangesMessage() {
-    const container = document.getElementById('normalRangesContainer');
-    const noRangesMsg = document.getElementById('noRangesMessage');
-    
-    if (!container || !noRangesMsg) return;
-    
-    if (container.children.length === 0) {
-        noRangesMsg.classList.remove('hidden');
-    } else {
-        noRangesMsg.classList.add('hidden');
-    }
+// ✅ Show "Add Another Range" only on the last item
+function updateAddButtons() {
+    const items = document.querySelectorAll('.normal-range-item');
+    items.forEach((item, i) => {
+        const addBtn = item.querySelector('.bg-\\[\\#bc1622\\]');
+        if (addBtn) {
+            addBtn.style.display = (i === items.length - 1) ? 'inline-flex' : 'none';
+        }
+    });
 }
+
 function addNormalRange(data = {}) {
     const container = document.getElementById('normalRangesContainer');
     if (!container) return;
-    
+
     const index = rangeCounter++;
 
     const wrapper = document.createElement('div');
     wrapper.className = 'normal-range-item bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-gray-200 p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200';
 
     wrapper.innerHTML = `
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+            <h4 class="range-title text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span class="range-badge flex items-center justify-center w-6 h-6 rounded-full bg-[#bc1622] text-white text-xs font-bold">
+                    #
+                </span>
+                Reference Range
+            </h4>
+        </div>
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -823,7 +617,6 @@ function addNormalRange(data = {}) {
                 </div>
             </div>
 
-            {{-- Age Minimum --}}
             <div>
                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Minimum</label>
                 <div class="grid grid-cols-3 gap-2">
@@ -841,32 +634,31 @@ function addNormalRange(data = {}) {
                     </div>
                     <div>
                         <input type="number" name="normal_ranges[${index}][age_min_days]" value="${data.age_min_days ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
                                placeholder="Days" min="0" max="30">
                         <span class="text-xs text-gray-500 mt-0.5 block">Days</span>
                     </div>
                 </div>
             </div>
 
-            {{-- Age Maximum --}}
             <div>
                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Maximum</label>
                 <div class="grid grid-cols-3 gap-2">
                     <div>
                         <input type="number" name="normal_ranges[${index}][age_max_years]" value="${data.age_max_years ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
                                placeholder="Years" min="0">
                         <span class="text-xs text-gray-500 mt-0.5 block">Years</span>
                     </div>
                     <div>
                         <input type="number" name="normal_ranges[${index}][age_max_months]" value="${data.age_max_months ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
                                placeholder="Months" min="0" max="11">
                         <span class="text-xs text-gray-500 mt-0.5 block">Months</span>
                     </div>
                     <div>
                         <input type="number" name="normal_ranges[${index}][age_max_days]" value="${data.age_max_days ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
                                placeholder="Days" min="0" max="30">
                         <span class="text-xs text-gray-500 mt-0.5 block">Days</span>
                     </div>
@@ -877,22 +669,34 @@ function addNormalRange(data = {}) {
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1.5">Normal Minimum</label>
                     <input type="number" step="0.01" name="normal_ranges[${index}][normal_min]" value="${data.normal_min ?? ''}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
                            placeholder="0.00">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1.5">Normal Maximum</label>
                     <input type="number" step="0.01" name="normal_ranges[${index}][normal_max]" value="${data.normal_max ?? ''}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
                            placeholder="0.00">
                 </div>
             </div>
 
-            <div class="flex justify-end pt-2">
-                <button type="button" onclick="if (confirm('Remove this normal range?')) { this.closest('.normal-range-item').remove(); updateNoRangesMessage(); }" 
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:scale-95 transition-all duration-200 shadow-sm">
+            <div class="flex justify-between items-center pt-3 border-t border-gray-200">
+                <!-- Add Another Range -->
+                <button type="button"
+                        onclick="addNormalRange()"
+                        class="inline-flex items-center gap-2 px-3 py-2 bg-[#bc1622] text-white text-xs font-semibold rounded-lg hover:bg-[#a0141e] active:scale-95 transition shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add Another Range
+                </button>
+
+                <!-- Remove -->
+                <button type="button" onclick="removeNormalRange(this)"
+                        class="inline-flex items-center gap-2 px-3 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 active:scale-95 transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                     </svg>
                     Remove
                 </button>
@@ -903,7 +707,58 @@ function addNormalRange(data = {}) {
     container.appendChild(wrapper);
     attachSexChangeListener(wrapper);
     updateNoRangesMessage();
+    updateRangeNumbers();
+    updateAddButtons();
+
+    // ✅ Smooth scroll + subtle highlight + focus
+    setTimeout(() => {
+        const offset = 100;
+        const elementPosition = wrapper.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+        });
+
+        // Fade-in + small highlight
+        wrapper.style.opacity = '0';
+        wrapper.style.transform = 'translateY(15px)';
+        wrapper.classList.add('ring-2', 'ring-[#bc1622]/30');
+
+        requestAnimationFrame(() => {
+            wrapper.style.transition = 'all 400ms cubic-bezier(.16,.84,.44,1)';
+            wrapper.style.opacity = '1';
+            wrapper.style.transform = 'translateY(0)';
+        });
+
+        const focusTarget = wrapper.querySelector(`input[name="normal_ranges[${index}][age_max_years]"]`);
+
+        setTimeout(() => {
+            focusTarget?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            setTimeout(() => {
+                focusTarget?.focus({ preventScroll: true });
+            }, 350);
+        }, 450);
+
+        setTimeout(() => {
+            wrapper.classList.remove('ring-2', 'ring-[#bc1622]/30');
+        }, 1500);
+    }, 30);
 }
+// ✅ Remove Normal Range
+function removeNormalRange(button) {
+    if (confirm('Remove this normal range?')) {
+        button.closest('.normal-range-item').remove();
+        updateNoRangesMessage();
+    }
+}
+
+// ✅ Attach Sex Change Listener
 function attachSexChangeListener(item) {
     const sexSelect = item.querySelector('.sex-select');
     const pregWrapper = item.querySelector('.pregnancy-wrapper');
@@ -923,10 +778,24 @@ function attachSexChangeListener(item) {
     });
 }
 
+// ✅ Update No Ranges Message
+function updateNoRangesMessage() {
+    const container = document.getElementById('normalRangesContainer');
+    const noRangesMsg = document.getElementById('noRangesMessage');
+    
+    if (!container || !noRangesMsg) return;
+    
+    if (container.children.length === 0) {
+        noRangesMsg.classList.remove('hidden');
+    } else {
+        noRangesMsg.classList.add('hidden');
+    }
+}
+
+// ✅ Load Compatible Devices
 async function loadCompatibleDevices() {
     const container = document.getElementById('deviceSelectionContainer');
     const summary = document.getElementById('deviceSelectionSummary');
-    const countSpan = document.getElementById('selectedDeviceCount');
     
     if (!container) return;
     
@@ -965,7 +834,6 @@ async function loadCompatibleDevices() {
             return;
         }
 
-        // Group devices by type
         const devicesByType = devices.reduce((acc, device) => {
             const type = device.device_type || 'Other';
             if (!acc[type]) acc[type] = [];
@@ -973,7 +841,6 @@ async function loadCompatibleDevices() {
             return acc;
         }, {});
 
-        // Create grouped checkbox lists
         Object.entries(devicesByType).forEach(([type, typeDevices]) => {
             const typeSection = document.createElement('div');
             typeSection.className = 'space-y-2 p-4';
@@ -1021,28 +888,24 @@ async function loadCompatibleDevices() {
     }
 }
 
+// ✅ Update Device Count
 function updateDeviceCount() {
-    const checked = document.querySelectorAll(
-        'input[name="device_ids[]"]:checked'
-    );
+    const checked = document.querySelectorAll('input[name="device_ids[]"]:checked');
     const countSpan = document.getElementById('selectedDeviceCount');
     if (countSpan) {
         countSpan.textContent = checked.length;
     }
-    console.log('Checked devices:', checked.length);
-
 }
 
+// ✅ Attach Device Listeners
 function attachDeviceListeners() {
     const checkboxes = document.querySelectorAll('.device-checkbox');
     checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            updateDeviceCount();
-        });
+        cb.addEventListener('change', updateDeviceCount);
     });
-    
 }
-// Modal Functions
+
+// ✅ Modal Functions
 function openCategoryModal() { 
     const modal = document.getElementById('categoryModal');
     if (modal) modal.classList.remove('hidden'); 
@@ -1091,14 +954,230 @@ function closeUnitModal() {
     }
 }
 
-  // Close modals on outside click
-  document.addEventListener('click', function(e) {
-      if (e.target.id === 'categoryModal') closeCategoryModal();
-      if (e.target.id === 'sampleTypeModal') closeSampleTypeModal();
-      if (e.target.id === 'unitModal') closeUnitModal();
-  });
+// ✅ DOMContentLoaded - Event listeners only
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('normalRangesContainer');
+    if (container) {
+        rangeCounter = container.querySelectorAll('.normal-range-item').length;
+        updateNoRangesMessage();
+        
+        container.querySelectorAll('.normal-range-item').forEach(item => {
+            attachSexChangeListener(item);
+        });
+    }
 
+    loadCompatibleDevices();
+    
+    const formulaInput = document.getElementById('formula');
+    if (formulaInput) {
+        formulaInput.addEventListener('input', updateFormulaPreview);
+    }
+    
+    loadFormulas();
+    
+    // Category Form
+    const categoryForm = document.getElementById('categoryForm');
+    if (categoryForm) {
+        categoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('categoryName');
+            const errorDiv = document.getElementById('categoryError');
+            
+            if (!nameInput || !errorDiv) return;
+            
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                errorDiv.textContent = 'Category name is required';
+                return;
+            }
+            
+            const select = document.querySelector('select[name="category_analyse_id"]');
+            if (!select) {
+                console.error('Category select not found');
+                return;
+            }
+            
+            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+            if (existingOptions.includes(name.toLowerCase())) {
+                errorDiv.textContent = 'Category already exists';
+                return;
+            }
+            
+            const tempCategory = { id: tempIdCounter--, name: name, isTemp: true };
+            tempCategories.push(tempCategory);
+            
+            const option = new Option(name + ' (New)', tempCategory.id, true, true);
+            option.className = 'text-emerald-600 font-medium';
+            select.add(option);
+            
+            closeCategoryModal();
+        });
+    }
+    
+    // Sample Type Form
+    const sampleTypeForm = document.getElementById('sampleTypeForm');
+    if (sampleTypeForm) {
+        sampleTypeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('sampleTypeName');
+            const errorDiv = document.getElementById('sampleTypeError');
+            
+            if (!nameInput || !errorDiv) return;
+            
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                errorDiv.textContent = 'Sample type name is required';
+                return;
+            }
+            
+            const select = document.querySelector('select[name="sample_type_id"]');
+            if (!select) {
+                console.error('Sample type select not found');
+                return;
+            }
+            
+            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+            if (existingOptions.includes(name.toLowerCase())) {
+                errorDiv.textContent = 'Sample type already exists';
+                return;
+            }
+            
+            const tempSampleType = { id: tempIdCounter--, name: name, isTemp: true };
+            tempSampleTypes.push(tempSampleType);
+            
+            const option = new Option(name + ' (New)', tempSampleType.id, true, true);
+            option.className = 'text-emerald-600 font-medium';
+            select.add(option);
+            
+            closeSampleTypeModal();
+        });
+    }
+    
+    // Unit Form
+    const unitForm = document.getElementById('unitForm');
+    if (unitForm) {
+        unitForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('unitName');
+            const errorDiv = document.getElementById('unitError');
+            
+            if (!nameInput || !errorDiv) return;
+            
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                errorDiv.textContent = 'Unit name is required';
+                return;
+            }
+            
+            const select = document.querySelector('select[name="unit_id"]');
+            if (!select) {
+                console.error('Unit select not found');
+                return;
+            }
+            
+            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+            if (existingOptions.includes(name.toLowerCase())) {
+                errorDiv.textContent = 'Unit already exists';
+                return;
+            }
+            
+            const tempUnit = { id: tempIdCounter--, name: name, isTemp: true };
+            tempUnits.push(tempUnit);
+            
+            const option = new Option(name + ' (New)', tempUnit.id, true, true);
+            option.className = 'text-emerald-600 font-medium';
+            select.add(option);
+            
+            closeUnitModal();
+        });
+    }
+    
+    // Main form submission
+    const mainForm = document.getElementById('analysisCreateForm');
+    if (mainForm) {
+        mainForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            tempCategories.forEach(category => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'temp_categories[]';
+                input.value = JSON.stringify(category);
+                this.appendChild(input);
+            });
+
+            tempSampleTypes.forEach(sampleType => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'temp_sample_types[]';
+                input.value = JSON.stringify(sampleType);
+                this.appendChild(input);
+            });
+
+            tempUnits.forEach(unit => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'temp_units[]';
+                input.value = JSON.stringify(unit);
+                this.appendChild(input);
+            });
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            try {
+                const res = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new FormData(this),
+                });
+
+                if (res.status === 422) {
+                    const data = await res.json();
+                    const firstKey = Object.keys(data.errors || {})[0];
+                    const firstMsg = firstKey ? data.errors[firstKey][0] : 'Validation error';
+                    showToast(`⚠️ ${firstMsg}`, "warning");
+                    if (submitBtn) submitBtn.disabled = false;
+                    return;
+                }
+
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    showToast(`❌ ${data.message || 'Failed to save.'}`, "error");
+                    if (submitBtn) submitBtn.disabled = false;
+                    return;
+                }
+
+                const data = await res.json();
+                showToast(`✅ ${data.message || 'Saved successfully.'}`, "success");
+
+                setTimeout(() => {
+                    window.location.href = data.redirect || "{{ route('analyses.index') }}";
+                }, 700);
+
+            } catch (err) {
+                console.error(err);
+                showToast("❌ Network error. Please try again.", "error");
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Close modals on outside click
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'categoryModal') closeCategoryModal();
+        if (e.target.id === 'sampleTypeModal') closeSampleTypeModal();
+        if (e.target.id === 'unitModal') closeUnitModal();
+    });
 });
 </script>
+
 
 @endsection

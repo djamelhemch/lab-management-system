@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 from app.schemas.analysis import AnalysisResponse
+
 class AnalysisBase(BaseModel):
     id: int
     name: str
@@ -13,7 +14,7 @@ class AnalysisBase(BaseModel):
 
 
 class QuotationItemBase(BaseModel):
-    analysis_id: int
+    analysis_id: Optional[int] = None
     price: float
 
 

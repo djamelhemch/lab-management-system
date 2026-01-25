@@ -18,7 +18,8 @@ from sqlalchemy import func
 import logging
 router = APIRouter(prefix="/quotations", tags=["Quotations"])
 logger = logging.getLogger("uvicorn") 
-
+from typing import Literal
+from sqlalchemy import desc, asc
 @router.get("/stats")
 def quotation_stats(db: Session = Depends(get_db)):
     return get_revenue_stats(db)
@@ -65,14 +66,16 @@ def list_today_quotations_dashboard(
     grouped_list = list(grouped.values())
     logger.info(f"Returning {len(grouped_list)} patients with quotations")
     return grouped_list
-
-@router.get("/", response_model=dict)  # return structured dict instead of plain list
+    
+@router.get("/", response_model=dict)
 def list_quotations(
     db: Session = Depends(get_db),
     q: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     page: int = 1,
     limit: int = 10,
+    sort_by: Optional[Literal["date", "name"]] = Query(None),
+    sort_dir: Optional[Literal["asc", "desc"]] = Query("desc"),
 ):
     query = db.query(Quotation).options(
         joinedload(Quotation.patient),
@@ -94,8 +97,25 @@ def list_quotations(
     if status:
         query = query.filter(Quotation.status == status)
 
+    # SORTING
+    if sort_by == "name":
+        # Always join patient only once
+        query = query.join(Patient, Quotation.patient)
+
+        if sort_dir == "asc":
+            query = query.order_by(Patient.last_name.asc(), Patient.first_name.asc())
+        else:
+            query = query.order_by(Patient.last_name.desc(), Patient.first_name.desc())
+
+    else:
+        # Default: sort by date
+        if sort_dir == "asc":
+            query = query.order_by(Quotation.created_at.asc())
+        else:
+            query = query.order_by(Quotation.created_at.desc())
+
     # pagination
-    total = query.count()
+    total = query.order_by(None).count()
     items = query.offset((page - 1) * limit).limit(limit).all()
 
     items_schema = [QuotationWithPatientSchema.model_validate(item, from_attributes=True) for item in items]

@@ -23,6 +23,14 @@
     <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }} {{ request()->routeIs('dashboard') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200 mb-1">
         <i class="fas fa-tachometer-alt"></i> <span class="ml-2">Tableau de bord</span>
     </a>
+    <a href="{{ route('hub.index') }}"
+    class="sidebar-link {{ request()->routeIs('hub') ? 'active' : '' }} 
+    {{ request()->routeIs('hub') ? 'bg-indigo-100 text-indigo-700 font-bold shadow' : 'text-gray-700 hover:bg-indigo-50' }} 
+    flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200 mb-1">
+        
+        <i class="fas fa-bolt"></i>
+        <span class="ml-2">Centre d’actions</span>
+    </a>
     <a href="{{ route('patients.index') }}" class="sidebar-link {{ request()->routeIs('patients.*') ? 'active' : '' }} {{ request()->routeIs('patients.*') ? 'bg-red-100 text-red-700 font-bold shadow' : 'text-gray-700 hover:bg-red-50' }} flex items-center gap-3 py-2.5 px-4 rounded-lg transition-colors duration-200 mb-1">
         <i class="fas fa-user-injured"></i> <span class="ml-2">Patients</span>
     </a>

@@ -14,30 +14,50 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800">Quotations Management</h1>
-                        <p class="text-gray-600">Manage and track all laboratory quotations</p>
+                      <h1 class="text-2xl font-bold text-gray-800">Gestion des visites</h1>
+                        <p class="text-gray-600">Gestion et suivi des devis du laboratoire</p>
                     </div>
                 </div>
 
                 {{-- Action Buttons --}}
-                <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('quotations.create') }}" 
-                       class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-sm transition-all">
-                        {{-- Plus Icon --}}
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        New Quotation
-                    </a>
-                    <a href="{{ route('agreements.index') }}" 
-                       class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium shadow-sm transition-all">
-                        {{-- Document Text Icon --}}
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M8 6h8m-6 16h10a2 2 0 002-2V8a2 2 0 00-.586-1.414l-4-4A2 2 0 0013.586 2H6a2 2 0 00-2 2v2" />
-                        </svg>
-                        Manage Agreements
-                    </a>
-                </div>
+                <div class="flex flex-wrap gap-3 items-center">
+
+    <!-- 🔵 PRIMARY ACTION -->
+    <a href="{{ route('quotations.create') }}" 
+       class="inline-flex items-center gap-2 px-6 py-3
+              bg-indigo-600 hover:bg-indigo-700
+              text-white font-semibold rounded-xl
+              shadow-md hover:shadow-lg
+              transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600">
+
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+
+        Nouvelle Visite/Devis
+    </a>
+
+    <!-- ⚙️ SECONDARY / MANAGEMENT -->
+     <a href="{{ route('agreements.index') }}"
+       class="inline-flex items-center gap-2 px-6 py-3
+              bg-[#bc1622] hover:bg-[#9f121c]
+              text-white font-semibold rounded-xl
+              shadow-md hover:shadow-lg
+              transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#bc1622]">
+
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12h6m-6 4h6M8 6h8m-6 16h10a2 2 0 002-2V8a2 2 0 00-.586-1.414l-4-4A2 2 0 0013.586 2H6a2 2 0 00-2 2v2"/>
+        </svg>
+
+        Convetions et Réductions
+    </a>
+
+</div>
             </div>
         </div>
     </div>
@@ -75,16 +95,20 @@
         </div>
         @endif
 
-        {{-- Search and Filters --}}
+       {{-- Search and Filters --}}
         <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-6 mb-6">
             <div class="flex items-center gap-2 mb-4">
                 {{-- Search Icon --}}
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <h2 class="text-lg font-semibold text-gray-800">Search & Filter</h2>
-            </div>
-            
+            <h2 class="text-lg font-semibold text-gray-800">Search & Filter</h2>
+        </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-[2fr,1fr,1fr] gap-4 items-end">
+        {{-- Existing Search + Status component --}}
+        <div class="md:col-span-2">
             <x-search-filter
                 search-placeholder="Search quotations by patient name, ID, or file number..."
                 :search-value="request('q') ?? ''"
@@ -101,7 +125,10 @@
                 container-id="quotations-table-container"
             />
         </div>
+    </div>
+</div>
 
+        {{-- Quotations Table --}}
         {{-- Data Table --}}
         <div id="quotations-table-container" data-table-route="{{ route('quotations.table') }}">
             @include('quotations.partials.table', ['quotations' => $quotations])

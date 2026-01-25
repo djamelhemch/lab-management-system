@@ -19,3 +19,11 @@ class AgreementOut(AgreementBase):
 
     class Config:
         orm_mode = True
+
+class AgreementUpdate(BaseModel):
+    patient_id: Optional[int] = None
+    doctor_id: Optional[int] = None
+    discount_type: Optional[Literal["percentage", "fixed"]] = None
+    discount_value: Optional[float] = None
+    status: Optional[Literal["active", "inactive"]] = None
+    description: Optional[str] = None

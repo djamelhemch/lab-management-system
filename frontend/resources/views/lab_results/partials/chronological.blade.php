@@ -15,8 +15,6 @@
 {{-- Filters --}}
 <div class="mb-6 flex flex-wrap items-center gap-4">
     <form method="GET" action="{{ route('lab-results.index') }}" class="flex flex-wrap gap-2 items-center">
-
-
         <input type="date" name="from_date" value="{{ request('from_date') }}"
                class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
 

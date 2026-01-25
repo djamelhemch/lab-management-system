@@ -96,6 +96,7 @@ class AnalysisBase(BaseModel):
     device_ids: Optional[List[int]] = []
     tube_type: Optional[str] = None 
     is_active: Optional[bool] = True
+    
 class AnalysisCreate(AnalysisBase):
     name: str
     price: float

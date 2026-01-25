@@ -5,6 +5,7 @@ use App\Http\Controllers\{
     PatientController,
     DoctorController,
     DashboardController,
+    HubController,
     StatisticsController,
     AnalysisController,
     SamplesController,
@@ -29,9 +30,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Routes for authenticated users (admin + user)
 Route::middleware(['auth.api'])->group(function () {
     
-    // Dashboard (Hub)
+    // Dashboard 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+    //(Hub)
+    Route::get('/hub', [HubController::class, 'index'])->name('hub.index');
+    Route::post('/hub/live-update', [HubController::class, 'liveUpdate'])->name('hub.live-update');
     // Statistics (Old Dashboard)
     Route::get('/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
     Route::get('/statistics/stats', [StatisticsController::class, 'stats'])->name('statistics.stats');

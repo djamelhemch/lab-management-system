@@ -1,7 +1,22 @@
 @extends('layouts.app')
 
 @section('title', 'Analysis Details')
+@php
+function formatAge($days) {
+    if ($days === 0) return 'Nouveau-né';
+    
+    $years = floor($days / 365);
+    $months = floor(($days % 365) / 30);
+    $daysRemain = $days % 30;
+    
+    $parts = [];
+    if ($years > 0) $parts[] = $years . ($years == 1 ? ' ans' : ' ans');
+    if ($months > 0) $parts[] = $months . ($months == 1 ? ' mois' : ' mois');
+    if ($daysRemain > 0 || empty($parts)) $parts[] = $daysRemain . ($daysRemain == 1 ? ' jour' : ' jours');
 
+    return implode(' ', $parts);
+}
+@endphp
 @section('content')
 <div class="max-w-5xl mx-auto px-4 py-6">
 
@@ -135,31 +150,33 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @foreach($analysis['normal_ranges'] as $range)
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-3 text-sm font-medium text-gray-900">
-                                    @switch($range['sex_applicable'])
-                                        @case('M') <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Male</span> @break
-                                        @case('F') <span class="bg-pink-100 text-pink-800 px-2 py-1 rounded text-xs">Female</span> @break
-                                        @default <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">All</span>
-                                    @endswitch
-                                </td>
-                                <td class="px-6 py-3 text-sm text-gray-700">
-                                    {{ $range['age_min'] ?? 0 }} – {{ $range['age_max'] ?? '∞' }} yrs
-                                </td>
-                                <td class="px-6 py-3 text-sm">
-                                    @if($range['pregnant_applicable'])
-                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Yes</span>
-                                    @else
-                                        <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">No</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-3 text-center font-semibold text-[#bc1622]">
-                                    {{ $range['normal_min'] ?? 'N/A' }} – {{ $range['normal_max'] ?? 'N/A' }}
-                                </td>
-                            </tr>
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                                @switch($range['sex_applicable'])
+                                    @case('M') <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Male</span> @break
+                                    @case('F') <span class="bg-pink-100 text-pink-800 px-2 py-1 rounded text-xs">Female</span> @break
+                                    @default <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">All</span>
+                                @endswitch
+                            </td>
+                            <td class="px-6 py-3 text-sm font-medium text-gray-700">
+                                {{-- ✅ FIXED: Convert days to Y/M/D --}}
+                                {{ formatAge($range['age_min'] ?? 0) }} – {{ $range['age_max'] ? formatAge($range['age_max']) : '∞' }}
+                            </td>
+                            <td class="px-6 py-3 text-sm">
+                                @if($range['pregnant_applicable'])
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Yes</span>
+                                @else
+                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">No</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-3 text-center font-semibold text-[#bc1622]">
+                                {{ number_format($range['normal_min'] ?? 0, 2) }} – {{ number_format($range['normal_max'] ?? 0, 2) }}
+                            </td>
+                        </tr>
                         @endforeach
                     </tbody>
                 </table>
+
             </div>
         </div>
         @endif
