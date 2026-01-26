@@ -2,19 +2,37 @@
 
 @section('title', 'Analysis Details')
 @php
-function formatAge($days) {
-    if ($days === 0) return 'Nouveau-né';
-    
+function formatAgeClinical($days) {
+    if ($days === null) return '∞';
+
+    // 🧠 Medical life stages
+    if ($days <= 28) {
+        $label = 'Nouveau-né';
+    } elseif ($days <= 365) {
+        $label = 'Nourrisson';
+    } elseif ($days <= 365 * 3) {
+        $label = 'Petit enfant';
+    } elseif ($days <= 365 * 12) {
+        $label = 'Enfant';
+    } elseif ($days <= 365 * 18) {
+        $label = 'Adolescent';
+    } else {
+        $label = 'Adulte';
+    }
+
+    // ⏳ Exact breakdown
     $years = floor($days / 365);
     $months = floor(($days % 365) / 30);
     $daysRemain = $days % 30;
-    
-    $parts = [];
-    if ($years > 0) $parts[] = $years . ($years == 1 ? ' ans' : ' ans');
-    if ($months > 0) $parts[] = $months . ($months == 1 ? ' mois' : ' mois');
-    if ($daysRemain > 0 || empty($parts)) $parts[] = $daysRemain . ($daysRemain == 1 ? ' jour' : ' jours');
 
-    return implode(' ', $parts);
+    $parts = [];
+    if ($years > 0) $parts[] = $years . ' an' . ($years > 1 ? 's' : '');
+    if ($months > 0) $parts[] = $months . ' mois';
+    if ($daysRemain > 0 && $years == 0) $parts[] = $daysRemain . ' j';
+
+    $exact = implode(' ', $parts);
+
+    return "$label ($exact)";
 }
 @endphp
 @section('content')
@@ -160,7 +178,9 @@ function formatAge($days) {
                             </td>
                             <td class="px-6 py-3 text-sm font-medium text-gray-700">
                                 {{-- ✅ FIXED: Convert days to Y/M/D --}}
-                                {{ formatAge($range['age_min'] ?? 0) }} – {{ $range['age_max'] ? formatAge($range['age_max']) : '∞' }}
+                                {{ formatAgeClinical($range['age_min'] ?? 0) }}
+                                    –
+                                {{ isset($range['age_max']) ? formatAgeClinical($range['age_max']) : '∞' }}
                             </td>
                             <td class="px-6 py-3 text-sm">
                                 @if($range['pregnant_applicable'])
