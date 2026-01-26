@@ -87,7 +87,31 @@ def get_quotation(db: Session, quotation_id: int):
         .first()
     )
 def get_all_quotations(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Quotation).offset(skip).limit(limit).all()
+    return (
+        db.query(Quotation)
+        .options(
+            # Load analysis items with their analysis details
+            joinedload(Quotation.analysis_items)
+            .joinedload(QuotationItem.analysis)
+            .joinedload(AnalysisCatalog.normal_ranges),
+            
+            joinedload(Quotation.analysis_items)
+            .joinedload(QuotationItem.analysis)
+            .joinedload(AnalysisCatalog.unit),
+            
+            # Load patient
+            joinedload(Quotation.patient),
+            
+            # Load agreement
+            joinedload(Quotation.agreement),
+            
+            # Load payments
+            joinedload(Quotation.payments)
+        )
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 def convert_quotation(db: Session, quotation_id: int):
     quotation = (
