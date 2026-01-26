@@ -89,27 +89,69 @@ def get_real_client_ip(request: Request) -> str:
     return request.client.host
 
 def get_real_user_agent(request: Request) -> str:
-    """Get real User-Agent, fallback to generic desktop/mobile detection"""
-    if request is None:
-        return "Unknown"
+    """Return formatted device info: OS • Browser • Device"""
     
+    if request is None:
+        return "Unknown • Unknown • Desktop"
+
     ua = request.headers.get("user-agent", "")
     if not ua:
-        return "Unknown"
-    
+        return "Unknown • Unknown • Desktop"
+
     ua_lower = ua.lower()
-    
-    # ✅ Detect device type from UA
-    if "mobile" in ua_lower or "android" in ua_lower or "iphone" in ua_lower or "ipad" in ua_lower:
-        return "Mobile Browser"
-    elif "chrome" in ua_lower:
-        return "Chrome Desktop"
-    elif "firefox" in ua_lower:
-        return "Firefox Desktop"
-    elif "safari" in ua_lower:
-        return "Safari Desktop"
+
+    # -------------------
+    # 🖥️ OS DETECTION
+    # -------------------
+    if "windows" in ua_lower:
+        os = "Windows"
+    elif "mac os" in ua_lower or "macintosh" in ua_lower:
+        os = "MacOS"
+    elif "linux" in ua_lower and "android" not in ua_lower:
+        os = "Linux"
+    elif "android" in ua_lower:
+        os = "Android"
+    elif "iphone" in ua_lower or "ipad" in ua_lower or "ios" in ua_lower:
+        os = "iOS"
     else:
-        return ua[:100] + "..."  # Truncate long UAs
+        os = "Unknown"
+
+    # -------------------
+    # 🌐 BROWSER DETECTION (order matters!)
+    # -------------------
+    if "guzzlehttp" in ua_lower:
+        browser = "API Client"
+    elif "postmanruntime" in ua_lower:
+        browser = "Postman"
+    elif "curl" in ua_lower:
+        browser = "cURL"
+    elif "edg/" in ua_lower or "edge" in ua_lower:
+        browser = "Edge"
+    elif "chrome" in ua_lower and "edg" not in ua_lower:
+        browser = "Chrome"
+    elif "firefox" in ua_lower:
+        browser = "Firefox"
+    elif "safari" in ua_lower and "chrome" not in ua_lower:
+        browser = "Safari"
+    else:
+        browser = "Unknown"
+
+    # -------------------
+    # 📱 DEVICE TYPE
+    # -------------------
+    if "mobile" in ua_lower or ("android" in ua_lower and "mobile" in ua_lower) or "iphone" in ua_lower:
+        device = "Mobile"
+    elif "ipad" in ua_lower or "tablet" in ua_lower:
+        device = "Tablet"
+    else:
+        device = "Desktop"
+
+    # -------------------
+    # 🧠 FINAL FORMAT
+    # -------------------
+    return f"{os} • {browser} • {device}"
+
+
 async def _handle_log(func, args, kwargs, action_type, is_async: bool):
     request: Request = kwargs.get("request", None)
     db: Session = kwargs.get("db", None)

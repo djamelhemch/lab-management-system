@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.log import Log  # your SQLAlchemy Log model
 from fastapi import Request
 router = APIRouter()
-
+from app.utils.app_logging import get_real_user_agent
 @router.get("/logs")
 def get_logs(
     db: Session = Depends(get_db),
@@ -53,6 +53,7 @@ def get_logs(
             "last_page": (total + per_page - 1) // per_page
         }
     }
+
 @router.get("/debug-headers")
 def debug_headers(request: Request):
     return {
@@ -61,4 +62,10 @@ def debug_headers(request: Request):
         "x-forwarded-for": request.headers.get("x-forwarded-for"),
         "x-real-ip": request.headers.get("x-real-ip"),
         "user-agent": request.headers.get("user-agent")
+    }
+@router.get("/test-ua")
+def test_ua(request: Request):
+    return {
+        "raw_ua": request.headers.get("user-agent", ""),
+        "formatted": get_real_user_agent(request)
     }

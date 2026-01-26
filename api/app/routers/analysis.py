@@ -124,29 +124,41 @@ def get_analyses_table(
 @router.post("/", response_model=AnalysisResponse)
 @log_route("create_analysis")
 async def create_analysis(
+    request: Request,
     analysis: AnalysisCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    request: Request = None
+    current_user: User = Depends(get_current_user)
 ):
-    # Log the raw request JSON
+    # ✅ Log raw request body FIRST
     try:
-        body = await request.json()  # only works if you make this function async
-    except Exception:
-        body = "Could not parse JSON"
-    logging.info(f"Received analysis payload: {body}")
-
-    # Check required fields explicitly
+        body = await request.body()
+        body_str = body.decode('utf-8')
+        logging.info(f"=== RAW REQUEST BODY ===")
+        logging.info(body_str)
+        logging.info(f"=== END RAW BODY ===")
+    except Exception as e:
+        logging.error(f"Could not read request body: {e}")
+    
+    # ✅ Log parsed Pydantic model
+    logging.info(f"=== PARSED ANALYSIS MODEL ===")
+    logging.info(f"name: {analysis.name}")
+    logging.info(f"code: {analysis.code}")
     logging.info(f"tube_type: {analysis.tube_type}")
-    logging.info(f"device_ids: {analysis.device_ids}")
+    logging.info(f"device_ids type: {type(analysis.device_ids)}, value: {analysis.device_ids}")
+    logging.info(f"normal_ranges count: {len(analysis.normal_ranges) if analysis.normal_ranges else 0}")
+    
+    if analysis.normal_ranges:
+        for idx, nr in enumerate(analysis.normal_ranges):
+            logging.info(f"  Range {idx}: sex={nr.sex_applicable}, age_min={nr.age_min}, age_max={nr.age_max}")
+    
+    logging.info(f"=== END PARSED MODEL ===")
 
     # Check if code exists
     if analysis.code and analysis_crud.get_by_code(db, analysis.code):
         raise HTTPException(status_code=400, detail="Analysis code already exists")
 
     result = analysis_crud.create(db, analysis)
-
-    logging.info(f"Created analysis ID: {result.id}")
+    logging.info(f"✅ Created analysis ID: {result.id}")
 
     return result
 
@@ -173,6 +185,9 @@ def get_analysis(analysis_id: int, db: Session = Depends(get_db)):
 @log_route("update_analysis")
 def update_analysis(analysis_id: int, analysis: AnalysisUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user), request: Request = None):
     db_analysis = analysis_crud.update(db, analysis_id, analysis)
+    logger.info(f"=== UPDATING ANALYSIS {analysis_id} ===")
+    logger.info(f"is_active received: {analysis.is_active}")
+    logger.info(f"Full data: {analysis.dict()}")
     if not db_analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
     return db_analysis

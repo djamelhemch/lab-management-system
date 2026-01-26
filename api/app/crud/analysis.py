@@ -162,6 +162,21 @@ class AnalysisCRUD:
             exclude={"normal_ranges", "device_ids"}
         )
 
+        # ✅ Handle sample_type_id unlinking (empty string or 0 → None)
+        if "sample_type_id" in update_data:
+            if update_data["sample_type_id"] in [0, "", None]:
+                update_data["sample_type_id"] = None
+        
+        # ✅ Handle category_analyse_id unlinking
+        if "category_analyse_id" in update_data:
+            if update_data["category_analyse_id"] in [0, "", None]:
+                update_data["category_analyse_id"] = None
+        
+        # ✅ Handle unit_id unlinking
+        if "unit_id" in update_data:
+            if update_data["unit_id"] in [0, "", None]:
+                update_data["unit_id"] = None
+
         # ✅ Handle device_ids
         if analysis_data.device_ids is not None:
             device_ids = analysis_data.device_ids
@@ -179,12 +194,16 @@ class AnalysisCRUD:
         for field, value in update_data.items():
             setattr(db_analysis, field, value)
 
-        # ✅ Handle normal ranges
+        # ✅ Handle normal ranges - DELETE OLD, ADD NEW
         if "normal_ranges" in analysis_data.__fields_set__:
+            # Delete existing ranges
             db.query(NormalRange).filter(NormalRange.analysis_id == analysis_id).delete()
-            for r in analysis_data.normal_ranges:
-                db_range = NormalRange(analysis_id=analysis_id, **r.dict())
-                db.add(db_range)
+            
+            # Add new ranges
+            if analysis_data.normal_ranges:
+                for r in analysis_data.normal_ranges:
+                    db_range = NormalRange(analysis_id=analysis_id, **r.dict())
+                    db.add(db_range)
 
         db.commit()
         db.refresh(db_analysis)

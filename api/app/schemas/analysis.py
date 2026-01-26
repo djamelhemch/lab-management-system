@@ -110,8 +110,22 @@ class AnalysisCreate(AnalysisBase):
         return v
 
 
-class AnalysisUpdate(AnalysisBase):
-    normal_ranges: Optional[List[NormalRangeCreate]] = []
+class AnalysisUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    formula: Optional[str] = None
+    price: Optional[float] = None
+    category_analyse_id: Optional[int] = None  # ✅ Nullable
+    sample_type_id: Optional[int] = None  # ✅ Nullable - allows unlinking
+    unit_id: Optional[int] = None  # ✅ Nullable
+    tube_type: Optional[str] = None
+    device_ids: Optional[List[int]] = None
+    normal_ranges: Optional[List[NormalRangeCreate]] = None
+    is_active: Optional[bool] = None
+    user_id: Optional[int] = None
+
+    class Config:
+        orm_mode = True
 
 
 class AnalysisResponse(AnalysisBase):
