@@ -80,12 +80,30 @@ class AgreementController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        $response = $this->api->put("agreements/{$id}", $request->all());
+      $data = $request->only([
+            'patient_id',
+            'doctor_id',
+            'discount_type',
+            'discount_value',
+            'status',
+            'description'
+        ]);
+
+        foreach (['patient_id', 'doctor_id'] as $field) {
+            $data[$field] = $data[$field] ?? null;
+            if ($data[$field] === '') $data[$field] = null;
+        }
+        \Log::info('Agreement update payload', $data);
+
+        $response = $this->api->put("agreements/{$id}", $data);
+
+        \Log::info('API response', $response->json());
 
         return $response->successful()
             ? redirect()->route('agreements.index')->with('success', 'Agreement updated.')
-            : back()->with('error', 'Failed to update agreement.')->withInput();
+            : back()->with('error', $response->json()['detail'] ?? 'Failed to update.')->withInput();
     }
+
 
     public function destroy($id)
     {

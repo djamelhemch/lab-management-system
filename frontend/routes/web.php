@@ -122,6 +122,7 @@ Route::middleware(['auth.api', 'admin'])
     ->group(function () {
         Route::resource('users', UserController::class);
         Route::get('logs', [LogsController::class, 'index'])->name('logs');
+        Route::get('logs/partial', [LogsController::class, 'partial'])->name('logs.partial');
 
           // Settings routes
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])

@@ -2,62 +2,78 @@
 @extends('layouts.app')
 @section('title', 'Add New Analysis')
 
+
 @section('content')
-<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-5xl mx-auto">
 
     {{-- Page Header --}}
-    <header class="mb-10">
-      <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-        <x-heroicon-o-beaker class="w-7 h-7 text-[#bc1622]" />
-        Add New Analysis
-      </h1>
-      <p class="mt-1 text-sm text-gray-600">Define a new laboratory analysis including its category, unit, pricing, and device compatibility.</p>
-    </header>
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Add New Analysis</h1>
+          <p class="text-sm text-gray-600 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Define a new laboratory analysis including its category, unit, pricing, and device compatibility.
+          </p>
+        </div>
+        <a href="{{ route('analyses.index') }}" 
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow-md transition-all duration-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Back to List
+        </a>
+      </div>
+    </div>
 
-    <form id="analysisCreateForm" action="{{ route('analyses.store') }}" method="POST" class="space-y-8" novalidate>
+    <form id="analysisCreateForm" action="{{ route('analyses.store') }}" method="POST" class="space-y-6" novalidate>
       @csrf
 
       {{-- BASIC INFORMATION --}}
-      <section class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 flex items-center gap-2">
-          <x-heroicon-o-clipboard-document class="w-5 h-5 text-[#bc1622]" />
-          <h2 class="text-lg font-semibold text-gray-900">Basic Information</h2>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Basic Information
+          </h2>
         </div>
 
-        <div class="p-6 space-y-6">
-          <div class="grid md:grid-cols-2 gap-6">
+        <div class="p-6 space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             {{-- Code --}}
             <div>
-              <label for="code" class="block text-sm font-medium text-gray-900">Analysis Code</label>
-              <p class="text-sm text-gray-500 mb-2">Internal reference code (optional)</p>
+              <label for="code" class="block text-sm font-semibold text-gray-700 mb-2">Analysis Code</label>
+              <p class="text-xs text-gray-500 mb-2">Internal reference code (optional)</p>
               <input id="code" name="code" value="{{ old('code') }}" type="text" placeholder="e.g., CBC001"
-                class="w-full rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]" />
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white" />
               @error('code')
-                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
               @enderror
             </div>
 
             {{-- Name --}}
             <div>
-              <label for="name" class="block text-sm font-medium text-gray-900">Analysis Name</label>
-              <p class="text-sm text-gray-500 mb-2">Short, descriptive name shown to clinicians</p>
+              <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">Analysis Name <span class="text-red-500">*</span></label>
+              <p class="text-xs text-gray-500 mb-2">Short, descriptive name shown to clinicians</p>
               <input id="name" name="name" value="{{ old('name') }}" type="text" required placeholder="e.g., Complete Blood Count"
-                class="w-full rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]" />
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white" />
               @error('name')
-                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
               @enderror
             </div>
           </div>
 
-          <hr class="border-gray-200">
-
-          <div class="grid md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             {{-- Category --}}
             <div>
-              <label class="block text-sm font-medium text-gray-900">Category</label>
-              <div class="mt-2 flex gap-2">
-                <select name="category_analyse_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+              <div class="flex gap-2">
+                <select name="category_analyse_id" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white">
                   <option value="">Select category</option>
                   @foreach($categories as $category)
                     <option value="{{ $category['id'] }}" {{ old('category_analyse_id') == $category['id'] ? 'selected' : '' }}>
@@ -66,7 +82,7 @@
                   @endforeach
                 </select>
                 <button type="button" onclick="openCategoryModal()"
-                  class="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700">
+                  class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-all">
                   <x-heroicon-o-plus-small class="w-5 h-5" />
                 </button>
               </div>
@@ -74,20 +90,20 @@
 
             {{-- Price --}}
             <div>
-              <label for="price" class="block text-sm font-medium text-gray-900">Price (DA)</label>
-              <div class="mt-2 relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">DA</span>
+              <label for="price" class="block text-sm font-semibold text-gray-700 mb-2">Price <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-sm">DZD</span>
                 <input id="price" name="price" type="number" step="0.01" min="0"
-                  value="{{ old('price') }}" class="pl-10 w-full rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]"
+                  value="{{ old('price') }}" class="w-full pl-16 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                   placeholder="0.00" />
               </div>
             </div>
 
             {{-- Unit --}}
             <div>
-              <label class="block text-sm font-medium text-gray-900">Unit</label>
-              <div class="mt-2 flex gap-2">
-                <select name="unit_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Unit</label>
+              <div class="flex gap-2">
+                <select name="unit_id" id="unit_select" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white">
                   <option value="">Select unit</option>
                   @foreach($units as $unit)
                     <option value="{{ $unit['id'] }}" {{ old('unit_id') == $unit['id'] ? 'selected' : '' }}>
@@ -96,49 +112,57 @@
                   @endforeach
                 </select>
                 <button type="button" onclick="openUnitModal()"
-                  class="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700">
+                  class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-all">
                   <x-heroicon-o-plus-small class="w-5 h-5" />
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       {{-- SPECIFICATIONS --}}
-      <section class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 flex items-center gap-2">
-          <x-heroicon-o-adjustments-horizontal class="w-5 h-5 text-[#bc1622]" />
-          <h2 class="text-lg font-semibold text-gray-900">Specifications</h2>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            Specifications
+          </h2>
         </div>
 
-        <div class="p-6 space-y-8">
+        <div class="p-6 space-y-6">
           {{-- Reference Ranges --}}
           <div>
             <div class="flex justify-between items-center mb-3">
-              <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-1">
-                <x-heroicon-o-chart-bar class="w-4 h-4 text-[#bc1622]" /> Normal Reference Ranges
+              <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Normal Reference Ranges
               </h3>
               <button type="button" onclick="addNormalRange()"
-                class="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700">
-                <x-heroicon-o-plus class="w-4 h-4" /> Add Range
+                class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all text-sm font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Range
               </button>
             </div>
-            <div id="normalRangesContainer" class="divide-y divide-gray-200 border border-gray-200 rounded-md"></div>
-            <div id="noRangesMessage" class="text-center py-8 text-gray-500 text-sm border border-dashed border-gray-200 rounded-md mt-3">
-              No ranges defined yet. Click “Add Range” to begin.
+            <div id="normalRangesContainer" class="space-y-3"></div>
+            <div id="noRangesMessage" class="text-center py-8 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg mt-3 bg-gray-50">
+              No ranges defined yet. Click "Add Range" to begin.
             </div>
           </div>
 
-          <hr class="border-gray-200">
-
           {{-- Sample Requirements --}}
-          <div class="grid md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-6 border-t border-gray-200">
             {{-- Sample Type --}}
             <div>
-              <label class="block text-sm font-medium text-gray-900">Sample Type</label>
-              <div class="mt-2 flex gap-2">
-                <select name="sample_type_id" class="flex-1 rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622]">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Sample Type</label>
+              <div class="flex gap-2">
+                <select name="sample_type_id" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 hover:bg-white">
                   <option value="">Select type</option>
                   @foreach($sampleTypes as $sampleType)
                     <option value="{{ $sampleType['id'] }}" {{ old('sample_type_id') == $sampleType['id'] ? 'selected' : '' }}>
@@ -147,7 +171,7 @@
                   @endforeach
                 </select>
                 <button type="button" onclick="openSampleTypeModal()"
-                  class="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700">
+                  class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-all">
                   <x-heroicon-o-plus-small class="w-5 h-5" />
                 </button>
               </div>
@@ -155,26 +179,29 @@
 
             {{-- Tube Type --}}
             <div>
-              <label for="tube_type" class="block text-sm font-medium text-gray-900">Tube Type</label>
+              <label for="tube_type" class="block text-sm font-semibold text-gray-700 mb-2">Tube Type</label>
               <select id="tube_type" name="tube_type"
-                class="mt-2 w-full rounded-lg border-gray-300 focus:ring-[#bc1622] focus:border-[#bc1622] bg-white">
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 hover:bg-white">
                 <option value="">Select tube type</option>
                 <option value="EDTA">EDTA (Lavender)</option>
                 <option value="Heparin">Heparin (Green)</option>
-                <option value="Citrated">Citrated (Light Blue)</option>
-                <option value="Dry">Serum (Red/Gold)</option>
+                <option value="Serum">Serum (Red/Gold)</option>
+                <option value="Citrate">Citrate (Blue)</option>
+                <option value="Fluoride">Fluoride (Gray)</option>
+                <option value="Plain">Plain (Red)</option>
               </select>
             </div>
           </div>
 
-          <hr class="border-gray-200">
-
-          {{-- Devices --}}
-          <div>
-            <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-1">
-              <x-heroicon-o-cpu-chip class="w-4 h-4 text-[#bc1622]" /> Compatible Devices
+          {{-- Compatible Devices --}}
+          <div class="pt-6 border-t border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+              </svg>
+              Compatible Devices
             </h3>
-            <div id="deviceSelectionContainer" class="border border-gray-200 divide-y divide-gray-200 rounded-md">
+            <div id="deviceSelectionContainer" class="border-2 border-gray-200 divide-y divide-gray-200 rounded-lg bg-gray-50">
               <div class="h-12 bg-gray-100 animate-pulse"></div>
               <div class="h-12 bg-gray-100 animate-pulse"></div>
               <div class="h-12 bg-gray-100 animate-pulse"></div>
@@ -187,159 +214,150 @@
             </div>
           </div>
         </div>
-      </section>
-<div class="border-2 border-gray-300 rounded-2xl p-6 bg-white shadow-md mt-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-      🧮 Formule de calcul
-    </h3>
-    <button 
-      type="button" 
-      onclick="openSavedFormulas()"
-      class="text-sm text-indigo-600 hover:underline"
-    >
-      📚 Formules enregistrées
-    </button>
-  </div>
-
-  <!-- Formula Name -->
-  <div class="mb-4">
-    <label for="formula_name" class="block text-sm font-medium text-gray-700 mb-1">
-      Nom de la formule :
-    </label>
-    <input 
-      type="text" 
-      id="formula_name" 
-      class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition" 
-      placeholder="Ex : Formule de Friedewald"
-    >
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- LEFT: Editor -->
-    <div>
-      <label for="formula" class="block text-sm font-medium text-gray-700 mb-2">
-        Expression mathématique :
-      </label>
-      <div class="border-2 border-blue-400 rounded-xl p-3 bg-blue-50 focus-within:ring-2 focus-within:ring-blue-300 transition">
-        <textarea 
-          id="formula" 
-          rows="4" 
-          class="w-full bg-transparent outline-none text-gray-800 text-sm font-mono"
-          placeholder="Exemple : LDL-C = CT - HDL-C - TG / 5"
-        ></textarea>
       </div>
 
-      <div id="formulaPreview" class="mt-3 text-sm font-mono text-gray-600 bg-gray-100 border border-gray-300 rounded-lg p-2">
-        🧠 Aperçu : <span id="formulaDisplay" class="text-gray-800"></span>
-      </div>
+      {{-- FORMULA SECTION --}}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+              🧮 Formule de calcul
+            </h2>
+            <button type="button" onclick="openSavedFormulas()"
+              class="text-sm text-indigo-600 hover:underline">
+              📚 Formules enregistrées
+            </button>
+          </div>
+        </div>
 
-      <div class="flex gap-2 mt-3">
-        <button 
-          type="button" 
-          onclick="clearFormula()"
-          class="bg-red-50 border border-red-300 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition"
-        >
-          Effacer
-        </button>
-        <button 
-          id="saveFormulaBtn"
-          type="button"
-          onclick="saveFormula()"
-          class="bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
-        >
-          💾 Enregistrer la formule
-        </button>
-      </div>
-    </div>
+        <div class="p-6">
+          <!-- Formula Name -->
+          <div class="mb-5">
+            <label for="formula_name" class="block text-sm font-semibold text-gray-700 mb-2">
+              Nom de la formule :
+            </label>
+            <input type="text" id="formula_name" 
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white" 
+              placeholder="Ex : Formule de Friedewald">
+          </div>
 
-    <!-- RIGHT: Tools -->
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">🔢 Opérateurs et fonctions :</label>
-      <div class="border-2 border-gray-300 bg-gray-50 rounded-xl p-3 flex flex-wrap gap-2">
-        @php
-          $ops = [
-            ['+', 'Addition'],
-            ['-', 'Soustraction'],
-            ['*', 'Multiplication'],
-            ['/', 'Division'],
-            ['=', 'Égal (assignation du résultat)'],
-            ['(', 'Parenthèse ouvrante'],
-            [')', 'Parenthèse fermante'],
-            ['^', 'Puissance'],
-            ['√', 'Racine carrée'],
-            ['ln()', 'Logarithme naturel'],
-            ['exp()', 'Exponentielle'],
-            ['mean()', 'Moyenne'],
-            ['sd()', 'Écart-type'],
-            ['zscore()', 'Score Z : (val - moyenne) / écart-type'],
-            ['min()', 'Valeur minimale'],
-            ['max()', 'Valeur maximale']
-          ];
-        @endphp
-        @foreach($ops as [$symbol, $desc])
-          <button 
-            type="button" 
-            class="bg-white hover:bg-blue-100 border border-blue-400 text-blue-700 text-xs px-2 py-1 rounded-md transition relative"
-            onclick="insertFormula('{{ $symbol }}')"
-            title="{{ $desc }}"
-          >
-            {{ $symbol }}
-          </button>
-        @endforeach
-      </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- LEFT: Editor -->
+            <div>
+              <label for="formula" class="block text-sm font-semibold text-gray-700 mb-2">
+                Expression mathématique :
+              </label>
+              <div class="border-2 border-blue-400 rounded-xl p-3 bg-blue-50 focus-within:ring-2 focus-within:ring-blue-300 transition">
+                <textarea id="formula" rows="4" 
+                  class="w-full bg-transparent outline-none text-gray-800 text-sm font-mono"
+                  placeholder="Exemple : LDL-C = CT - HDL-C - TG / 5"></textarea>
+              </div>
 
-      <!-- Search analyses -->
-      <div class="mt-5">
-        <label class="block text-sm font-medium text-gray-700 mb-1">🔍 Rechercher une analyse :</label>
-        <input 
-          type="text" 
-          id="analysisSearch" 
-          placeholder="Code ou nom..." 
-          class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
-          oninput="filterAnalyses()"
-        />
-      </div>
+              <div id="formulaPreview" class="mt-3 text-sm font-mono text-gray-600 bg-gray-100 border border-gray-300 rounded-lg p-2">
+                🧠 Aperçu : <span id="formulaDisplay" class="text-gray-800"></span>
+              </div>
 
-        <!-- Analysis codes -->
-        <div class="border-2 border-gray-300 rounded-xl p-2 mt-3 max-h-44 overflow-y-auto bg-gray-50">
-          <div id="analysisButtons" class="flex flex-wrap gap-2">
-            @foreach($analyses as $analysis)
-              <button 
-                type="button" 
-                class="bg-white hover:bg-gray-100 text-xs px-2 py-1 border border-gray-300 rounded-md transition"
-                onclick="insertFormula('{{ $analysis['code'] }}')"
-                title="{{ $analysis['name'] ?? 'Analyse' }}"
-              >
-                {{ $analysis['code'] }}
-              </button>
-            @endforeach
+              <div class="flex gap-2 mt-3">
+                <button type="button" onclick="clearFormula()"
+                  class="bg-red-50 border border-red-300 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition text-sm">
+                  Effacer
+                </button>
+                <button id="saveFormulaBtn" type="button" onclick="saveFormula()"
+                  class="bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition text-sm">
+                  💾 Enregistrer la formule
+                </button>
+              </div>
+            </div>
+
+            <!-- RIGHT: Tools -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">🔢 Opérateurs et fonctions :</label>
+              <div class="border-2 border-gray-300 bg-gray-50 rounded-xl p-3 flex flex-wrap gap-2">
+                @php
+                  $ops = [
+                    ['+', 'Addition'],
+                    ['-', 'Soustraction'],
+                    ['*', 'Multiplication'],
+                    ['/', 'Division'],
+                    ['=', 'Égal (assignation du résultat)'],
+                    ['(', 'Parenthèse ouvrante'],
+                    [')', 'Parenthèse fermante'],
+                    ['^', 'Puissance'],
+                    ['√', 'Racine carrée'],
+                    ['ln()', 'Logarithme naturel'],
+                    ['exp()', 'Exponentielle'],
+                    ['mean()', 'Moyenne'],
+                    ['sd()', 'Écart-type'],
+                    ['zscore()', 'Score Z : (val - moyenne) / écart-type'],
+                    ['min()', 'Valeur minimale'],
+                    ['max()', 'Valeur maximale']
+                  ];
+                @endphp
+                @foreach($ops as [$symbol, $desc])
+                  <button type="button" 
+                    class="bg-white hover:bg-blue-100 border border-blue-400 text-blue-700 text-xs px-2 py-1 rounded-md transition relative"
+                    onclick="insertFormula('{{ $symbol }}')"
+                    title="{{ $desc }}">
+                    {{ $symbol }}
+                  </button>
+                @endforeach
+              </div>
+
+              <!-- Search analyses -->
+              <div class="mt-5">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">🔍 Rechercher une analyse :</label>
+                <input type="text" id="analysisSearch" placeholder="Code ou nom..." 
+                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                  oninput="filterAnalyses()" />
+              </div>
+
+              <!-- Analysis codes -->
+              <div class="border-2 border-gray-300 rounded-xl p-2 mt-3 max-h-44 overflow-y-auto bg-gray-50">
+                <div id="analysisButtons" class="flex flex-wrap gap-2">
+                  @foreach($analyses as $analysis)
+                    <button type="button" 
+                      class="bg-white hover:bg-gray-100 text-xs px-2 py-1 border border-gray-300 rounded-md transition"
+                      onclick="insertFormula('{{ $analysis['code'] }}')"
+                      title="{{ $analysis['name'] ?? 'Analyse' }}">
+                      {{ $analysis['code'] }}
+                    </button>
+                  @endforeach
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Saved formulas modal -->
+          <div id="savedFormulasModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 border border-gray-300">
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="text-lg font-semibold text-gray-800">📘 Formules enregistrées</h4>
+                <button onclick="closeSavedFormulas()" class="text-gray-400 hover:text-gray-600">&times;</button>
+              </div>
+              <div id="savedFormulasList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Saved formulas modal -->
-    <div id="savedFormulasModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 border border-gray-300">
-        <div class="flex justify-between items-center mb-3">
-          <h4 class="text-lg font-semibold text-gray-800">📘 Formules enregistrées</h4>
-          <button onclick="closeSavedFormulas()" class="text-gray-400 hover:text-gray-600">&times;</button>
-        </div>
-        <div id="savedFormulasList" class="space-y-2 max-h-64 overflow-y-auto"></div>
-      </div>
-    </div>
-  </div>
 
       {{-- ACTIONS --}}
-      <div class="flex justify-end gap-3">
-        <a href="{{ route('analyses.index') }}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-          <x-heroicon-o-x-mark class="w-5 h-5" /> Cancel
+      <div class="flex items-center justify-end gap-3 pt-4">
+        <a href="{{ route('analyses.index') }}" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 hover:shadow-md transition-all duration-200 font-medium">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Cancel
         </a>
-        <button type="submit"
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#bc1622] text-white hover:bg-[#a1141e] focus:ring-2 focus:ring-[#bc1622] focus:ring-offset-1">
-          <x-heroicon-o-check class="w-5 h-5" /> Save Analysis
+        <button type="submit" 
+                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 hover:shadow-lg transition-all duration-200 font-medium">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          Create Analysis
         </button>
       </div>
     </form>
@@ -350,6 +368,434 @@
 @include('analyses.partials.category-modal')
 @include('analyses.partials.sample-type-modal')
 @include('analyses.partials.unit-modal')
+<script>
+// ========================================
+// AUTO-SAVE & RECOVERY SYSTEM WITH LOGGING
+// ========================================
+
+const AUTOSAVE_KEY = 'analysis_form_autosave';
+const AUTOSAVE_INTERVAL = 3000; // Save every 3 seconds
+let autosaveTimer = null;
+let saveCount = 0;
+
+// Save form data to localStorage
+function saveFormData() {
+    saveCount++;
+    console.log(`%c🔄 [${saveCount}] Starting autosave...`, 'color: #3b82f6; font-weight: bold');
+    
+    try {
+        const formData = {
+            // Basic fields
+            name: document.getElementById('name')?.value || '',
+            code: document.getElementById('code')?.value || '',
+            category_analyse_id: document.getElementById('category_analyse_id')?.value || '',
+            sample_type_id: document.getElementById('sample_type_id')?.value || '',
+            unit_id: document.getElementById('unit_id')?.value || '',
+            formula: document.getElementById('formula')?.value || '',
+            price: document.getElementById('price')?.value || '',
+            tube_type: document.getElementById('tube_type')?.value || '',
+            is_active: document.getElementById('is_active')?.checked || false,
+            
+            // Device IDs
+            device_ids: Array.from(document.querySelectorAll('input[name="device_ids[]"]:checked'))
+                .map(cb => cb.value),
+            
+            // Normal ranges
+            normal_ranges: [],
+            
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log('📝 Basic fields captured:', {
+            name: formData.name,
+            code: formData.code,
+            price: formData.price,
+            device_count: formData.device_ids.length
+        });
+        
+        // Extract all normal ranges
+        const rangeItems = document.querySelectorAll('.normal-range-item');
+        console.log(`📊 Found ${rangeItems.length} normal range(s)`);
+        
+        rangeItems.forEach((range, index) => {
+            const rangeData = {
+                sex_applicable: range.querySelector(`select[name*="[sex_applicable]"]`)?.value || 'All',
+                
+                age_min_years: range.querySelector(`input[name*="[age_min_years]"]`)?.value || '',
+                age_min_months: range.querySelector(`input[name*="[age_min_months]"]`)?.value || '',
+                age_min_days: range.querySelector(`input[name*="[age_min_days]"]`)?.value || '',
+                
+                age_max_years: range.querySelector(`input[name*="[age_max_years]"]`)?.value || '',
+                age_max_months: range.querySelector(`input[name*="[age_max_months]"]`)?.value || '',
+                age_max_days: range.querySelector(`input[name*="[age_max_days]"]`)?.value || '',
+                
+                normal_min: range.querySelector(`input[name*="[normal_min]"]`)?.value || '',
+                normal_max: range.querySelector(`input[name*="[normal_max]"]`)?.value || '',
+                
+                pregnant_applicable: range.querySelector(`input[name*="[pregnant_applicable]"]`)?.checked || false
+            };
+            
+            console.log(`  Range #${index + 1}:`, {
+                sex: rangeData.sex_applicable,
+                age_min: `${rangeData.age_min_years}y ${rangeData.age_min_months}m ${rangeData.age_min_days}d`,
+                age_max: `${rangeData.age_max_years}y ${rangeData.age_max_months}m ${rangeData.age_max_days}d`,
+                vals: `${rangeData.normal_min} - ${rangeData.normal_max}`
+            });
+            
+            formData.normal_ranges.push(rangeData);
+        });
+        
+        // Calculate size
+        const dataString = JSON.stringify(formData);
+        const sizeKB = (dataString.length / 1024).toFixed(2);
+        
+        localStorage.setItem(AUTOSAVE_KEY, dataString);
+        
+        console.log(`%c✅ [${saveCount}] Autosave successful!`, 'color: #10b981; font-weight: bold');
+        console.log(`📦 Data size: ${sizeKB} KB`);
+        console.log(`⏰ Timestamp: ${new Date(formData.timestamp).toLocaleTimeString('fr-FR')}`);
+        console.log('---');
+        
+        // Visual feedback
+        showAutosaveIndicator('success');
+        
+    } catch (error) {
+        console.error('%c❌ Autosave FAILED!', 'color: #ef4444; font-weight: bold', error);
+        showAutosaveIndicator('error');
+    }
+}
+
+// Visual indicator
+function showAutosaveIndicator(status = 'success') {
+    let indicator = document.getElementById('autosave-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'autosave-indicator';
+        indicator.className = 'fixed bottom-20 right-4 px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-opacity duration-300 z-50';
+        document.body.appendChild(indicator);
+    }
+    
+    if (status === 'success') {
+        indicator.className = 'fixed bottom-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-opacity duration-300 z-50';
+        indicator.innerHTML = '💾 Sauvegardé';
+    } else {
+        indicator.className = 'fixed bottom-20 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-opacity duration-300 z-50';
+        indicator.innerHTML = '❌ Erreur';
+    }
+    
+    indicator.style.opacity = '1';
+    
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+    }, 1500);
+}
+// Restore form data from localStorage
+function restoreFormData() {
+    console.log('%c🔍 Checking for saved data...', 'color: #8b5cf6; font-weight: bold');
+    
+    try {
+        const savedData = localStorage.getItem(AUTOSAVE_KEY);
+        if (!savedData) {
+            console.log('ℹ️ No saved data found');
+            return false;
+        }
+        
+        const data = JSON.parse(savedData);
+        const timeSaved = new Date(data.timestamp).toLocaleString('fr-FR');
+        const sizeKB = (savedData.length / 1024).toFixed(2);
+        
+        console.log(`%c📋 Saved data found!`, 'color: #f59e0b; font-weight: bold');
+        console.log(`⏰ Last save: ${timeSaved}`);
+        console.log(`📦 Size: ${sizeKB} KB`);
+        console.log(`📊 Normal ranges: ${data.normal_ranges?.length || 0}`);
+        
+        // Show recovery modal
+        const shouldRestore = confirm(
+            `📋 Données sauvegardées trouvées!\n\n` +
+            `Dernière sauvegarde: ${timeSaved}\n` +
+            `Plages normales: ${data.normal_ranges?.length || 0}\n\n` +
+            `Voulez-vous restaurer ces données?`
+        );
+        
+        if (!shouldRestore) {
+            console.log('❌ User declined restoration');
+            localStorage.removeItem(AUTOSAVE_KEY);
+            return false;
+        }
+        
+        console.log('🔄 Restoring data...');
+        
+        // Restore basic fields
+        let restoredFields = 0;
+        if (data.name) { document.getElementById('name').value = data.name; restoredFields++; }
+        if (data.code) { document.getElementById('code').value = data.code; restoredFields++; }
+        if (data.category_analyse_id) { document.getElementById('category_analyse_id').value = data.category_analyse_id; restoredFields++; }
+        if (data.sample_type_id) { document.getElementById('sample_type_id').value = data.sample_type_id; restoredFields++; }
+        if (data.unit_id) {
+            document.getElementById('unit_id').value = data.unit_id;
+            const unitSelect = document.getElementById('unit_id');
+            if (unitSelect && typeof currentUnit !== 'undefined') {
+                currentUnit = unitSelect.options[unitSelect.selectedIndex]?.text || '';
+            }
+            restoredFields++;
+        }
+        if (data.formula) { document.getElementById('formula').value = data.formula; restoredFields++; }
+        if (data.price) { document.getElementById('price').value = data.price; restoredFields++; }
+        if (data.tube_type) { document.getElementById('tube_type').value = data.tube_type; restoredFields++; }
+        if (data.is_active) { document.getElementById('is_active').checked = data.is_active; restoredFields++; }
+        
+        console.log(`✅ Restored ${restoredFields} basic fields`);
+        
+        // Restore device selections
+        let restoredDevices = 0;
+        if (data.device_ids && data.device_ids.length > 0) {
+            document.querySelectorAll('input[name="device_ids[]"]').forEach(checkbox => {
+                if (data.device_ids.includes(checkbox.value)) {
+                    checkbox.checked = true;
+                    restoredDevices++;
+                }
+            });
+            console.log(`✅ Restored ${restoredDevices} device selections`);
+        }
+        
+        // Restore normal ranges
+        if (data.normal_ranges && data.normal_ranges.length > 0) {
+            console.log(`🔄 Restoring ${data.normal_ranges.length} normal ranges...`);
+            
+            // Clear existing ranges first
+            document.querySelectorAll('.normal-range-item').forEach(item => item.remove());
+            
+            // Add each saved range
+            data.normal_ranges.forEach((rangeData, idx) => {
+                console.log(`  Adding range #${idx + 1}`);
+                addNormalRange(rangeData);
+            });
+            
+            console.log(`✅ Restored ${data.normal_ranges.length} normal ranges`);
+        }
+        
+        // Success notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-50';
+        notification.innerHTML = '✅ Données restaurées avec succès!';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.transition = 'opacity 300ms';
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+        
+        console.log('%c✅ Restoration complete!', 'color: #10b981; font-weight: bold');
+        console.log('---');
+        
+        return true;
+    } catch (error) {
+        console.error('%c❌ Restore FAILED!', 'color: #ef4444; font-weight: bold', error);
+        return false;
+    }
+}
+
+// Clear autosave data
+function addManualClearButton() {
+    console.log('🔘 Adding clear form button...');
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'fixed bottom-4 right-4 z-40';
+    buttonContainer.innerHTML = `
+        <button type="button" onclick="clearAllFields()" 
+            class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg shadow-lg text-sm font-bold transition-all flex items-center gap-2 hover:scale-105">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Effacer Tout
+        </button>
+    `;
+    
+    document.body.appendChild(buttonContainer);
+    console.log('✅ Clear button added');
+}
+
+// Clear all form fields
+function clearAllFields() {
+    console.log('%c🗑️ Clearing all form fields...', 'color: #ef4444; font-weight: bold');
+    
+    const confirmed = confirm(
+        '⚠️ Êtes-vous sûr de vouloir effacer tous les champs?\n\n' +
+        'Cette action ne peut pas être annulée.'
+    );
+    
+    if (!confirmed) {
+        console.log('❌ User cancelled clear operation');
+        return;
+    }
+    
+    let clearedCount = 0;
+    
+    // Clear basic text/number inputs
+    document.querySelectorAll('#analysisForm input[type="text"], #analysisForm input[type="number"]').forEach(input => {
+        if (input.value) {
+            input.value = '';
+            clearedCount++;
+        }
+    });
+    
+    // Clear textareas
+    document.querySelectorAll('#analysisForm textarea').forEach(textarea => {
+        if (textarea.value) {
+            textarea.value = '';
+            clearedCount++;
+        }
+    });
+    
+    // Reset selects to first option
+    document.querySelectorAll('#analysisForm select').forEach(select => {
+        select.selectedIndex = 0;
+        clearedCount++;
+    });
+    
+    // Uncheck all checkboxes
+    document.querySelectorAll('#analysisForm input[type="checkbox"]').forEach(checkbox => {
+        if (checkbox.checked) {
+            checkbox.checked = false;
+            clearedCount++;
+        }
+    });
+    
+    // Remove all normal ranges
+    const ranges = document.querySelectorAll('.normal-range-item');
+    ranges.forEach(range => range.remove());
+    console.log(`🗑️ Removed ${ranges.length} normal ranges`);
+    
+    // Update displays
+    if (typeof updateNoRangesMessage === 'function') updateNoRangesMessage();
+    if (typeof updateRangeNumbers === 'function') updateRangeNumbers();
+    
+    console.log(`✅ Cleared ${clearedCount} fields`);
+    console.log('---');
+    
+    // Visual feedback
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-50';
+    notification.innerHTML = '🗑️ Tous les champs ont été effacés!';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.transition = 'opacity 300ms';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 2500);
+}
+
+// Start auto-save timer
+function startAutosave() {
+    console.log('%c⚙️ Initializing autosave system...', 'color: #3b82f6; font-weight: bold');
+    
+    const form = document.getElementById('analysisCreateForm');
+    if (!form) {
+        console.error('❌ Form #analysisCreateForm not found!');
+        return;
+    }
+    
+    console.log('✅ Form found');
+    
+    // Save on input change (debounced)
+    form.addEventListener('input', (e) => {
+        console.log(`📝 Input detected: ${e.target.name || e.target.id || 'unknown'}`);
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(saveFormData, AUTOSAVE_INTERVAL);
+    });
+    
+    form.addEventListener('change', (e) => {
+        console.log(`🔄 Change detected: ${e.target.name || e.target.id || 'unknown'}`);
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(saveFormData, 1000);
+    });
+    
+    // Save before page unload
+    window.addEventListener('beforeunload', () => {
+        console.log('⚠️ Page unloading - saving data...');
+        saveFormData();
+    });
+    
+    console.log(`✅ Autosave enabled (interval: ${AUTOSAVE_INTERVAL}ms)`);
+    console.log('---');
+}
+
+// Clear autosave on successful submission
+function handleFormSubmit(event) {
+    console.log('📤 Form submitted - clearing autosave...');
+    setTimeout(() => {
+        clearAutosave();
+    }, 1000);
+}
+
+// Add manual save/clear buttons
+function addManualSaveButtons() {
+    console.log('🔘 Adding manual control buttons...');
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'fixed bottom-4 left-4 flex gap-2 z-50';
+    buttonContainer.innerHTML = `
+        <button type="button" onclick="saveFormData()" 
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+            </svg>
+            Sauvegarder
+        </button>
+        <button type="button" onclick="clearAutosave()" 
+            class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Effacer
+        </button>
+        <button type="button" onclick="restoreFormData()" 
+            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Restaurer
+        </button>
+    `;
+    
+    document.body.appendChild(buttonContainer);
+    console.log('✅ Manual buttons added');
+}
+
+// ========================================
+// INITIALIZE ON PAGE LOAD
+// ========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('%c╔════════════════════════════════════════╗', 'color: #3b82f6');
+    console.log('%c║   AUTOSAVE SYSTEM INITIALIZING...    ║', 'color: #3b82f6; font-weight: bold');
+    console.log('%c╚════════════════════════════════════════╝', 'color: #3b82f6');
+    console.log('');
+    
+    // Try to restore data first
+    const restored = restoreFormData();
+    
+    // Start autosave system
+    startAutosave();
+    
+    // Attach to form submit
+    const form = document.getElementById('analysisCreateForm');
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+        console.log('✅ Form submit handler attached');
+    }
+    
+    // Add manual clear buttons
+    addManualClearButton();
+    
+    console.log('');
+    console.log('%c🎉 Autosave system ready!', 'color: #10b981; font-weight: bold; font-size: 14px');
+    console.log('%c💡 Tip: Check console for real-time autosave activity', 'color: #6b7280; font-style: italic');
+    console.log('');
+});
+
+</script>
 <script>
 // ✅ FIXED: Use route() helper for HTTPS URL
 const API_URL = "{{ route('lab.formulas') }}";
@@ -579,7 +1025,6 @@ function updateAddButtons() {
         }
     });
 }
-
 function addNormalRange(data = {}) {
     const container = document.getElementById('normalRangesContainer');
     if (!container) return;
@@ -587,120 +1032,144 @@ function addNormalRange(data = {}) {
     const index = rangeCounter++;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'normal-range-item bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-gray-200 p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200';
+    wrapper.className = 'normal-range-item bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200';
+    wrapper.dataset.rangeIndex = index;
 
     wrapper.innerHTML = `
-        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-            <h4 class="range-title text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span class="range-badge flex items-center justify-center w-6 h-6 rounded-full bg-[#bc1622] text-white text-xs font-bold">
-                    #
+        <!-- Range Counter Header -->
+        <div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-300">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 text-white font-bold text-sm rounded-full shadow-md range-number">
+                    #1
                 </span>
-                Reference Range
-            </h4>
+                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Plage Normale</h3>
+            </div>
+            <button type="button" onclick="addNormalRange()"
+                class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 text-xs font-medium border border-green-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter
+            </button>
         </div>
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Sex Applicable</label>
-                    <select name="normal_ranges[${index}][sex_applicable]" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white sex-select text-sm">
-                        <option value="All" ${data.sex_applicable === 'All' ? 'selected' : ''}>All</option>
-                        <option value="M" ${data.sex_applicable === 'M' ? 'selected' : ''}>Male</option>
-                        <option value="F" ${data.sex_applicable === 'F' ? 'selected' : ''}>Female</option>
-                    </select>
-                </div>
-                <div class="pregnancy-wrapper ${data.sex_applicable === 'F' ? '' : 'hidden'}">
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Pregnant</label>
-                    <div class="flex items-center h-10">
-                        <input type="checkbox" name="normal_ranges[${index}][pregnant_applicable]" value="1" ${data.pregnant_applicable ? 'checked' : ''} 
-                               class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 transition">
-                    </div>
-                </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
+            
+            <!-- Sex -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Sexe</label>
+                <select name="normal_ranges[${index}][sex_applicable]" class="sex-select w-full px-3 py-2.5 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium">
+                    <option value="All" ${data.sex_applicable === 'All' ? 'selected' : ''}>Tous</option>
+                    <option value="M" ${data.sex_applicable === 'M' ? 'selected' : ''}>Homme</option>
+                    <option value="F" ${data.sex_applicable === 'F' ? 'selected' : ''}>Femme</option>
+                </select>
             </div>
 
+            <!-- Age Min -->
             <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Minimum</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Âge Min</label>
+                <div class="bg-blue-50 rounded-lg p-1.5 mb-2 min-h-[32px] flex items-center justify-center">
+                    <p class="text-[11px] font-semibold text-blue-700 text-center age-min-display leading-tight">
+                        ${formatAgeDisplay(data.age_min_years, data.age_min_months, data.age_min_days)}
+                    </p>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <div class="relative">
                         <input type="number" name="normal_ranges[${index}][age_min_years]" value="${data.age_min_years ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
-                               placeholder="Years" min="0">
-                        <span class="text-xs text-gray-500 mt-0.5 block">Years</span>
+                              class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                              placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                        <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">ans</span>
                     </div>
-                    <div>
+                    <div class="relative">
                         <input type="number" name="normal_ranges[${index}][age_min_months]" value="${data.age_min_months ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm" 
-                               placeholder="Months" min="0" max="11">
-                        <span class="text-xs text-gray-500 mt-0.5 block">Months</span>
+                              class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                              placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                        <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">mois</span>
                     </div>
-                    <div>
+                    <div class="relative">
                         <input type="number" name="normal_ranges[${index}][age_min_days]" value="${data.age_min_days ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
-                               placeholder="Days" min="0" max="30">
-                        <span class="text-xs text-gray-500 mt-0.5 block">Days</span>
+                              class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                              placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                        <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">j</span>
                     </div>
                 </div>
             </div>
 
+            <!-- Age Max -->
             <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Age Maximum</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Âge Max</label>
+                <div class="bg-blue-50 rounded-lg p-1.5 mb-2 min-h-[32px] flex items-center justify-center">
+                    <p class="text-[11px] font-semibold text-blue-700 text-center age-max-display leading-tight">
+                        ${formatAgeDisplay(data.age_max_years, data.age_max_months, data.age_max_days)}
+                    </p>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <div class="relative">
                         <input type="number" name="normal_ranges[${index}][age_max_years]" value="${data.age_max_years ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
-                               placeholder="Years" min="0">
-                        <span class="text-xs text-gray-500 mt-0.5 block">Years</span>
+                              class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                              placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                        <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">ans</span>
                     </div>
-                    <div>
+                    <div class="relative">
                         <input type="number" name="normal_ranges[${index}][age_max_months]" value="${data.age_max_months ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
-                               placeholder="Months" min="0" max="11">
-                        <span class="text-xs text-gray-500 mt-0.5 block">Months</span>
+                              class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                              placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                        <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">mois</span>
                     </div>
-                    <div>
+                    <div class="relative">
                         <input type="number" name="normal_ranges[${index}][age_max_days]" value="${data.age_max_days ?? ''}" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
-                               placeholder="Days" min="0" max="30">
-                        <span class="text-xs text-gray-500 mt-0.5 block">Days</span>
+                              class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                              placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                        <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">j</span>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Normal Minimum</label>
+            <!-- Normal Min -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Min</label>
+                <div class="relative">
                     <input type="number" step="0.01" name="normal_ranges[${index}][normal_min]" value="${data.normal_min ?? ''}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
-                           placeholder="0.00">
+                          class="w-full px-3 pr-14 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
+                          placeholder="0.00">
+                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded unit-display pointer-events-none">
+                        ${currentUnit || ''}
+                    </span>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">Normal Maximum</label>
+            </div>
+
+            <!-- Normal Max -->
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Max</label>
+                <div class="relative">
                     <input type="number" step="0.01" name="normal_ranges[${index}][normal_max]" value="${data.normal_max ?? ''}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus;border-transparent transition text-sm" 
-                           placeholder="0.00">
+                          class="w-full px-3 pr-14 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
+                          placeholder="0.00">
+                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded unit-display pointer-events-none">
+                        ${currentUnit || ''}
+                    </span>
                 </div>
             </div>
+        </div>
 
-            <div class="flex justify-between items-center pt-3 border-t border-gray-200">
-                <!-- Add Another Range -->
-                <button type="button"
-                        onclick="addNormalRange()"
-                        class="inline-flex items-center gap-2 px-3 py-2 bg-[#bc1622] text-white text-xs font-semibold rounded-lg hover:bg-[#a0141e] active:scale-95 transition shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Add Another Range
-                </button>
-
-                <!-- Remove -->
-                <button type="button" onclick="removeNormalRange(this)"
-                        class="inline-flex items-center gap-2 px-3 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 active:scale-95 transition shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                    Remove
-                </button>
+        <!-- Second Row: Pregnancy Checkbox + Delete -->
+        <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+            <div class="pregnancy-wrapper ${data.sex_applicable === 'F' ? '' : 'hidden'}">
+                <label class="flex items-center gap-2 px-3 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-pink-50 hover:border-pink-300 transition-all">
+                    <input type="checkbox" name="normal_ranges[${index}][pregnant_applicable]" value="1" ${data.pregnant_applicable ? 'checked' : ''}
+                        class="h-4 w-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500">
+                    <span class="text-sm font-medium text-gray-700">🤰 Grossesse</span>
+                </label>
             </div>
+
+            <!-- Delete Button -->
+            <button type="button" onclick="removeNormalRange(this)"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 text-sm font-medium border border-red-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Supprimer
+            </button>
         </div>
     `;
 
@@ -708,9 +1177,8 @@ function addNormalRange(data = {}) {
     attachSexChangeListener(wrapper);
     updateNoRangesMessage();
     updateRangeNumbers();
-    updateAddButtons();
 
-    // ✅ Smooth scroll + subtle highlight + focus
+    // Smooth scroll + animation
     setTimeout(() => {
         const offset = 100;
         const elementPosition = wrapper.getBoundingClientRect().top + window.pageYOffset;
@@ -721,7 +1189,6 @@ function addNormalRange(data = {}) {
             behavior: 'smooth'
         });
 
-        // Fade-in + small highlight
         wrapper.style.opacity = '0';
         wrapper.style.transform = 'translateY(15px)';
         wrapper.classList.add('ring-2', 'ring-[#bc1622]/30');
@@ -732,7 +1199,7 @@ function addNormalRange(data = {}) {
             wrapper.style.transform = 'translateY(0)';
         });
 
-        const focusTarget = wrapper.querySelector(`input[name="normal_ranges[${index}][age_max_years]"]`);
+        const focusTarget = wrapper.querySelector(`input[name="normal_ranges[${index}][age_min_years]"]`);
 
         setTimeout(() => {
             focusTarget?.scrollIntoView({
@@ -750,12 +1217,105 @@ function addNormalRange(data = {}) {
         }, 1500);
     }, 30);
 }
+
+function formatAgeDisplay(years, months, days) {
+    years = parseInt(years) || 0;
+    months = parseInt(months) || 0;
+    days = parseInt(days) || 0;
+    
+    if (!years && !months && !days) return '∞';
+    
+    let parts = [];
+    if (years) parts.push(years + (years > 1 ? ' ans' : ' an'));
+    if (months) parts.push(months + ' mois');
+    if (days) parts.push(days + ' j');  // ✅ ALWAYS show days if present
+    
+    return parts.join(' ') || '∞';
+}
+function normalizeAge(years, months, days) {
+    years = parseInt(years) || 0;
+    months = parseInt(months) || 0;
+    days = parseInt(days) || 0;
+    
+    // Convert days overflow to months
+    if (days >= 30) {
+        const extraMonths = Math.floor(days / 30);
+        months += extraMonths;
+        days = days % 30;
+    }
+    
+    // Convert months overflow to years
+    if (months >= 12) {
+        const extraYears = Math.floor(months / 12);
+        years += extraYears;
+        months = months % 12;
+    }
+    
+    return { years, months, days };
+}
+
+function updateAgeDisplayForRange(input) {
+    const wrapper = input.closest('.normal-range-item');
+    const isMin = input.name.includes('age_min');
+    
+    const yearInput = wrapper.querySelector(`input[name*="age_${isMin ? 'min' : 'max'}_years"]`);
+    const monthInput = wrapper.querySelector(`input[name*="age_${isMin ? 'min' : 'max'}_months"]`);
+    const dayInput = wrapper.querySelector(`input[name*="age_${isMin ? 'min' : 'max'}_days"]`);
+    
+    let years = parseInt(yearInput?.value) || 0;
+    let months = parseInt(monthInput?.value) || 0;
+    let days = parseInt(dayInput?.value) || 0;
+    
+    // ✅ Auto-normalize overflow
+    const normalized = normalizeAge(years, months, days);
+    
+    // ✅ Update input fields with normalized values
+    if (yearInput) yearInput.value = normalized.years || '';
+    if (monthInput) monthInput.value = normalized.months || '';
+    if (dayInput) dayInput.value = normalized.days || '';
+    
+    // ✅ Update display
+    const displayElement = wrapper.querySelector(`.age-${isMin ? 'min' : 'max'}-display`);
+    if (displayElement) {
+        displayElement.textContent = formatAgeDisplay(normalized.years, normalized.months, normalized.days);
+    }
+}
+// Initialize currentUnit on page load
+let currentUnit = '';
+const unitSelect = document.getElementById('unit_select');
+if (unitSelect) {
+    currentUnit = unitSelect.options[unitSelect.selectedIndex]?.text || '';
+    unitSelect.addEventListener('change', function() {
+        currentUnit = this.options[this.selectedIndex].text;
+        document.querySelectorAll('.unit-display').forEach(span => {
+            span.textContent = currentUnit;
+        });
+    });
+}
+function updateRangeNumbers() {
+    const ranges = document.querySelectorAll('.normal-range-item');
+    ranges.forEach((range, index) => {
+        const numberBadge = range.querySelector('.range-number');
+        if (numberBadge) {
+            numberBadge.textContent = `#${index + 1}`;
+        }
+    });
+}
 // ✅ Remove Normal Range
 function removeNormalRange(button) {
+  const wrapper = button.closest('.normal-range-item');
     if (confirm('Remove this normal range?')) {
-        button.closest('.normal-range-item').remove();
-        updateNoRangesMessage();
+        wrapper.style.transition = 'all 300ms ease-out';
+        wrapper.style.opacity = '0';
+        wrapper.style.transform = 'translateX(-20px)';
+        
+        setTimeout(() => {
+            wrapper.remove();
+            updateNoRangesMessage();
+            updateRangeNumbers(); // ✅ Re-number after deletion
+        }, 300);
     }
+   
 }
 
 // ✅ Attach Sex Change Listener

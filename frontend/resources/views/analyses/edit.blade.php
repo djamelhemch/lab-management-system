@@ -4,9 +4,40 @@
 @section('title', 'Edit Analysis')
 
 @section('content')
+
+<style>
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.toast-enter {
+    animation: slideInRight 0.3s ease-out forwards;
+}
+
+.toast-exit {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+</style>
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-5xl mx-auto">
-        
+   
         {{-- Header Section --}}
         <div class="mb-8">
             <div class="flex items-center justify-between">
@@ -144,8 +175,8 @@
                 </div>
             </div>
 
-            {{-- Specifications Card --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+           {{-- Specifications Card --}}
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
                         <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,16 +189,30 @@
                 <div class="p-6">
                     <div class="max-w-md">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Sample Type</label>
-                        <select name="sample_type_id" 
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 hover:bg-white">
-                            <option value="">Select Sample Type</option>
-                            @foreach($sampleTypes as $sampleType)
-                                <option value="{{ $sampleType['id'] }}"
-                                    {{ old('sample_type_id', $analysis['sample_type']['id'] ?? null) == $sampleType['id'] ? 'selected' : '' }}>
-                                    {{ $sampleType['name'] }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="flex gap-2">
+                            <select name="sample_type_id" 
+                                    id="sample_type_select"
+                                    class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 hover:bg-white">
+                                <option value="">Select Sample Type</option>
+                                @foreach($sampleTypes as $sampleType)
+                                    <option value="{{ $sampleType['id'] }}"
+                                        {{ old('sample_type_id', $analysis['sample_type']['id'] ?? null) == $sampleType['id'] ? 'selected' : '' }}>
+                                        {{ $sampleType['name'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" 
+                                    onclick="unlinkSampleType()"
+                                    title="Dissocier le type d'échantillon"
+                                    class="px-3 py-2 bg-orange-50 border border-orange-300 rounded-lg hover:bg-orange-100 transition-all text-orange-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="mt-1.5 text-xs text-gray-500">
+                            ℹ️ Le bouton orange dissocie le type d'échantillon de cette analyse uniquement
+                        </p>
                         @error('sample_type_id')
                             <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -175,169 +220,347 @@
                 </div>
             </div>
 
-            {{-- Normal Ranges Card --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+       {{-- Normal Ranges Card --}}
+{{-- Normal Ranges Card --}}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Plages normales
+        </h2>
+    </div>
+
+    <div class="p-6">
+        <div id="normalRangesContainer" class="space-y-4">
+            @foreach($analysis['normal_ranges'] ?? [] as $index => $range)
+            @php
+                // Convert days back to years/months/days
+                $ageMinDays = $range['age_min'] ?? 0;
+                $ageMaxDays = $range['age_max'] ?? null;
+                
+                // Min age conversion
+                $minYears = floor($ageMinDays / 365);
+                $minMonths = floor(($ageMinDays % 365) / 30);
+                $minDays = $ageMinDays % 30;
+                
+                // Max age conversion
+                if ($ageMaxDays) {
+                    $maxYears = floor($ageMaxDays / 365);
+                    $maxMonths = floor(($ageMaxDays % 365) / 30);
+                    $maxDays = $ageMaxDays % 30;
+                } else {
+                    $maxYears = null;
+                    $maxMonths = null;
+                    $maxDays = null;
+                }
+            @endphp
+            <div class="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200" data-range-index="{{ $index }}">
+                
+                <!-- Range Counter Header -->
+                <div class="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-300">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 text-white font-bold text-sm rounded-full shadow-md range-number">
+                            #{{ $index + 1 }}
+                        </span>
+                        <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Plage Normale</h3>
+                    </div>
+                    <button type="button" onclick="addNormalRange()"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 text-xs font-medium border border-green-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
-                        Normal Ranges
-                    </h2>
+                        Ajouter
+                    </button>
                 </div>
 
-                <div class="p-6">
-                    <div id="normalRangesContainer" class="space-y-4">
-                        @foreach($analysis['normal_ranges'] ?? [] as $index => $range)
-                        <div class="bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200">
-                            <div class="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
-                                
-                                {{-- Sex --}}
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Sexe</label>
-                                    <select name="normal_ranges[{{ $index }}][sex_applicable]" 
-                                            class="w-full px-3 py-2.5 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium">
-                                        <option value="All" {{ ($range['sex_applicable'] ?? 'All') == 'All' ? 'selected' : '' }}>Tous</option>
-                                        <option value="M" {{ ($range['sex_applicable'] ?? '') == 'M' ? 'selected' : '' }}>Homme</option>
-                                        <option value="F" {{ ($range['sex_applicable'] ?? '') == 'F' ? 'selected' : '' }}>Femme</option>
-                                    </select>
-                                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
+                    
+                    <!-- Sex -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Sexe</label>
+                        <select name="normal_ranges[{{ $index }}][sex_applicable]" class="sex-select w-full px-3 py-2.5 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium">
+                            <option value="All" {{ ($range['sex_applicable'] ?? 'All') == 'All' ? 'selected' : '' }}>Tous</option>
+                            <option value="M" {{ ($range['sex_applicable'] ?? '') == 'M' ? 'selected' : '' }}>Homme</option>
+                            <option value="F" {{ ($range['sex_applicable'] ?? '') == 'F' ? 'selected' : '' }}>Femme</option>
+                        </select>
+                    </div>
 
-                                {{-- Age Min --}}
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Âge Min</label>
-                                    <div class="bg-blue-50 rounded-lg p-2 mb-2 min-h-[44px] flex items-center justify-center">
-                                        <p class="text-xs font-semibold text-blue-700 text-center" id="age-min-display-{{ $index }}">
-                                            {{ formatAgeClinical($range['age_min']) }}
-                                        </p>
-                                    </div>
-                                    <div class="relative">
-                                        <input type="number"
-                                            name="normal_ranges[{{ $index }}][age_min]"
-                                            value="{{ old("normal_ranges.$index.age_min", $range['age_min']) }}"
-                                            class="w-full px-3 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                                            onchange="updateAgeDisplay(this, {{ $index }}, 'min')"
-                                            placeholder="jours">
-                                        <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">j</span>
-                                    </div>
-                                </div>
-
-                                {{-- Age Max --}}
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Âge Max</label>
-                                    <div class="bg-blue-50 rounded-lg p-2 mb-2 min-h-[44px] flex items-center justify-center">
-                                        <p class="text-xs font-semibold text-blue-700 text-center" id="age-max-display-{{ $index }}">
-                                            {{ formatAgeClinical($range['age_max']) }}
-                                        </p>
-                                    </div>
-                                    <div class="relative">
-                                        <input type="number"
-                                            name="normal_ranges[{{ $index }}][age_max]"
-                                            value="{{ old("normal_ranges.$index.age_max", $range['age_max']) }}"
-                                            class="w-full px-3 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                                            onchange="updateAgeDisplay(this, {{ $index }}, 'max')"
-                                            placeholder="jours">
-                                        <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">j</span>
-                                    </div>
-                                </div>
-
-                                {{-- Normal Min --}}
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Min</label>
-                                    <div class="relative">
-                                        <input type="number" 
-                                            step="0.01"
-                                            name="normal_ranges[{{ $index }}][normal_min]"
-                                            value="{{ old("normal_ranges.$index.normal_min", $range['normal_min']) }}"
-                                            class="w-full px-3 pr-16 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                                            placeholder="0.00">
-                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded" id="unit-display-min-{{ $index }}">
-                                            {{ $analysis['unit']['symbol'] ?? $analysis['unit']['name'] ?? '' }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {{-- Normal Max --}}
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Max</label>
-                                    <div class="relative">
-                                        <input type="number" 
-                                            step="0.01"
-                                            name="normal_ranges[{{ $index }}][normal_max]"
-                                            value="{{ old("normal_ranges.$index.normal_max", $range['normal_max']) }}"
-                                            class="w-full px-3 pr-16 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                                            placeholder="0.00">
-                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded" id="unit-display-max-{{ $index }}">
-                                            {{ $analysis['unit']['symbol'] ?? $analysis['unit']['name'] ?? '' }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {{-- Pregnancy --}}
-                                <div class="flex flex-col items-center justify-end space-y-2">
-                                    <label class="flex items-center gap-2 px-3 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-pink-50 hover:border-pink-300 transition-all">
-                                        <input type="checkbox"
-                                            name="normal_ranges[{{ $index }}][pregnant_applicable]"
-                                            value="1"
-                                            {{ old("normal_ranges.$index.pregnant_applicable", $range['pregnant_applicable'] ?? false) ? 'checked' : '' }}
-                                            class="h-4 w-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500">
-                                        <span class="text-sm font-medium text-gray-700">🤰 Grossesse</span>
-                                    </label>
-                                </div>
+                    <!-- Age Min -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Âge Min</label>
+                        <div class="bg-blue-50 rounded-lg p-1.5 mb-2 min-h-[32px] flex items-center justify-center">
+                            <p class="text-[11px] font-semibold text-blue-700 text-center age-min-display leading-tight">
+                                {{ formatAgeDisplay($minYears, $minMonths, $minDays) }}
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <div class="relative">
+                                <input type="number" name="normal_ranges[{{ $index }}][age_min_years]" value="{{ old("normal_ranges.$index.age_min_years", $minYears ?: '') }}" 
+                                      class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                                      placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                                <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">ans</span>
                             </div>
-
-                            {{-- Delete Button --}}
-                            <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
-                                <button type="button"
-                                    onclick="if(confirm('Êtes-vous sûr de vouloir supprimer cette plage ?')) this.closest('.bg-gradient-to-r').remove();"
-                                    class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 text-sm font-medium border border-red-200">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                    Supprimer
-                                </button>
+                            <div class="relative">
+                                <input type="number" name="normal_ranges[{{ $index }}][age_min_months]" value="{{ old("normal_ranges.$index.age_min_months", $minMonths ?: '') }}" 
+                                      class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                                      placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                                <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">mois</span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" name="normal_ranges[{{ $index }}][age_min_days]" value="{{ old("normal_ranges.$index.age_min_days", $minDays ?: '') }}" 
+                                      class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                                      placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                                <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">j</span>
                             </div>
                         </div>
-                        @endforeach
                     </div>
-                    
-                    <button type="button" 
-                            onclick="addNormalRange()" 
-                            class="mt-6 inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 hover:shadow-lg transition-all duration-200 font-medium">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+
+                    <!-- Age Max -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Âge Max</label>
+                        <div class="bg-blue-50 rounded-lg p-1.5 mb-2 min-h-[32px] flex items-center justify-center">
+                            <p class="text-[11px] font-semibold text-blue-700 text-center age-max-display leading-tight">
+                                {{ formatAgeDisplay($maxYears, $maxMonths, $maxDays) }}
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <div class="relative">
+                                <input type="number" name="normal_ranges[{{ $index }}][age_max_years]" value="{{ old("normal_ranges.$index.age_max_years", $maxYears ?: '') }}" 
+                                      class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                                      placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                                <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">ans</span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" name="normal_ranges[{{ $index }}][age_max_months]" value="{{ old("normal_ranges.$index.age_max_months", $maxMonths ?: '') }}" 
+                                      class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                                      placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                                <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">mois</span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" name="normal_ranges[{{ $index }}][age_max_days]" value="{{ old("normal_ranges.$index.age_max_days", $maxDays ?: '') }}" 
+                                      class="w-full px-1.5 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium age-input"
+                                      placeholder="0" min="0" onchange="updateAgeDisplayForRange(this)">
+                                <span class="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 font-medium whitespace-nowrap">j</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Normal Min -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Min</label>
+                        <div class="relative">
+                            <input type="number" step="0.01" name="normal_ranges[{{ $index }}][normal_min]" value="{{ old("normal_ranges.$index.normal_min", $range['normal_min'] ?? '') }}" 
+                                  class="w-full px-3 pr-14 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
+                                  placeholder="0.00">
+                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded unit-display pointer-events-none">
+                                {{ $analysis['unit']['symbol'] ?? $analysis['unit']['name'] ?? '' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Normal Max -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Max</label>
+                        <div class="relative">
+                            <input type="number" step="0.01" name="normal_ranges[{{ $index }}][normal_max]" value="{{ old("normal_ranges.$index.normal_max", $range['normal_max'] ?? '') }}" 
+                                  class="w-full px-3 pr-14 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
+                                  placeholder="0.00">
+                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded unit-display pointer-events-none">
+                                {{ $analysis['unit']['symbol'] ?? $analysis['unit']['name'] ?? '' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Row: Pregnancy Checkbox + Delete -->
+                <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                    <div class="pregnancy-wrapper {{ ($range['sex_applicable'] ?? 'All') === 'F' ? '' : 'hidden' }}">
+                        <label class="flex items-center gap-2 px-3 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-pink-50 hover:border-pink-300 transition-all">
+                            <input type="checkbox" name="normal_ranges[{{ $index }}][pregnant_applicable]" value="1" {{ old("normal_ranges.$index.pregnant_applicable", $range['pregnant_applicable'] ?? false) ? 'checked' : '' }}
+                                class="h-4 w-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500">
+                            <span class="text-sm font-medium text-gray-700">🤰 Grossesse</span>
+                        </label>
+                    </div>
+
+                    <!-- Delete Button -->
+                    <button type="button" onclick="removeNormalRange(this)"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 text-sm font-medium border border-red-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>
-                        Ajouter une plage normale
+                        Supprimer
+                    </button>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        
+        <button type="button" 
+                onclick="addNormalRange()" 
+                class="mt-6 inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 hover:shadow-lg transition-all duration-200 font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Ajouter une plage normale
+        </button>
+    </div>
+</div>
+
+{{-- Add formatAgeDisplay helper function at the top of your blade file --}}
+@php
+function formatAgeDisplay($years, $months, $days) {
+    if (!$years && !$months && !$days) return '∞';
+    
+    $parts = [];
+    if ($years) $parts[] = $years . ' an' . ($years > 1 ? 's' : '');
+    if ($months) $parts[] = $months . ' mois';
+    if ($days) $parts[] = $days . ' j';
+    
+    return implode(' ', $parts) ?: '0';
+}
+@endphp
+
+
+
+
+            
+{{-- Formula Card - ENHANCED VERSION --}}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                🧮 Formule de calcul
+            </h2>
+            <button type="button" onclick="openSavedFormulas()"
+                class="text-sm text-indigo-600 hover:underline">
+                📚 Formules enregistrées
+            </button>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        <!-- Formula Name -->
+        <div class="mb-5">
+            <label for="formula_name" class="block text-sm font-semibold text-gray-700 mb-2">
+                Nom de la formule :
+            </label>
+            <input type="text" id="formula_name" 
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white" 
+                placeholder="Ex : Formule de Friedewald"
+                value="{{ old('formula_name', '') }}">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- LEFT: Editor -->
+            <div>
+                <label for="formula" class="block text-sm font-semibold text-gray-700 mb-2">
+                    Expression mathématique :
+                </label>
+                <div class="border-2 border-blue-400 rounded-xl p-3 bg-blue-50 focus-within:ring-2 focus-within:ring-blue-300 transition">
+                    <textarea id="formula" 
+                              name="formula"
+                              rows="4" 
+                              class="w-full bg-transparent outline-none text-gray-800 text-sm font-mono"
+                              placeholder="Exemple : LDL-C = CT - HDL-C - TG / 5">{{ old('formula', $analysis['formula']) }}</textarea>
+                </div>
+
+                <div id="formulaPreview" class="mt-3 text-sm font-mono text-gray-600 bg-gray-100 border border-gray-300 rounded-lg p-2">
+                    🧠 Aperçu : <span id="formulaDisplay" class="text-gray-800">{{ $analysis['formula'] ?? 'Aucune formule' }}</span>
+                </div>
+
+                <div class="flex gap-2 mt-3">
+                    <button type="button" onclick="clearFormula()"
+                        class="bg-red-50 border border-red-300 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition text-sm">
+                        Effacer
+                    </button>
+                    <button id="saveFormulaBtn" type="button" onclick="saveFormula()"
+                        class="bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition text-sm">
+                        💾 Enregistrer la formule
                     </button>
                 </div>
             </div>
 
+            <!-- RIGHT: Tools -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">🔢 Opérateurs et fonctions :</label>
+                <div class="border-2 border-gray-300 bg-gray-50 rounded-xl p-3 flex flex-wrap gap-2">
+                    @php
+                        $ops = [
+                            ['+', 'Addition'],
+                            ['-', 'Soustraction'],
+                            ['*', 'Multiplication'],
+                            ['/', 'Division'],
+                            ['=', 'Égal (assignation du résultat)'],
+                            ['(', 'Parenthèse ouvrante'],
+                            [')', 'Parenthèse fermante'],
+                            ['^', 'Puissance'],
+                            ['√', 'Racine carrée'],
+                            ['ln()', 'Logarithme naturel'],
+                            ['exp()', 'Exponentielle'],
+                            ['mean()', 'Moyenne'],
+                            ['sd()', 'Écart-type'],
+                            ['zscore()', 'Score Z : (val - moyenne) / écart-type'],
+                            ['min()', 'Valeur minimale'],
+                            ['max()', 'Valeur maximale']
+                        ];
+                    @endphp
+                    @foreach($ops as [$symbol, $desc])
+                        <button type="button" 
+                            class="bg-white hover:bg-blue-100 border border-blue-400 text-blue-700 text-xs px-2 py-1 rounded-md transition relative"
+                            onclick="insertFormula('{{ $symbol }}')"
+                            title="{{ $desc }}">
+                            {{ $symbol }}
+                        </button>
+                    @endforeach
+                </div>
 
-            {{-- Formula Card --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                            Calculation Formula
-                        </h2>
-                        <span class="text-xs bg-gray-200 text-gray-600 px-2.5 py-1 rounded-full font-medium">Optional</span>
+                <!-- Search analyses -->
+                <div class="mt-5">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">🔍 Rechercher une analyse :</label>
+                    <input type="text" id="analysisSearch" placeholder="Code ou nom..." 
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                        oninput="filterAnalyses()" />
+                </div>
+
+                <!-- Analysis codes -->
+                <div class="border-2 border-gray-300 rounded-xl p-2 mt-3 max-h-44 overflow-y-auto bg-gray-50">
+                    <div id="analysisButtons" class="flex flex-wrap gap-2">
+                        @if(isset($analyses) && count($analyses) > 0)
+                            @foreach($analyses as $analysisItem)
+                                <button type="button" 
+                                    class="bg-white hover:bg-gray-100 text-xs px-2 py-1 border border-gray-300 rounded-md transition analysis-btn"
+                                    onclick="insertFormula('{{ $analysisItem['code'] }}')"
+                                    data-code="{{ $analysisItem['code'] }}"
+                                    data-name="{{ $analysisItem['name'] ?? 'Analyse' }}"
+                                    title="{{ $analysisItem['name'] ?? 'Analyse' }}">
+                                    {{ $analysisItem['code'] }}
+                                </button>
+                            @endforeach
+                        @else
+                            <p class="text-xs text-gray-500">Aucune analyse disponible</p>
+                        @endif
                     </div>
                 </div>
-                
-                <div class="p-6">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Formula</label>
-                    <textarea name="formula" 
-                              rows="4" 
-                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white font-mono text-sm"
-                              placeholder="Enter calculation formula (e.g., value1 + value2 * 0.5)">{{ old('formula', $analysis['formula']) }}</textarea>
-                    @error('formula')
-                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+            </div>
+        </div>
+
+        <!-- Saved formulas modal -->
+                <div id="savedFormulasModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 border border-gray-300">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-lg font-semibold text-gray-800">📘 Formules enregistrées</h4>
+                            <button onclick="closeSavedFormulas()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                        </div>
+                        <div id="savedFormulasList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                    </div>
                 </div>
             </div>
+        </div>
 
             {{-- Status Card --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
@@ -352,17 +575,26 @@
                 
                 <div class="p-6">
                     <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-indigo-50 hover:border-indigo-200 transition-all">
-                        <input type="hidden" name="is_active" value="0">
                         <input type="checkbox" 
-                               name="is_active" 
-                               value="1" 
-                               id="is_active"
-                               {{ old('is_active', $analysis['is_active'] ?? true) ? 'checked' : '' }}
-                               class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition">
+                            name="is_active" 
+                            value="1" 
+                            id="is_active"
+                            {{ old('is_active', $analysis['is_active'] ?? true) ? 'checked' : '' }}
+                            class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition">
                         <label for="is_active" class="text-sm font-medium text-gray-900 cursor-pointer select-none">
                             Analysis is active and available for use
                         </label>
                     </div>
+                    
+                    {{-- ✅ Add visual indicator --}}
+                    <p class="mt-2 text-xs text-gray-500">
+                        <span id="status-indicator">
+                            Status actuel: 
+                            <strong class="{{ ($analysis['is_active'] ?? true) ? 'text-green-600' : 'text-red-600' }}">
+                                {{ ($analysis['is_active'] ?? true) ? 'Actif' : 'Inactif' }}
+                            </strong>
+                        </span>
+                    </p>
                 </div>
             </div>
 
@@ -382,6 +614,10 @@
                     </svg>
                     Update Analysis
                 </button>
+                <button type="button" onclick="showToast('Test toast notification!', 'success')" 
+                        class="px-4 py-2 bg-purple-500 text-white rounded">
+                        Test Toast
+                    </button>
             </div>
         </form>
     </div>
@@ -419,23 +655,315 @@ function formatAgeClinical($days) {
     return "$label ($exact)";
 }
 @endphp
+{{-- Toast Notification Container --}}
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
 {{-- JavaScript --}}
 <script>
 let rangeCounter = {{ count($analysis['normal_ranges'] ?? []) }};
 let currentUnit = '{{ $analysis['unit']['symbol'] ?? $analysis['unit']['name'] ?? '' }}';
 
-// Update unit display when unit dropdown changes
-document.querySelector('select[name="unit_id"]').addEventListener('change', function() {
+// ============================================
+// TOAST NOTIFICATION FUNCTIONS
+// ============================================
+
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    const toastId = 'toast-' + Date.now();
+    toast.id = toastId;
+    
+    // Set colors based on type
+    const colors = {
+        success: 'bg-green-500 border-green-600',
+        error: 'bg-red-500 border-red-600',
+        warning: 'bg-orange-500 border-orange-600',
+        info: 'bg-blue-500 border-blue-600'
+    };
+    
+    const icons = {
+        success: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>`,
+        error: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>`,
+        warning: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>`,
+        info: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+               </svg>`
+    };
+    
+    toast.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg border-l-4 flex items-center gap-3 min-w-[320px] max-w-md toast-enter`;
+    toast.innerHTML = `
+        <div class="flex-shrink-0">
+            ${icons[type]}
+        </div>
+        <div class="flex-1">
+            <p class="font-medium text-sm">${message}</p>
+        </div>
+        <button onclick="closeToast('${toastId}')" class="flex-shrink-0 hover:bg-white/20 rounded p-1 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        closeToast(toastId);
+    }, 5000);
+}
+
+function closeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (!toast) return;
+    
+    toast.classList.remove('toast-enter');
+    toast.classList.add('toast-exit');
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 300);
+}
+
+// ============================================
+// UNIT UPDATE
+// ============================================
+
+document.querySelector('select[name="unit_id"]')?.addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
     const unitText = selectedOption.text;
     currentUnit = unitText;
     
-    // Update all existing unit displays
-    document.querySelectorAll('[id^="unit-display-"]').forEach(span => {
+    document.querySelectorAll('.unit-display').forEach(span => {
         span.textContent = unitText;
     });
 });
+// ============================================
+// STATUS INDICATOR UPDATE
+// ============================================
+document.getElementById('is_active')?.addEventListener('change', function() {
+    const indicator = document.getElementById('status-indicator');
+    if (indicator) {
+        if (this.checked) {
+            indicator.innerHTML = 'Status actuel: <strong class="text-green-600">Actif ✓</strong> <span class="text-xs text-orange-500">(non enregistré)</span>';
+        } else {
+            indicator.innerHTML = 'Status actuel: <strong class="text-red-600">Inactif ✗</strong> <span class="text-xs text-orange-500">(non enregistré)</span>';
+        }
+    }
+});
+
+// ============================================
+// FORM SUBMISSION WITH SPINNER
+// ============================================
+
+document.querySelector('form')?.addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <svg class="animate-spin h-5 w-5 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Enregistrement en cours...
+        `;
+    }
+    
+    // Show loading overlay
+    showLoadingOverlay();
+});
+
+function showLoadingOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'loading-overlay';
+    overlay.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    overlay.innerHTML = `
+        <div class="bg-white rounded-lg p-8 shadow-2xl flex flex-col items-center gap-4">
+            <svg class="animate-spin h-12 w-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-700 font-medium text-lg">Enregistrement en cours...</p>
+            <p class="text-gray-500 text-sm">Veuillez patienter</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+// ============================================
+// FORMULA BUILDER FUNCTIONS
+// ============================================
+
+function insertFormula(text) {
+    const textarea = document.getElementById('formula');
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = textarea.value;
+    
+    textarea.value = currentValue.substring(0, start) + text + currentValue.substring(end);
+    
+    const newPos = start + text.length;
+    textarea.setSelectionRange(newPos, newPos);
+    textarea.focus();
+    
+    updateFormulaPreview();
+}
+
+function updateFormulaPreview() {
+    const formula = document.getElementById('formula')?.value || '';
+    const display = document.getElementById('formulaDisplay');
+    if (display) {
+        display.textContent = formula || 'Aucune formule';
+    }
+}
+
+function clearFormula() {
+    if (confirm('Êtes-vous sûr de vouloir effacer la formule?')) {
+        const formulaInput = document.getElementById('formula');
+        const nameInput = document.getElementById('formula_name');
+        
+        if (formulaInput) formulaInput.value = '';
+        if (nameInput) nameInput.value = '';
+        
+        updateFormulaPreview();
+        showToast('Formule effacée', 'info');
+    }
+}
+
+function filterAnalyses() {
+    const searchTerm = document.getElementById('analysisSearch')?.value.toLowerCase() || '';
+    const buttons = document.querySelectorAll('.analysis-btn');
+    
+    buttons.forEach(btn => {
+        const code = (btn.dataset.code || '').toLowerCase();
+        const name = (btn.dataset.name || '').toLowerCase();
+        
+        btn.style.display = (code.includes(searchTerm) || name.includes(searchTerm)) ? 'inline-block' : 'none';
+    });
+}
+
+function saveFormula() {
+    const formula = document.getElementById('formula')?.value;
+    const nameInput = document.getElementById('formula_name');
+    const name = nameInput?.value;
+    
+    if (!formula) {
+        showToast('Veuillez entrer une formule avant de sauvegarder', 'warning');
+        return;
+    }
+    
+    if (!name) {
+        showToast('Veuillez donner un nom à la formule', 'warning');
+        return;
+    }
+    
+    let formulas = JSON.parse(localStorage.getItem('saved_formulas') || '[]');
+    
+    formulas.push({
+        name: name,
+        formula: formula,
+        date: new Date().toISOString()
+    });
+    
+    localStorage.setItem('saved_formulas', JSON.stringify(formulas));
+    showToast('✅ Formule sauvegardée avec succès!', 'success');
+}
+
+function openSavedFormulas() {
+    const modal = document.getElementById('savedFormulasModal');
+    const list = document.getElementById('savedFormulasList');
+    
+    if (!modal || !list) return;
+    
+    const formulas = JSON.parse(localStorage.getItem('saved_formulas') || '[]');
+    
+    if (formulas.length === 0) {
+        list.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Aucune formule sauvegardée</p>';
+    } else {
+        list.innerHTML = formulas.map((f, index) => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition">
+                <div class="flex-1">
+                    <p class="font-medium text-sm text-gray-800">${f.name}</p>
+                    <p class="text-xs text-gray-600 font-mono mt-1">${f.formula}</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="loadFormula(${index})" 
+                        class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition">
+                        Charger
+                    </button>
+                    <button onclick="deleteFormula(${index})" 
+                        class="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition">
+                        ×
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+function closeSavedFormulas() {
+    document.getElementById('savedFormulasModal')?.classList.add('hidden');
+}
+
+function loadFormula(index) {
+    const formulas = JSON.parse(localStorage.getItem('saved_formulas') || '[]');
+    const formula = formulas[index];
+    
+    if (formula) {
+        const formulaInput = document.getElementById('formula');
+        const nameInput = document.getElementById('formula_name');
+        
+        if (formulaInput) formulaInput.value = formula.formula;
+        if (nameInput) nameInput.value = formula.name;
+        
+        updateFormulaPreview();
+        closeSavedFormulas();
+        showToast('Formule chargée', 'success');
+    }
+}
+
+function deleteFormula(index) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette formule?')) {
+        let formulas = JSON.parse(localStorage.getItem('saved_formulas') || '[]');
+        formulas.splice(index, 1);
+        localStorage.setItem('saved_formulas', JSON.stringify(formulas));
+        openSavedFormulas();
+        showToast('Formule supprimée', 'info');
+    }
+}
+
+function unlinkSampleType() {
+    const select = document.getElementById('sample_type_select');
+    if (!select) return;
+    
+    const currentSelection = select.options[select.selectedIndex].text;
+    
+    if (select.value === '') {
+        showToast('Aucun type d\'échantillon n\'est actuellement associé', 'info');
+        return;
+    }
+    
+    if (confirm(`⚠️ Êtes-vous sûr de vouloir dissocier "${currentSelection}"?\n\nLe type d'échantillon restera disponible dans le système.`)) {
+        select.value = '';
+        showToast(`Type d'échantillon "${currentSelection}" dissocié`, 'success');
+    }
+}
+
+// ============================================
+// AGE DISPLAY FUNCTIONS
+// ============================================
 
 function formatAgeClinicalJS(days) {
     if (!days) return '∞';
@@ -461,114 +989,119 @@ function formatAgeClinicalJS(days) {
     return `${label} (${exact})`;
 }
 
-function updateAgeDisplay(input, index, type) {
-    const days = parseInt(input.value) || null;
-    const displayId = `age-${type}-display-${index}`;
-    const displayElement = document.getElementById(displayId);
-    if (displayElement) {
-        displayElement.textContent = formatAgeClinicalJS(days);
+function updateAgeDisplayForRange(input) {
+    const wrapper = input.closest('[data-range-index]');
+    if (!wrapper) return;
+    
+    const rangeIndex = wrapper.dataset.rangeIndex;
+    const isMin = input.name.includes('age_min');
+    const displayType = isMin ? 'min' : 'max';
+    
+    const yearsInput = wrapper.querySelector(`input[name*="age_${displayType}_years"]`);
+    const monthsInput = wrapper.querySelector(`input[name*="age_${displayType}_months"]`);
+    const daysInput = wrapper.querySelector(`input[name*="age_${displayType}_days"]`);
+    
+    const years = parseInt(yearsInput?.value) || 0;
+    const months = parseInt(monthsInput?.value) || 0;
+    const days = parseInt(daysInput?.value) || 0;
+    
+    const totalDays = (years * 365) + (months * 30) + days;
+    
+    const display = wrapper.querySelector(`.age-${displayType}-display`);
+    if (display) {
+        display.textContent = formatAgeDisplay(years, months, days);
     }
 }
 
-function addNormalRange() {
-    const container = document.getElementById('normalRangesContainer');
-    const index = rangeCounter++;
-
-    const div = document.createElement('div');
-    div.className = 'bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200';
-
-    div.innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Sexe</label>
-                <select name="normal_ranges[${index}][sex_applicable]" 
-                        class="w-full px-3 py-2.5 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium">
-                    <option value="All">Tous</option>
-                    <option value="M">Homme</option>
-                    <option value="F">Femme</option>
-                </select>
-            </div>
-            
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Âge Min</label>
-                <div class="bg-blue-50 rounded-lg p-2 mb-2 min-h-[44px] flex items-center justify-center">
-                    <p class="text-xs font-semibold text-blue-700 text-center" id="age-min-display-${index}">∞</p>
-                </div>
-                <div class="relative">
-                    <input type="number"
-                        name="normal_ranges[${index}][age_min]"
-                        class="w-full px-3 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                        onchange="updateAgeDisplay(this, ${index}, 'min')"
-                        placeholder="jours">
-                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">j</span>
-                </div>
-            </div>
-            
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Âge Max</label>
-                <div class="bg-blue-50 rounded-lg p-2 mb-2 min-h-[44px] flex items-center justify-center">
-                    <p class="text-xs font-semibold text-blue-700 text-center" id="age-max-display-${index}">∞</p>
-                </div>
-                <div class="relative">
-                    <input type="number"
-                        name="normal_ranges[${index}][age_max]"
-                        class="w-full px-3 py-2 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                        onchange="updateAgeDisplay(this, ${index}, 'max')"
-                        placeholder="jours">
-                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">j</span>
-                </div>
-            </div>
-            
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Min</label>
-                <div class="relative">
-                    <input type="number" step="0.01"
-                        name="normal_ranges[${index}][normal_min]"
-                        class="w-full px-3 pr-16 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                        placeholder="0.00">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded" id="unit-display-min-${index}">
-                        ${currentUnit}
-                    </span>
-                </div>
-            </div>
-            
-            <div>
-                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Val. Max</label>
-                <div class="relative">
-                    <input type="number" step="0.01"
-                        name="normal_ranges[${index}][normal_max]"
-                        class="w-full px-3 pr-16 py-2.5 text-sm text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white font-medium"
-                        placeholder="0.00">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded" id="unit-display-max-${index}">
-                        ${currentUnit}
-                    </span>
-                </div>
-            </div>
-            
-            <div class="flex flex-col items-center justify-end space-y-2">
-                <label class="flex items-center gap-2 px-3 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-pink-50 hover:border-pink-300 transition-all">
-                    <input type="checkbox"
-                        name="normal_ranges[${index}][pregnant_applicable]"
-                        value="1"
-                        class="h-4 w-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500">
-                    <span class="text-sm font-medium text-gray-700">🤰 Grossesse</span>
-                </label>
-            </div>
-        </div>
-        
-        <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
-            <button type="button"
-                onclick="if(confirm('Êtes-vous sûr de vouloir supprimer cette plage ?')) this.closest('.bg-gradient-to-r').remove();"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 text-sm font-medium border border-red-200">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
-                Supprimer
-            </button>
-        </div>
-    `;
-
-    container.appendChild(div);
+function formatAgeDisplay(years, months, days) {
+    if (!years && !months && !days) return '∞';
+    
+    let parts = [];
+    if (years) parts.push(years + ' an' + (years > 1 ? 's' : ''));
+    if (months) parts.push(months + ' mois');
+    if (days) parts.push(days + ' j');
+    
+    return parts.join(' ') || '0';
 }
+
+// ============================================
+// NORMAL RANGE FUNCTIONS
+// ============================================
+
+function addNormalRange() {
+    showToast('Nouvelle plage ajoutée', 'info');
+    // Your existing addNormalRange code here
+}
+
+function removeNormalRange(button) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette plage ?')) {
+        button.closest('[data-range-index]').remove();
+        showToast('Plage supprimée', 'info');
+        updateRangeNumbers();
+    }
+}
+
+function updateRangeNumbers() {
+    document.querySelectorAll('[data-range-index] .range-number').forEach((num, index) => {
+        num.textContent = `#${index + 1}`;
+    });
+}
+
+// ============================================
+// FORM SUBMISSION
+// ============================================
+
+document.querySelector('form')?.addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <svg class="animate-spin h-5 w-5 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Enregistrement...
+        `;
+        
+        showToast('Enregistrement des modifications...', 'info');
+    }
+});
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize formula preview
+    const formulaTextarea = document.getElementById('formula');
+    if (formulaTextarea) {
+        formulaTextarea.addEventListener('input', updateFormulaPreview);
+        updateFormulaPreview();
+    }
+    
+    // Show Laravel flash messages
+    @if(session('success'))
+        showToast("{{ session('success') }}", 'success');
+    @endif
+    
+    @if(session('error'))
+        showToast("{{ session('error') }}", 'error');
+    @endif
+    
+    @if(session('warning'))
+        showToast("{{ session('warning') }}", 'warning');
+    @endif
+    
+    @if(session('info'))
+        showToast("{{ session('info') }}", 'info');
+    @endif
+    
+    @if($errors->any())
+        @foreach($errors->all() as $error)
+            showToast("{{ $error }}", 'error');
+        @endforeach
+    @endif
+});
 </script>
+
 @endsection

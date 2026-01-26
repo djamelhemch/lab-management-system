@@ -42,5 +42,25 @@ class LogsController extends Controller
 
         return view('admin.logs', compact('logs', 'users', 'pagination'));
     }
+    public function partial()
+    {
+        try {
+            $query = request()->only(['user_id', 'action_type', 'page', 'per_page']);
+            $response = $this->api->get('/logs', $query);
+
+            if ($response->successful()) {
+                $json = $response->json();
+                $logs = $json['data'] ?? [];
+            } else {
+                $logs = [];
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error fetching logs (partial): ' . $e->getMessage());
+            $logs = [];
+        }
+
+        return view('admin.partials.logs_rows', compact('logs'));
+    }
 
 }

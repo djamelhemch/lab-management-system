@@ -10,6 +10,7 @@ use App\Http\Controllers\AnalysisController;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+
 class QuotationController extends Controller
 {
     protected $api;
@@ -18,41 +19,54 @@ class QuotationController extends Controller
     {
         $this->api = $api;
     }
+    
+    
+    private function buildQuotationParams(Request $request)
+    {
+        return array_filter([
+            'q'        => $request->get('q'),
+            'status'   => $request->get('status'),
+            'page'     => $request->get('page', 1),
+            'limit'    => $request->get('limit', 10),
+
+            // ✅ NEW — forward real sorting
+            'sort_by'  => $request->get('sort_by'),
+            'sort_dir' => $request->get('sort_dir', 'desc'),
+        ]);
+    }
+
     public function index(Request $request)
     {
-        $params = [
-            'q'      => $request->get('q'),
-            'status' => $request->get('status'),
-            'page'   => $request->get('page', 1),
-            'limit'  => $request->get('limit', 10),
-        ];
+        $params = array_filter([
+            'q'        => $request->get('q'),
+            'status'   => $request->get('status'),
+            'page'     => $request->get('page', 1),
+            'limit'    => $request->get('limit', 10),
+            'sort_by'  => $request->get('sort_by', 'date'),
+            'sort_dir' => $request->get('sort_dir', 'desc'),
+        ]);
 
-        $response = $this->api->get('/quotations', array_filter($params));
-        $quotations = $response->ok() ? $response->json() : [
-            'items' => [],
-            'total' => 0,
-            'page' => 1,
-            'last_page' => 1,
-        ];
+        $response = $this->api->get('/quotations', $params);
+
+        $quotations = $response->ok()
+            ? $response->json()
+            : [
+                'items'     => [],
+                'total'     => 0,
+                'page'      => 1,
+                'last_page' => 1,
+            ];
 
         return view('quotations.index', compact('quotations'));
     }
 
     public function table(Request $request)
     {
-        $params = [
-            'q'      => $request->get('q'),
-            'status' => $request->get('status'),
-            'page'   => $request->get('page', 1),
-            'limit'  => $request->get('limit', 10),
-        ];
+        $params = $this->buildQuotationParams($request);
 
-        $response = $this->api->get('/quotations', array_filter($params));
+        $response = $this->api->get('/quotations', $params);
         $quotations = $response->ok() ? $response->json() : [
-            'items' => [],
-            'total' => 0,
-            'page' => 1,
-            'last_page' => 1,
+            'items' => [], 'total' => 0, 'page' => 1, 'last_page' => 1,
         ];
 
         return view('quotations.partials.table', compact('quotations'));
