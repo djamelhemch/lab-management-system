@@ -16,7 +16,11 @@ class Sample(Base):
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey('patients.id'))
     doctor_id = Column(Integer, ForeignKey('doctors.id'))
-    sample_type = Column(String(50))
+    
+    # ✅ Link to SampleType catalog
+    sample_type_id = Column(Integer, ForeignKey('sample_types.id'), nullable=True)
+    sample_type_name = Column(String(50), nullable=True)  # Keep for custom/legacy entries
+    
     appearance = Column(String(100))
     color = Column(String(50))
     odor = Column(String(100))
@@ -27,7 +31,9 @@ class Sample(Base):
     barcode = Column(String(100), unique=True)
     tube_type = Column(String(50))
 
-    # relationship
-
+    # Relationships
     patient = relationship("Patient", back_populates="samples")
     doctor = relationship("Doctor", back_populates="samples")
+    
+    # ✅ ADD: Relationship to SampleType catalog
+    sample_type_obj = relationship("SampleType")

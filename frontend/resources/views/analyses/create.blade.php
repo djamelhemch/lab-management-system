@@ -6,6 +6,26 @@
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-5xl mx-auto">
+<button type="button"
+        onclick="confirmClearAll()"
+        class="fixed bottom-5 right-8 z-50
+               inline-flex items-center gap-2
+               px-4 py-2
+               bg-white text-red-600
+               border border-red-200
+               rounded-lg
+               text-xs font-semibold
+               shadow-md
+               hover:bg-red-50 hover:border-red-300
+               active:scale-95 transition-all duration-200">
+
+    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+    </svg>
+
+    <span>Vider les champs</span>
+</button>
 
     {{-- Page Header --}}
     <div class="mb-8">
@@ -158,27 +178,59 @@
 
           {{-- Sample Requirements --}}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-6 border-t border-gray-200">
-            {{-- Sample Type --}}
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Sample Type</label>
-              <div class="flex gap-2">
-                <select name="sample_type_id" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 hover:bg-white">
-                  <option value="">Select type</option>
-                  @foreach($sampleTypes as $sampleType)
-                    <option value="{{ $sampleType['id'] }}" {{ old('sample_type_id') == $sampleType['id'] ? 'selected' : '' }}>
-                      {{ $sampleType['name'] }}
-                    </option>
-                  @endforeach
-                </select>
-                <button type="button" onclick="openSampleTypeModal()"
-                  class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-all">
-                  <x-heroicon-o-plus-small class="w-5 h-5" />
+<div class="p-6">
+        <div class="max-w-md">
+            <label for="sample_type_ids" class="block text-sm font-semibold text-gray-700 mb-2">
+                Types d'Échantillon <span class="text-red-500">*</span>
+            </label>
+
+            <div class="flex gap-2 relative">
+                <!-- Chips container -->
+                <div id="chips-container" 
+                     class="flex-1 flex flex-wrap items-center gap-1.5 px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 hover:bg-white focus-within:ring-2 focus-within:ring-purple-500 transition-all duration-200 cursor-text min-h-[48px]">
+                     
+                    <div id="selected-chips" class="flex flex-wrap gap-1.5"></div>
+                    <span id="placeholder" class="text-gray-400 select-none">Sélectionnez les types d'échantillon...</span>
+
+                    <!-- Hidden select -->
+                    <select name="sample_type_ids[]" 
+                            id="sample_type_ids"
+                            multiple 
+                            class="hidden">
+                        @foreach($sampleTypes as $type)
+                            <option value="{{ $type['id'] }}"
+                                {{ in_array($type['id'], old('sample_type_ids', [])) ? 'selected' : '' }}>
+                                {{ $type['name'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Add new sample type button -->
+                <button type="button" 
+                        onclick="openSampleTypeModal()"
+                        title="Ajouter un nouveau type d'échantillon"
+                        class="flex-shrink-0 px-3 py-2.5 bg-purple-50 border border-purple-200 text-purple-600 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    <x-heroicon-o-plus-small class="w-5 h-5" />
                 </button>
-              </div>
             </div>
 
+            <p class="mt-2 text-xs text-gray-500 flex items-start gap-1">
+                <span class="flex-shrink-0">ℹ️</span>
+                <span>Vous pouvez sélectionner plusieurs types d'échantillon</span>
+            </p>
+
+            @error('sample_type_ids')
+                <p class="mt-2 text-sm text-red-600 flex items-start gap-1">
+                    <span class="flex-shrink-0">⚠️</span>
+                    <span>{{ $message }}</span>
+                </p>
+            @enderror
+        </div>
+    </div>
+
             {{-- Tube Type --}}
-            <div>
+            <div class="p-6">
               <label for="tube_type" class="block text-sm font-semibold text-gray-700 mb-2">Tube Type</label>
               <select id="tube_type" name="tube_type"
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 hover:bg-white">
@@ -368,6 +420,107 @@
 @include('analyses.partials.category-modal')
 @include('analyses.partials.sample-type-modal')
 @include('analyses.partials.unit-modal')
+<style>
+/* Chips styling */
+#selected-chips > div {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-full border border-purple-200 shadow-sm transition-all duration-200;
+}
+#selected-chips > div:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25);
+}
+#selected-chips > div button {
+    @apply w-6 h-6 flex items-center justify-center rounded-full text-sm text-purple-700 bg-purple-100 hover:bg-red-500 hover:text-white transition-all;
+}
+@keyframes slideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-10px); }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('sample_type_ids');
+    const chipsContainer = document.getElementById('selected-chips');
+    const placeholder = document.getElementById('placeholder');
+    const container = document.getElementById('chips-container');
+
+    const updatePlaceholder = () => placeholder.style.display = chipsContainer.children.length ? 'none' : 'block';
+
+    const addChip = (text, value) => {
+        if ([...chipsContainer.children].some(chip => chip.dataset.value === value)) return;
+
+        const chip = document.createElement('div');
+        chip.className = 'inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-full border border-purple-200 shadow-sm transition-all duration-200';
+        chip.dataset.value = value;
+        chip.innerHTML = `<span>${text}</span><button type="button">&times;</button>`;
+
+        // Make X button bigger and easier to click
+        chip.querySelector('button').onclick = () => {
+            chip.style.animation = 'slideOut 0.2s ease forwards';
+            setTimeout(() => {
+                chip.remove();
+                select.querySelector(`option[value="${value}"]`).selected = false;
+                updatePlaceholder();
+            }, 200);
+        };
+
+        chipsContainer.appendChild(chip);
+        select.querySelector(`option[value="${value}"]`).selected = true;
+        updatePlaceholder();
+    };
+
+    // Initialize chips
+    Array.from(select.selectedOptions).forEach(option => addChip(option.textContent.trim(), option.value));
+
+    // Simple dropdown
+    container.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+
+        let dropdown = document.createElement('div');
+        dropdown.id = 'multi-select-dropdown';
+        dropdown.className = 'absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1';
+        dropdown.style.minWidth = '100%';
+
+        Array.from(select.options).forEach(option => {
+            const item = document.createElement('div');
+            item.className = 'px-4 py-2 hover:bg-purple-50 cursor-pointer flex items-center gap-2';
+            item.textContent = option.textContent;
+            if (option.selected) item.classList.add('bg-purple-50', 'font-medium');
+
+            item.addEventListener('click', () => {
+                option.selected = !option.selected;
+                if (option.selected) {
+                    addChip(option.textContent, option.value);
+                    item.classList.add('bg-purple-50', 'font-medium');
+                } else {
+                    const chip = chipsContainer.querySelector(`div[data-value="${option.value}"]`);
+                    if (chip) chip.remove();
+                    item.classList.remove('bg-purple-50', 'font-medium');
+                }
+                updatePlaceholder();
+            });
+
+            dropdown.appendChild(item);
+        });
+
+        // Remove old dropdown if exists
+        const oldDropdown = document.getElementById('multi-select-dropdown');
+        if (oldDropdown) oldDropdown.remove();
+        container.appendChild(dropdown);
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', e => {
+        if (!container.contains(e.target)) {
+            const dropdown = document.getElementById('multi-select-dropdown');
+            if (dropdown) dropdown.remove();
+        }
+    });
+
+    updatePlaceholder();
+});
+</script>
 <script>
 // ========================================
 // AUTO-SAVE & RECOVERY SYSTEM WITH LOGGING
@@ -377,9 +530,32 @@ const AUTOSAVE_KEY = 'analysis_form_autosave';
 const AUTOSAVE_INTERVAL = 3000; // Save every 3 seconds
 let autosaveTimer = null;
 let saveCount = 0;
+let hasRestoredOnce = false; // ✅ Prevent multiple restore prompts
+
+// ✅ Check if form has meaningful data
+function hasFormData() {
+    const name = document.getElementById('name')?.value || '';
+    const code = document.getElementById('code')?.value || '';
+    const price = document.getElementById('price')?.value || '';
+    const formula = document.getElementById('formula')?.value || '';
+    const rangeItems = document.querySelectorAll('.normal-range-item');
+    
+    // Consider form has data if ANY of these fields are filled
+    return name.trim() !== '' || 
+           code.trim() !== '' || 
+           price.trim() !== '' || 
+           formula.trim() !== '' ||
+           rangeItems.length > 0;
+}
 
 // Save form data to localStorage
 function saveFormData() {
+    // ✅ Only save if form has actual data
+    if (!hasFormData()) {
+        console.log('ℹ️ Form is empty, skipping autosave');
+        return;
+    }
+    
     saveCount++;
     console.log(`%c🔄 [${saveCount}] Starting autosave...`, 'color: #3b82f6; font-weight: bold');
     
@@ -406,16 +582,8 @@ function saveFormData() {
             timestamp: new Date().toISOString()
         };
         
-        console.log('📝 Basic fields captured:', {
-            name: formData.name,
-            code: formData.code,
-            price: formData.price,
-            device_count: formData.device_ids.length
-        });
-        
         // Extract all normal ranges
         const rangeItems = document.querySelectorAll('.normal-range-item');
-        console.log(`📊 Found ${rangeItems.length} normal range(s)`);
         
         rangeItems.forEach((range, index) => {
             const rangeData = {
@@ -435,13 +603,6 @@ function saveFormData() {
                 pregnant_applicable: range.querySelector(`input[name*="[pregnant_applicable]"]`)?.checked || false
             };
             
-            console.log(`  Range #${index + 1}:`, {
-                sex: rangeData.sex_applicable,
-                age_min: `${rangeData.age_min_years}y ${rangeData.age_min_months}m ${rangeData.age_min_days}d`,
-                age_max: `${rangeData.age_max_years}y ${rangeData.age_max_months}m ${rangeData.age_max_days}d`,
-                vals: `${rangeData.normal_min} - ${rangeData.normal_max}`
-            });
-            
             formData.normal_ranges.push(rangeData);
         });
         
@@ -451,10 +612,7 @@ function saveFormData() {
         
         localStorage.setItem(AUTOSAVE_KEY, dataString);
         
-        console.log(`%c✅ [${saveCount}] Autosave successful!`, 'color: #10b981; font-weight: bold');
-        console.log(`📦 Data size: ${sizeKB} KB`);
-        console.log(`⏰ Timestamp: ${new Date(formData.timestamp).toLocaleTimeString('fr-FR')}`);
-        console.log('---');
+        console.log(`%c✅ [${saveCount}] Autosave successful! (${sizeKB} KB)`, 'color: #10b981; font-weight: bold');
         
         // Visual feedback
         showAutosaveIndicator('success');
@@ -471,7 +629,6 @@ function showAutosaveIndicator(status = 'success') {
     if (!indicator) {
         indicator = document.createElement('div');
         indicator.id = 'autosave-indicator';
-        indicator.className = 'fixed bottom-20 right-4 px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-opacity duration-300 z-50';
         document.body.appendChild(indicator);
     }
     
@@ -489,292 +646,264 @@ function showAutosaveIndicator(status = 'success') {
         indicator.style.opacity = '0';
     }, 1500);
 }
-// Restore form data from localStorage
-function restoreFormData() {
-    console.log('%c🔍 Checking for saved data...', 'color: #8b5cf6; font-weight: bold');
+
+// ✅ Beautiful restore modal with SweetAlert2 style
+function showRestoreModal(data, timeSaved) {
+    const modal = document.createElement('div');
+    modal.id = 'restore-modal';
+    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-slideUp">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 rounded-t-2xl text-center">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Données sauvegardées trouvées !</h2>
+                <p class="text-blue-100 text-sm mt-2">Voulez-vous restaurer votre travail ?</p>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6 space-y-4">
+                <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Dernière sauvegarde</p>
+                            <p class="text-sm font-bold text-gray-800">${timeSaved}</p>
+                        </div>
+                    </div>
+                    
+                    ${data.name ? `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Nom de l'analyse</p>
+                            <p class="text-sm font-bold text-gray-800">${data.name}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.code ? `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Code</p>
+                            <p class="text-sm font-bold text-gray-800">${data.code}</p>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Plages normales</p>
+                            <p class="text-sm font-bold text-gray-800">${data.normal_ranges?.length || 0} plage(s)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-gray-500 text-center italic">
+                    💡 Vos données sont enregistrées localement et peuvent être restaurées à tout moment
+                </p>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-3 p-6 pt-0">
+                <button onclick="declineRestore()" 
+                    class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all">
+                    ❌ Ignorer
+                </button>
+                <button onclick="acceptRestore()" 
+                    class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl">
+                    ✅ Restaurer
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+        .animate-slideUp { animation: slideUp 0.4s ease-out; }
+    `;
+    document.head.appendChild(style);
+}
+
+// Accept restore
+window.acceptRestore = function() {
+    const modal = document.getElementById('restore-modal');
+    if (modal) modal.remove();
     
     try {
         const savedData = localStorage.getItem(AUTOSAVE_KEY);
-        if (!savedData) {
-            console.log('ℹ️ No saved data found');
-            return false;
-        }
-        
         const data = JSON.parse(savedData);
-        const timeSaved = new Date(data.timestamp).toLocaleString('fr-FR');
-        const sizeKB = (savedData.length / 1024).toFixed(2);
         
-        console.log(`%c📋 Saved data found!`, 'color: #f59e0b; font-weight: bold');
-        console.log(`⏰ Last save: ${timeSaved}`);
-        console.log(`📦 Size: ${sizeKB} KB`);
-        console.log(`📊 Normal ranges: ${data.normal_ranges?.length || 0}`);
-        
-        // Show recovery modal
-        const shouldRestore = confirm(
-            `📋 Données sauvegardées trouvées!\n\n` +
-            `Dernière sauvegarde: ${timeSaved}\n` +
-            `Plages normales: ${data.normal_ranges?.length || 0}\n\n` +
-            `Voulez-vous restaurer ces données?`
-        );
-        
-        if (!shouldRestore) {
-            console.log('❌ User declined restoration');
-            localStorage.removeItem(AUTOSAVE_KEY);
-            return false;
-        }
-        
-        console.log('🔄 Restoring data...');
-        
-        // Restore basic fields
-        let restoredFields = 0;
-        if (data.name) { document.getElementById('name').value = data.name; restoredFields++; }
-        if (data.code) { document.getElementById('code').value = data.code; restoredFields++; }
-        if (data.category_analyse_id) { document.getElementById('category_analyse_id').value = data.category_analyse_id; restoredFields++; }
-        if (data.sample_type_id) { document.getElementById('sample_type_id').value = data.sample_type_id; restoredFields++; }
+        // Restore data
+        if (data.name) document.getElementById('name').value = data.name;
+        if (data.code) document.getElementById('code').value = data.code;
+        if (data.category_analyse_id) document.getElementById('category_analyse_id').value = data.category_analyse_id;
+        if (data.sample_type_id) document.getElementById('sample_type_id').value = data.sample_type_id;
         if (data.unit_id) {
             document.getElementById('unit_id').value = data.unit_id;
             const unitSelect = document.getElementById('unit_id');
             if (unitSelect && typeof currentUnit !== 'undefined') {
                 currentUnit = unitSelect.options[unitSelect.selectedIndex]?.text || '';
             }
-            restoredFields++;
         }
-        if (data.formula) { document.getElementById('formula').value = data.formula; restoredFields++; }
-        if (data.price) { document.getElementById('price').value = data.price; restoredFields++; }
-        if (data.tube_type) { document.getElementById('tube_type').value = data.tube_type; restoredFields++; }
-        if (data.is_active) { document.getElementById('is_active').checked = data.is_active; restoredFields++; }
-        
-        console.log(`✅ Restored ${restoredFields} basic fields`);
+        if (data.formula) document.getElementById('formula').value = data.formula;
+        if (data.price) document.getElementById('price').value = data.price;
+        if (data.tube_type) document.getElementById('tube_type').value = data.tube_type;
+        if (data.is_active) document.getElementById('is_active').checked = data.is_active;
         
         // Restore device selections
-        let restoredDevices = 0;
         if (data.device_ids && data.device_ids.length > 0) {
             document.querySelectorAll('input[name="device_ids[]"]').forEach(checkbox => {
                 if (data.device_ids.includes(checkbox.value)) {
                     checkbox.checked = true;
-                    restoredDevices++;
                 }
             });
-            console.log(`✅ Restored ${restoredDevices} device selections`);
         }
         
         // Restore normal ranges
         if (data.normal_ranges && data.normal_ranges.length > 0) {
-            console.log(`🔄 Restoring ${data.normal_ranges.length} normal ranges...`);
-            
-            // Clear existing ranges first
             document.querySelectorAll('.normal-range-item').forEach(item => item.remove());
-            
-            // Add each saved range
-            data.normal_ranges.forEach((rangeData, idx) => {
-                console.log(`  Adding range #${idx + 1}`);
+            data.normal_ranges.forEach((rangeData) => {
                 addNormalRange(rangeData);
             });
-            
-            console.log(`✅ Restored ${data.normal_ranges.length} normal ranges`);
         }
         
-        // Success notification
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-50';
-        notification.innerHTML = '✅ Données restaurées avec succès!';
-        document.body.appendChild(notification);
+        showToast('✅ Données restaurées avec succès!', 'success');
         
-        setTimeout(() => {
-            notification.style.transition = 'opacity 300ms';
-            notification.style.opacity = '0';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
+    } catch (error) {
+        console.error('Restore failed:', error);
+        showToast('❌ Erreur lors de la restauration', 'error');
+    }
+};
+
+// Decline restore
+// Decline restore - Clear all fields
+window.declineRestore = function() {
+    const modal = document.getElementById('restore-modal');
+    if (modal) modal.remove();
+    
+    // Clear autosave
+    localStorage.removeItem(AUTOSAVE_KEY);
+    console.log('❌ User declined restoration - clearing all fields');
+    
+    // Execute clear all
+    executeClearAll(true); // Pass true to skip confirmation modal
+};
+
+// Restore form data from localStorage
+function restoreFormData() {
+    // ✅ Only show modal once per page load
+    if (hasRestoredOnce) {
+        return false;
+    }
+    
+    try {
+        const savedData = localStorage.getItem(AUTOSAVE_KEY);
+        if (!savedData) {
+            return false;
+        }
         
-        console.log('%c✅ Restoration complete!', 'color: #10b981; font-weight: bold');
-        console.log('---');
+        const data = JSON.parse(savedData);
+        const timeSaved = new Date(data.timestamp).toLocaleString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        hasRestoredOnce = true;
+        showRestoreModal(data, timeSaved);
         
         return true;
     } catch (error) {
-        console.error('%c❌ Restore FAILED!', 'color: #ef4444; font-weight: bold', error);
+        console.error('Restore check failed:', error);
         return false;
     }
 }
 
-// Clear autosave data
-function addManualClearButton() {
-    console.log('🔘 Adding clear form button...');
-    
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'fixed bottom-4 right-4 z-40';
-    buttonContainer.innerHTML = `
-        <button type="button" onclick="clearAllFields()" 
-            class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-lg shadow-lg text-sm font-bold transition-all flex items-center gap-2 hover:scale-105">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-            Effacer Tout
-        </button>
-    `;
-    
-    document.body.appendChild(buttonContainer);
-    console.log('✅ Clear button added');
-}
-
-// Clear all form fields
-function clearAllFields() {
-    console.log('%c🗑️ Clearing all form fields...', 'color: #ef4444; font-weight: bold');
-    
-    const confirmed = confirm(
-        '⚠️ Êtes-vous sûr de vouloir effacer tous les champs?\n\n' +
-        'Cette action ne peut pas être annulée.'
-    );
-    
-    if (!confirmed) {
-        console.log('❌ User cancelled clear operation');
-        return;
-    }
-    
-    let clearedCount = 0;
-    
-    // Clear basic text/number inputs
-    document.querySelectorAll('#analysisForm input[type="text"], #analysisForm input[type="number"]').forEach(input => {
-        if (input.value) {
-            input.value = '';
-            clearedCount++;
-        }
-    });
-    
-    // Clear textareas
-    document.querySelectorAll('#analysisForm textarea').forEach(textarea => {
-        if (textarea.value) {
-            textarea.value = '';
-            clearedCount++;
-        }
-    });
-    
-    // Reset selects to first option
-    document.querySelectorAll('#analysisForm select').forEach(select => {
-        select.selectedIndex = 0;
-        clearedCount++;
-    });
-    
-    // Uncheck all checkboxes
-    document.querySelectorAll('#analysisForm input[type="checkbox"]').forEach(checkbox => {
-        if (checkbox.checked) {
-            checkbox.checked = false;
-            clearedCount++;
-        }
-    });
-    
-    // Remove all normal ranges
-    const ranges = document.querySelectorAll('.normal-range-item');
-    ranges.forEach(range => range.remove());
-    console.log(`🗑️ Removed ${ranges.length} normal ranges`);
-    
-    // Update displays
-    if (typeof updateNoRangesMessage === 'function') updateNoRangesMessage();
-    if (typeof updateRangeNumbers === 'function') updateRangeNumbers();
-    
-    console.log(`✅ Cleared ${clearedCount} fields`);
-    console.log('---');
-    
-    // Visual feedback
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-50';
-    notification.innerHTML = '🗑️ Tous les champs ont été effacés!';
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.transition = 'opacity 300ms';
-        notification.style.opacity = '0';
-        setTimeout(() => notification.remove(), 300);
-    }, 2500);
+// Clear autosave
+function clearAutosave() {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    console.log('🗑️ Autosave data cleared');
+    showToast('🗑️ Sauvegarde automatique effacée', 'info');
 }
 
 // Start auto-save timer
 function startAutosave() {
-    console.log('%c⚙️ Initializing autosave system...', 'color: #3b82f6; font-weight: bold');
-    
     const form = document.getElementById('analysisCreateForm');
-    if (!form) {
-        console.error('❌ Form #analysisCreateForm not found!');
-        return;
-    }
-    
-    console.log('✅ Form found');
+    if (!form) return;
     
     // Save on input change (debounced)
     form.addEventListener('input', (e) => {
-        console.log(`📝 Input detected: ${e.target.name || e.target.id || 'unknown'}`);
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(saveFormData, AUTOSAVE_INTERVAL);
     });
     
     form.addEventListener('change', (e) => {
-        console.log(`🔄 Change detected: ${e.target.name || e.target.id || 'unknown'}`);
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(saveFormData, 1000);
     });
     
     // Save before page unload
     window.addEventListener('beforeunload', () => {
-        console.log('⚠️ Page unloading - saving data...');
-        saveFormData();
+        if (hasFormData()) {
+            saveFormData();
+        }
     });
     
-    console.log(`✅ Autosave enabled (interval: ${AUTOSAVE_INTERVAL}ms)`);
-    console.log('---');
+    console.log('✅ Autosave enabled');
 }
 
 // Clear autosave on successful submission
 function handleFormSubmit(event) {
-    console.log('📤 Form submitted - clearing autosave...');
     setTimeout(() => {
         clearAutosave();
     }, 1000);
-}
-
-// Add manual save/clear buttons
-function addManualSaveButtons() {
-    console.log('🔘 Adding manual control buttons...');
-    
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'fixed bottom-4 left-4 flex gap-2 z-50';
-    buttonContainer.innerHTML = `
-        <button type="button" onclick="saveFormData()" 
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
-            </svg>
-            Sauvegarder
-        </button>
-        <button type="button" onclick="clearAutosave()" 
-            class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-            Effacer
-        </button>
-        <button type="button" onclick="restoreFormData()" 
-            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            Restaurer
-        </button>
-    `;
-    
-    document.body.appendChild(buttonContainer);
-    console.log('✅ Manual buttons added');
 }
 
 // ========================================
 // INITIALIZE ON PAGE LOAD
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('%c╔════════════════════════════════════════╗', 'color: #3b82f6');
-    console.log('%c║   AUTOSAVE SYSTEM INITIALIZING...    ║', 'color: #3b82f6; font-weight: bold');
-    console.log('%c╚════════════════════════════════════════╝', 'color: #3b82f6');
-    console.log('');
+    console.log('%c🚀 Autosave System Ready', 'color: #10b981; font-weight: bold; font-size: 14px');
     
-    // Try to restore data first
-    const restored = restoreFormData();
+    // Try to restore data first (only if saved data exists)
+    restoreFormData();
     
     // Start autosave system
     startAutosave();
@@ -783,19 +912,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('analysisCreateForm');
     if (form) {
         form.addEventListener('submit', handleFormSubmit);
-        console.log('✅ Form submit handler attached');
     }
-    
-    // Add manual clear buttons
-    addManualClearButton();
-    
-    console.log('');
-    console.log('%c🎉 Autosave system ready!', 'color: #10b981; font-weight: bold; font-size: 14px');
-    console.log('%c💡 Tip: Check console for real-time autosave activity', 'color: #6b7280; font-style: italic');
-    console.log('');
 });
-
 </script>
+{{-- FORMULA MANAGEMENT SCRIPT --}}
 <script>
 // ✅ FIXED: Use route() helper for HTTPS URL
 const API_URL = "{{ route('lab.formulas') }}";
@@ -997,7 +1117,168 @@ function showToast(message, type = "info") {
   }, 3000);
 }
 </script>
+<script>
+function confirmClearAll() {
+    const modal = document.createElement('div');
+    modal.id = 'clear-all-modal';
+    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-2xl text-center">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Effacer tous les champs ?</h2>
+                <p class="text-red-100 text-sm mt-2">Cette action ne peut pas être annulée</p>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-red-800 text-center font-medium">
+                        ⚠️ Tous les champs seront vidés, y compris les plages normales
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-3 p-6 pt-0">
+                <button onclick="closeClearModal()" 
+                    class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all">
+                    ✖️ Annuler
+                </button>
+                <button onclick="executeClearAll(false)" 
+                    class="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl">
+                    🗑️ Tout Effacer
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
 
+function closeClearModal() {
+    const modal = document.getElementById('clear-all-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// ✅ SINGLE executeClearAll function - ACCURATE counting
+function executeClearAll(silent = false) {
+    if (!silent) {
+        closeClearModal();
+    }
+    
+    const form = document.getElementById('analysisCreateForm');
+    if (!form) {
+        console.error('Form not found!');
+        return;
+    }
+    
+    let clearedCount = 0;
+    
+    // 1. Clear text inputs (ONLY if they have non-empty values)
+    form.querySelectorAll('input[type="text"]').forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            console.log('Clearing text input:', input.name, 'value:', input.value);
+            input.value = '';
+            clearedCount++;
+        }
+    });
+    
+    // 2. Clear number inputs (ONLY if they have non-empty values)
+    form.querySelectorAll('input[type="number"]').forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            console.log('Clearing number input:', input.name, 'value:', input.value);
+            input.value = '';
+            clearedCount++;
+        }
+    });
+    
+    // 3. Clear textareas (ONLY if they have non-empty values)
+    form.querySelectorAll('textarea').forEach(textarea => {
+        if (textarea.value && textarea.value.trim() !== '') {
+            console.log('Clearing textarea:', textarea.name, 'value:', textarea.value);
+            textarea.value = '';
+            clearedCount++;
+        }
+    });
+    
+    // 4. Reset selects ONLY if they're NOT on the first option (index 0)
+    form.querySelectorAll('select').forEach(select => {
+        if (select.selectedIndex > 0) {
+            console.log('Resetting select:', select.name, 'from index:', select.selectedIndex);
+            select.selectedIndex = 0;
+            clearedCount++;
+        }
+    });
+    
+    // 5. Uncheck checkboxes ONLY if they're checked (except is_active)
+    form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        if (checkbox.id !== 'is_active' && checkbox.checked) {
+            console.log('Unchecking checkbox:', checkbox.name);
+            checkbox.checked = false;
+            clearedCount++;
+        }
+    });
+    
+    // 6. Remove normal ranges (count them)
+    const normalRanges = document.querySelectorAll('.normal-range-item');
+    if (normalRanges.length > 0) {
+        console.log('Removing', normalRanges.length, 'normal ranges');
+        normalRanges.forEach(range => range.remove());
+        clearedCount += normalRanges.length;
+    }
+    
+    // 7. Update "no ranges" message
+    const noRangesMsg = document.getElementById('noRangesMessage');
+    if (noRangesMsg) {
+        noRangesMsg.classList.remove('hidden');
+    }
+    
+    // 8. Clear localStorage autosave
+    if (typeof AUTOSAVE_KEY !== 'undefined') {
+        localStorage.removeItem(AUTOSAVE_KEY);
+    }
+    
+    // 9. Clear formula preview
+    const formulaDisplay = document.getElementById('formulaDisplay');
+    if (formulaDisplay && formulaDisplay.textContent && formulaDisplay.textContent.trim() !== '' && formulaDisplay.textContent !== '—') {
+        formulaDisplay.textContent = '—';
+    }
+    
+    console.log(`✅ Total cleared: ${clearedCount} items`);
+    
+    // Show accurate toast message (if not silent)
+    if (!silent && typeof showToast === 'function') {
+        if (clearedCount === 0) {
+            showToast('ℹ️ Aucun champ à effacer', 'info');
+        } else if (clearedCount === 1) {
+            showToast('🗑️ 1 champ effacé', 'success');
+        } else {
+            showToast(`🗑️ ${clearedCount} champs effacés`, 'success');
+        }
+    }
+}
+
+// Test button functionality on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Clear button script loaded');
+    
+    const form = document.getElementById('analysisCreateForm');
+    if (form) {
+        console.log('✅ Form found');
+    } else {
+        console.error('❌ Form NOT found! Make sure your form has id="analysisCreateForm"');
+    }
+});
+</script>
+{{-- NORMAL RANGES MANAGEMENT SCRIPT --}}
 <script>
 // ✅ GLOBAL SCOPE - Functions accessible from onclick attributes
 let rangeCounter = 0;
@@ -1576,44 +1857,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Sample Type Form
-    const sampleTypeForm = document.getElementById('sampleTypeForm');
-    if (sampleTypeForm) {
-        sampleTypeForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('sampleTypeName');
-            const errorDiv = document.getElementById('sampleTypeError');
-            
-            if (!nameInput || !errorDiv) return;
-            
-            const name = nameInput.value.trim();
-            
-            if (!name) {
-                errorDiv.textContent = 'Sample type name is required';
-                return;
-            }
-            
-            const select = document.querySelector('select[name="sample_type_id"]');
-            if (!select) {
-                console.error('Sample type select not found');
-                return;
-            }
-            
-            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-            if (existingOptions.includes(name.toLowerCase())) {
-                errorDiv.textContent = 'Sample type already exists';
-                return;
-            }
-            
-            const tempSampleType = { id: tempIdCounter--, name: name, isTemp: true };
-            tempSampleTypes.push(tempSampleType);
-            
-            const option = new Option(name + ' (New)', tempSampleType.id, true, true);
-            option.className = 'text-emerald-600 font-medium';
-            select.add(option);
-            
-            closeSampleTypeModal();
-        });
-    }
+const sampleTypeForm = document.getElementById('sampleTypeForm');
+if (sampleTypeForm) {
+    sampleTypeForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nameInput = document.getElementById('sampleTypeName');
+        const errorDiv = document.getElementById('sampleTypeError');
+        
+        if (!nameInput || !errorDiv) return;
+        
+        const name = nameInput.value.trim();
+        if (!name) {
+            errorDiv.textContent = 'Sample type name is required';
+            return;
+        }
+        
+        // ✅ CONTEXT-AWARE SELECT FINDER
+        let select = document.getElementById('edit-sample-type-select') ||  // Edit view
+                    document.getElementById('sampletypeids') ||           // Create view
+                    document.querySelector('select[name="sampletypeids"]'); // Fallback
+        
+        if (!select) {
+            console.error('Sample type select not found - checked IDs: edit-sample-type-select, sampletypeids');
+            errorDiv.textContent = 'Erreur: Sélecteur non trouvé';
+            return;
+        }
+        
+        // Check for duplicates (case-insensitive)
+        const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+        if (existingOptions.includes(name.toLowerCase())) {
+            errorDiv.textContent = 'Sample type already exists';
+            return;
+        }
+        
+        // Generate unique temp ID
+        if (typeof tempIdCounter === 'undefined') tempIdCounter = -1;
+        const tempId = 'temp_' + (tempIdCounter--);
+        
+        // Global temp tracking
+        if (typeof tempSampleTypes === 'undefined') window.tempSampleTypes = [];
+        const tempSampleType = { id: tempId, name: name, isTemp: true };
+        window.tempSampleTypes.push(tempSampleType);
+        
+        // Add styled option
+        const option = new Option(name + ' (New)', tempId, true, true);
+        option.className = 'text-emerald-600 font-medium bg-emerald-50';
+        select.add(option);
+        
+        // Trigger chip addition (if chips system exists)
+        if (typeof addChip === 'function') {
+            addChip(name + ' (New)', tempId);
+        }
+        
+        // Clear & close
+        nameInput.value = '';
+        errorDiv.textContent = '';
+        closeSampleTypeModal();
+        showToast(`"${name}" ajouté temporairement`, 'success');
+    });
+}
+
     
     // Unit Form
     const unitForm = document.getElementById('unitForm');

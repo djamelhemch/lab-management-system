@@ -15,10 +15,20 @@ def generate_barcode(sample_type: str, tube_type: str) -> str:
 def create_sample(db: Session, sample: SampleCreate) -> Sample:
     sample_data = sample.dict()
 
+    # ✅ If sample_type_id provided, validate it exists
+    if sample_data.get('sample_type_id'):
+        sample_type = db.query(SampleType).filter(SampleType.id == sample_data['sample_type_id']).first()
+        if not sample_type:
+            raise HTTPException(status_code=400, detail="Invalid sample_type_id")
+        # Optionally set sample_type_name from catalog
+        if not sample_data.get('sample_type_name'):
+            sample_data['sample_type_name'] = sample_type.name
+
     # Auto-generate barcode if not provided
     if not sample_data.get('barcode'):
+        sample_type_str = sample_data.get('sample_type_name') or sample_data.get('sample_type', 'UNK')
         sample_data['barcode'] = generate_barcode(
-            sample_data.get('sample_type', 'UNK'),
+            sample_type_str,
             sample_data.get('tube_type', 'STD')
         )
 

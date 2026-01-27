@@ -132,7 +132,7 @@ async def login(
         logger.debug(f"Inserting active session for user_id={user.id}")
         insert_active_session(db, user.id, access_token, datetime.utcnow(), expires_at=datetime.utcnow() + access_token_expires)
 
-        logger.info(f"Login successful for user: {user.username}")
+        logger.info(f"Login successful for user: {user.username}, with token value is shown for debugging {access_token}")
         return {"access_token": access_token, "token_type": "bearer"}
 
     except HTTPException as auth_exc:

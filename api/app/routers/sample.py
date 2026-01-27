@@ -24,12 +24,22 @@ def list_samples_route(
 def list_samples_route(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud_sample.get_samples(db, skip, limit)
 
-@router.get("/{sample_id}", response_model=SampleRead)
-def get_sample_route(sample_id: int, db: Session = Depends(get_db)):
-    db_sample = crud_sample.get_sample(db, sample_id)
-    if not db_sample:
+@router.get("/samples/{sample_id}", response_model=SampleRead)
+def get_sample(sample_id: int, db: Session = Depends(get_db)):
+    sample = db.query(Sample).filter(Sample.id == sample_id).first()
+    if not sample:
         raise HTTPException(status_code=404, detail="Sample not found")
-    return db_sample
+    
+    # ✅ Serialize sample type details
+    sample_dict = sample.__dict__
+    if sample.sample_type_id and sample.sample_type_obj:
+        sample_dict['sample_type_obj'] = {
+            "id": sample.sample_type_obj.id,
+            "name": sample.sample_type_obj.name,
+            "created_at": sample.sample_type_obj.created_at
+        }
+    
+    return sample_dict
 
 
 

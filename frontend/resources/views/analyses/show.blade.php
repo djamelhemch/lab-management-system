@@ -107,11 +107,36 @@ function formatAgeClinical($days) {
                     </div>
 
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Sample Type</dt>
-                        <dd class="text-gray-800 text-sm">
-                            {{ $analysis['sample_type']['name'] ?? 'Not specified' }}
-                        </dd>
-                    </div>
+            <dt class="text-sm font-medium text-gray-500">Sample Types</dt>
+                    <dd class="flex flex-wrap gap-1.5 mt-1">
+                        @if(!empty($analysis['sample_types']))
+                            @foreach($analysis['sample_types'] as $type)
+                                <span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                                    {{ $type['name'] }}
+                                </span>
+                            @endforeach
+                        @else
+                            <span class="text-gray-400 text-sm">Not specified</span>
+                        @endif
+                    </dd>
+                </div>
+
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Tube Type</dt>
+                    <dd>
+                        @if(!empty($analysis['tube_type']))
+                            <span class="inline-block bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                                {{ $analysis['tube_type'] }}
+                            </span>
+                        @else
+                            <span class="text-gray-400 text-sm">Not specified</span>
+                        @endif
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
+
 
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Tube Type</dt>

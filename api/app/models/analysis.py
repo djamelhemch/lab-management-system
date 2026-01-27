@@ -1,11 +1,18 @@
 # models/analysis.py
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, Enum, Text, DateTime, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, Enum, Text, DateTime, Table, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from app.database import Base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
-
+#Association table for many-to-many
+analysis_sample_types = Table(
+    'analysis_sample_types',
+    Base.metadata,
+    Column('analysis_id', BigInteger, ForeignKey('analysis_catalog.id', ondelete='CASCADE'), primary_key=True),
+    Column('sample_type_id', Integer, ForeignKey('sample_types.id', ondelete='CASCADE'), primary_key=True),
+    extend_existing=True
+)
 
 class SexApplicableEnum(str, enum.Enum):
     M = "M"
@@ -28,9 +35,12 @@ class SampleType(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), unique=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    # Relationship
-    analyses = relationship("AnalysisCatalog", back_populates="sample_type")
+
+    analyses = relationship(
+        "AnalysisCatalog",
+        secondary=analysis_sample_types,
+        back_populates="sample_types"
+    )
 
 class Unit(Base):
     __tablename__ = "units"
@@ -50,18 +60,24 @@ class AnalysisCatalog(Base):
     name = Column(String(100))
     category_analyse_id = Column(Integer, ForeignKey("category_analyse.id"))
     unit_id = Column(Integer, ForeignKey("units.id"))
-    sample_type_id = Column(Integer, ForeignKey("sample_types.id"))
     formula = Column(Text)
     price = Column(Float, default=0.0)
-    tube_type = Column(String(50), nullable=True)  # New field for tube type
+    tube_type = Column(String(50), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    device_id = Column(Text, nullable=True)
+
     # Relationships
-    is_active = Column(Boolean, nullable=False, default=True) 
     category_analyse = relationship("CategoryAnalyse", back_populates="analyses")
     unit = relationship("Unit", back_populates="analyses")
-    sample_type = relationship("SampleType", back_populates="analyses")
     normal_ranges = relationship("NormalRange", back_populates="analysis", cascade="all, delete-orphan")
-    device_id = Column(Text, nullable=True) 
-    
+
+    # ✅ ONLY THIS relationship for sample types
+    sample_types = relationship(
+        "SampleType",
+        secondary=analysis_sample_types,
+        back_populates="analyses"
+    )
+
     analysis_items = relationship("QuotationItem", back_populates="analysis")
   
 

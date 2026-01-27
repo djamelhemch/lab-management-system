@@ -185,43 +185,57 @@
                         Specifications
                     </h2>
                 </div>
-                
-                <div class="p-6">
-                    <div class="max-w-md">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Sample Type</label>
-                        <div class="flex gap-2">
-                            <select name="sample_type_id" 
-                                    id="sample_type_select"
-                                    class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50 hover:bg-white">
-                                <option value="">Select Sample Type</option>
-                                @foreach($sampleTypes as $sampleType)
-                                    <option value="{{ $sampleType['id'] }}"
-                                        {{ old('sample_type_id', $analysis['sample_type']['id'] ?? null) == $sampleType['id'] ? 'selected' : '' }}>
-                                        {{ $sampleType['name'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <button type="button" 
-                                    onclick="unlinkSampleType()"
-                                    title="Dissocier le type d'échantillon"
-                                    class="px-3 py-2 bg-orange-50 border border-orange-300 rounded-lg hover:bg-orange-100 transition-all text-orange-600">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <p class="mt-1.5 text-xs text-gray-500">
-                            ℹ️ Le bouton orange dissocie le type d'échantillon de cette analyse uniquement
-                        </p>
-                        @error('sample_type_id')
-                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-            </div>
+                    <div class="p-6">
+                        <div class="max-w-md">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Types d'Échantillon <span class="text-red-500">*</span>
+                            </label>
 
+                            <div class="flex gap-2 relative">
+                                <!-- Chips container -->
+                                <div id="edit-chips-container" 
+                                    class="flex-1 flex flex-wrap items-center gap-1.5 px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 hover:bg-white focus-within:ring-2 focus-within:ring-purple-500 transition-all duration-200 cursor-text min-h-[48px]">
+
+                                    <div id="edit-selected-chips" class="flex flex-wrap gap-1.5"></div>
+                                    <span id="edit-placeholder" class="text-gray-400 select-none">Sélectionnez les types d'échantillon...</span>
+
+                                    <!-- Hidden select -->
+                                    <select name="sample_type_ids[]" 
+                                            id="edit-sample-type-select"
+                                            multiple 
+                                            class="hidden">
+                                        @foreach($sampleTypes as $type)
+                                            <option value="{{ $type['id'] }}"
+                                                {{ in_array($type['id'], old('sample_type_ids', $analysis['sample_type_ids'] ?? [])) ? 'selected' : '' }}>
+                                                {{ $type['name'] }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Add new sample type button -->
+                                <button type="button" 
+                                        onclick="openSampleTypeModal()"
+                                        title="Ajouter un nouveau type d'échantillon"
+                                        class="flex-shrink-0 px-3 py-2.5 bg-purple-50 border border-purple-200 text-purple-600 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                    <x-heroicon-o-plus-small class="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <p class="mt-2 text-xs text-gray-500 flex items-start gap-1">
+                                <span class="flex-shrink-0">ℹ️</span>
+                                <span>Vous pouvez sélectionner plusieurs types d'échantillon</span>
+                            </p>
+
+                            @error('sample_type_ids')
+                                <p class="mt-2 text-sm text-red-600 flex items-start gap-1">
+                                    <span class="flex-shrink-0">⚠️</span>
+                                    <span>{{ $message }}</span>
+                                </p>
+                            @enderror
+                        </div>
+                    </div>
        {{-- Normal Ranges Card --}}
-{{-- Normal Ranges Card --}}
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
@@ -421,11 +435,7 @@ function formatAgeDisplay($years, $months, $days) {
     return implode(' ', $parts) ?: '0';
 }
 @endphp
-
-
-
-
-            
+      
 {{-- Formula Card - ENHANCED VERSION --}}
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
@@ -614,10 +624,7 @@ function formatAgeDisplay($years, $months, $days) {
                     </svg>
                     Update Analysis
                 </button>
-                <button type="button" onclick="showToast('Test toast notification!', 'success')" 
-                        class="px-4 py-2 bg-purple-500 text-white rounded">
-                        Test Toast
-                    </button>
+
             </div>
         </form>
     </div>
@@ -655,9 +662,113 @@ function formatAgeClinical($days) {
     return "$label ($exact)";
 }
 @endphp
+{{-- Modals --}}
+@include('analyses.partials.category-modal')
+@include('analyses.partials.sample-type-modal')
+@include('analyses.partials.unit-modal')
 {{-- Toast Notification Container --}}
 <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+<style>
+/* Chips styling */
+#edit-selected-chips > div {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-full border border-purple-200 shadow-sm transition-all duration-200;
+}
+#edit-selected-chips > div:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25);
+}
+#edit-selected-chips > div button {
+    @apply w-6 h-6 flex items-center justify-center rounded-full text-sm text-purple-700 bg-purple-100 hover:bg-red-500 hover:text-white transition-all;
+}
+@keyframes slideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-10px); }
+}
+</style>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('edit-sample-type-select');
+    const chipsContainer = document.getElementById('edit-selected-chips');
+    const placeholder = document.getElementById('edit-placeholder');
+    const container = document.getElementById('edit-chips-container');
+
+    const updatePlaceholder = () => placeholder.style.display = chipsContainer.children.length ? 'none' : 'block';
+
+    const addChip = (text, value) => {
+        if ([...chipsContainer.children].some(chip => chip.dataset.value === value)) return;
+
+        const chip = document.createElement('div');
+        chip.className = 'inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-full border border-purple-200 shadow-sm transition-all duration-200';
+        chip.dataset.value = value;
+        chip.innerHTML = `<span>${text}</span><button type="button">&times;</button>`;
+
+        // Make X button easy to click
+        chip.querySelector('button').onclick = () => {
+            chip.style.animation = 'slideOut 0.2s ease forwards';
+            setTimeout(() => {
+                chip.remove();
+                select.querySelector(`option[value="${value}"]`).selected = false;
+                updatePlaceholder();
+            }, 200);
+        };
+
+        chipsContainer.appendChild(chip);
+        select.querySelector(`option[value="${value}"]`).selected = true;
+        updatePlaceholder();
+    };
+
+    // Initialize chips with existing selected values (for edit)
+    Array.from(select.selectedOptions).forEach(option => addChip(option.textContent.trim(), option.value));
+
+    // Simple dropdown
+    container.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+
+        let dropdown = document.createElement('div');
+        dropdown.id = 'edit-multi-select-dropdown';
+        dropdown.className = 'absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1';
+        dropdown.style.minWidth = '100%';
+
+        Array.from(select.options).forEach(option => {
+            const item = document.createElement('div');
+            item.className = 'px-4 py-2 hover:bg-purple-50 cursor-pointer flex items-center gap-2';
+            item.textContent = option.textContent;
+            if (option.selected) item.classList.add('bg-purple-50', 'font-medium');
+
+            item.addEventListener('click', () => {
+                option.selected = !option.selected;
+                if (option.selected) {
+                    addChip(option.textContent, option.value);
+                    item.classList.add('bg-purple-50', 'font-medium');
+                } else {
+                    const chip = chipsContainer.querySelector(`div[data-value="${option.value}"]`);
+                    if (chip) chip.remove();
+                    item.classList.remove('bg-purple-50', 'font-medium');
+                }
+                updatePlaceholder();
+            });
+
+            dropdown.appendChild(item);
+        });
+
+        // Remove old dropdown if exists
+        const oldDropdown = document.getElementById('edit-multi-select-dropdown');
+        if (oldDropdown) oldDropdown.remove();
+        container.appendChild(dropdown);
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', e => {
+        if (!container.contains(e.target)) {
+            const dropdown = document.getElementById('edit-multi-select-dropdown');
+            if (dropdown) dropdown.remove();
+        }
+    });
+
+    updatePlaceholder();
+});
+</script>
 {{-- JavaScript --}}
 <script>
 let rangeCounter = {{ count($analysis['normal_ranges'] ?? []) }};
@@ -798,6 +909,56 @@ function showLoadingOverlay() {
     `;
     document.body.appendChild(overlay);
 }
+// ============================================
+// SAMPLE TYPE MODAL FUNCTIONS
+// ============================================
+let tempSampleTypes = []; // Track temporary types
+
+function saveTempSampleType() {
+  const nameInput = document.getElementById('sampleTypeName');
+  const name = nameInput.value.trim();
+  if (!name) {
+    document.getElementById('sampleTypeError').textContent = 'Nom requis';
+    return;
+  }
+  
+  // Create temp ID (timestamp-based, unique)
+  const tempId = 'temp_' + Date.now();
+  
+  // Add to hidden select as option
+  const select = document.getElementById('edit-sample-type-select');
+  const option = document.createElement('option');
+  option.value = tempId;
+  option.textContent = name;
+  option.selected = true;
+  select.appendChild(option);
+  
+  // Add chip immediately
+  addChip(name, tempId);
+  
+  // Track for backend
+  tempSampleTypes.push({id: tempId, name: name});
+  
+  closeSampleTypeModal();
+  showToast(`"${name}" ajouté temporairement`, 'success');
+}
+
+function openSampleTypeModal() { 
+    const modal = document.getElementById('sampleTypeModal');
+    if (modal) modal.classList.remove('hidden'); 
+}
+
+function closeSampleTypeModal() { 
+    const modal = document.getElementById('sampleTypeModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        const nameInput = document.getElementById('sampleTypeName');
+        const errorDiv = document.getElementById('sampleTypeError');
+        if (nameInput) nameInput.value = '';
+        if (errorDiv) errorDiv.textContent = '';
+    }
+}
+
 // ============================================
 // FORMULA BUILDER FUNCTIONS
 // ============================================

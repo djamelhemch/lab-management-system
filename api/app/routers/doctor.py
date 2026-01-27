@@ -27,7 +27,6 @@ def list_doctors_route(skip: int = 0, limit: int = 100, db: Session = Depends(ge
 def create_doctor_route(doctor: DoctorCreate, db: Session = Depends(get_db)):
     return crud.create_doctor(db, doctor)
 
-
 # -----------------------------
 # DOCTOR TABLE (Searchable)
 # -----------------------------
