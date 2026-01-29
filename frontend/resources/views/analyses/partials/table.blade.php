@@ -109,14 +109,35 @@
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Unit</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sample</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sample Types</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                 @foreach($analysesData as $analysis)
-                    @php $isActive = $analysis['is_active'] ?? true; @endphp
+                    @php 
+                        $isActive = $analysis['is_active'] ?? true;
+                        
+                        // ✅ Handle multiple sample types (new array structure)
+                        $sampleTypes = [];
+                        
+                        // Try new array structure first
+                        if (isset($analysis['sample_types']) && is_array($analysis['sample_types'])) {
+                            $sampleTypes = collect($analysis['sample_types'])
+                                ->pluck('name')
+                                ->filter()
+                                ->toArray();
+                        }
+                        // Fallback to old single sample_type for backward compatibility
+                        elseif (isset($analysis['sample_type']['name'])) {
+                            $sampleTypes = [$analysis['sample_type']['name']];
+                        }
+                        
+                        $sampleTypesDisplay = !empty($sampleTypes) 
+                            ? implode(', ', $sampleTypes) 
+                            : 'N/A';
+                    @endphp
                     <tr class="hover:bg-gray-50 transition-colors duration-150 {{ !$isActive ? 'bg-red-50' : '' }}">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {{ $analysis['code'] ?? 'N/A' }}
@@ -133,9 +154,22 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $analysis['unit']['name'] ?? 'N/A' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $analysis['sample_type']['name'] ?? 'N/A' }}
+                        
+                        {{-- ✅ FIXED: Display multiple sample types with badges --}}
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            @if(!empty($sampleTypes))
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach($sampleTypes as $type)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                            {{ $type }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-gray-400 italic">N/A</span>
+                            @endif
                         </td>
+                        
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                          {{ $isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">

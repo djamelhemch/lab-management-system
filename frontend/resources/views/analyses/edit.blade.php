@@ -436,141 +436,235 @@ function formatAgeDisplay($years, $months, $days) {
 }
 @endphp
       
-{{-- Formula Card - ENHANCED VERSION --}}
+{{-- Formula Card - MATCHING YOUR DESIGN SYSTEM --}}
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+    
+    {{-- Header --}}
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <div class="flex items-center justify-between">
             <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                 </svg>
-                🧮 Formule de calcul
+                Formule de calcul
             </h2>
             <button type="button" onclick="openSavedFormulas()"
-                class="text-sm text-indigo-600 hover:underline">
-                📚 Formules enregistrées
+                class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-600 hover:text-white transition-all duration-200 text-xs font-medium border border-indigo-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                Formules enregistrées
             </button>
         </div>
     </div>
     
-    <div class="p-6">
-        <!-- Formula Name -->
-        <div class="mb-5">
+    {{-- Main Content --}}
+    <div class="p-6 space-y-5">
+        
+        {{-- Formula Name --}}
+        <div>
             <label for="formula_name" class="block text-sm font-semibold text-gray-700 mb-2">
-                Nom de la formule :
+                Nom de la formule
             </label>
             <input type="text" id="formula_name" 
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white" 
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white" 
                 placeholder="Ex : Formule de Friedewald"
                 value="{{ old('formula_name', '') }}">
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- LEFT: Editor -->
-            <div>
-                <label for="formula" class="block text-sm font-semibold text-gray-700 mb-2">
-                    Expression mathématique :
-                </label>
-                <div class="border-2 border-blue-400 rounded-xl p-3 bg-blue-50 focus-within:ring-2 focus-within:ring-blue-300 transition">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            
+            {{-- LEFT: Editor Section --}}
+            <div class="space-y-4">
+                
+                {{-- Formula Editor --}}
+                <div>
+                    <label for="formula" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Expression mathématique
+                    </label>
                     <textarea id="formula" 
                               name="formula"
-                              rows="4" 
-                              class="w-full bg-transparent outline-none text-gray-800 text-sm font-mono"
+                              rows="6" 
+                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white font-mono text-sm resize-none"
                               placeholder="Exemple : LDL-C = CT - HDL-C - TG / 5">{{ old('formula', $analysis['formula']) }}</textarea>
+                    @error('formula')
+                        <p class="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                            {{ $message }}
+                        </p>
+                    @enderror
                 </div>
 
-                <div id="formulaPreview" class="mt-3 text-sm font-mono text-gray-600 bg-gray-100 border border-gray-300 rounded-lg p-2">
-                    🧠 Aperçu : <span id="formulaDisplay" class="text-gray-800">{{ $analysis['formula'] ?? 'Aucune formule' }}</span>
+                {{-- Preview --}}
+                <div class="bg-gray-50 border border-gray-300 rounded-lg p-4">
+                    <div class="flex items-start gap-2 mb-2">
+                        <svg class="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        <span class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Aperçu</span>
+                    </div>
+                    <span id="formulaDisplay" class="text-sm font-mono text-gray-800 break-all block">
+                        {{ $analysis['formula'] ?? 'Aucune formule définie' }}
+                    </span>
                 </div>
 
-                <div class="flex gap-2 mt-3">
+                {{-- Action Buttons --}}
+                <div class="flex gap-3">
                     <button type="button" onclick="clearFormula()"
-                        class="bg-red-50 border border-red-300 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition text-sm">
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-400 hover:shadow-md transition-all duration-200 text-sm font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
                         Effacer
                     </button>
                     <button id="saveFormulaBtn" type="button" onclick="saveFormula()"
-                        class="bg-green-50 border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition text-sm">
-                        💾 Enregistrer la formule
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 hover:shadow-lg transition-all duration-200 text-sm font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                        </svg>
+                        Enregistrer
                     </button>
                 </div>
             </div>
 
-            <!-- RIGHT: Tools -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">🔢 Opérateurs et fonctions :</label>
-                <div class="border-2 border-gray-300 bg-gray-50 rounded-xl p-3 flex flex-wrap gap-2">
-                    @php
-                        $ops = [
-                            ['+', 'Addition'],
-                            ['-', 'Soustraction'],
-                            ['*', 'Multiplication'],
-                            ['/', 'Division'],
-                            ['=', 'Égal (assignation du résultat)'],
-                            ['(', 'Parenthèse ouvrante'],
-                            [')', 'Parenthèse fermante'],
-                            ['^', 'Puissance'],
-                            ['√', 'Racine carrée'],
-                            ['ln()', 'Logarithme naturel'],
-                            ['exp()', 'Exponentielle'],
-                            ['mean()', 'Moyenne'],
-                            ['sd()', 'Écart-type'],
-                            ['zscore()', 'Score Z : (val - moyenne) / écart-type'],
-                            ['min()', 'Valeur minimale'],
-                            ['max()', 'Valeur maximale']
-                        ];
-                    @endphp
-                    @foreach($ops as [$symbol, $desc])
-                        <button type="button" 
-                            class="bg-white hover:bg-blue-100 border border-blue-400 text-blue-700 text-xs px-2 py-1 rounded-md transition relative"
-                            onclick="insertFormula('{{ $symbol }}')"
-                            title="{{ $desc }}">
-                            {{ $symbol }}
-                        </button>
-                    @endforeach
-                </div>
-
-                <!-- Search analyses -->
-                <div class="mt-5">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">🔍 Rechercher une analyse :</label>
-                    <input type="text" id="analysisSearch" placeholder="Code ou nom..." 
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
-                        oninput="filterAnalyses()" />
-                </div>
-
-                <!-- Analysis codes -->
-                <div class="border-2 border-gray-300 rounded-xl p-2 mt-3 max-h-44 overflow-y-auto bg-gray-50">
-                    <div id="analysisButtons" class="flex flex-wrap gap-2">
-                        @if(isset($analyses) && count($analyses) > 0)
-                            @foreach($analyses as $analysisItem)
+            {{-- RIGHT: Tools Section --}}
+            <div class="space-y-5">
+                
+                {{-- Operators --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        Opérateurs et fonctions
+                    </label>
+                    
+                    {{-- Basic Operators --}}
+                    <div class="mb-3">
+                        <p class="text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">Basiques</p>
+                        <div class="flex flex-wrap gap-2">
+                            @php
+                                $basicOps = [
+                                    ['+', 'Addition'],
+                                    ['-', 'Soustraction'],
+                                    ['*', 'Multiplication'],
+                                    ['/', 'Division'],
+                                    ['=', 'Égal'],
+                                    ['(', 'Parenthèse ('],
+                                    [')', 'Parenthèse )'],
+                                    ['^', 'Puissance']
+                                ];
+                            @endphp
+                            @foreach($basicOps as [$symbol, $desc])
                                 <button type="button" 
-                                    class="bg-white hover:bg-gray-100 text-xs px-2 py-1 border border-gray-300 rounded-md transition analysis-btn"
-                                    onclick="insertFormula('{{ $analysisItem['code'] }}')"
-                                    data-code="{{ $analysisItem['code'] }}"
-                                    data-name="{{ $analysisItem['name'] ?? 'Analyse' }}"
-                                    title="{{ $analysisItem['name'] ?? 'Analyse' }}">
-                                    {{ $analysisItem['code'] }}
+                                    class="inline-flex items-center justify-center min-w-[2.25rem] px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 text-indigo-700 text-sm font-semibold rounded-lg transition-all duration-200 hover:shadow-md"
+                                    onclick="insertFormula('{{ $symbol }}')"
+                                    title="{{ $desc }}">
+                                    {{ $symbol }}
                                 </button>
                             @endforeach
-                        @else
-                            <p class="text-xs text-gray-500">Aucune analyse disponible</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Saved formulas modal -->
-                <div id="savedFormulasModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 border border-gray-300">
-                        <div class="flex justify-between items-center mb-3">
-                            <h4 class="text-lg font-semibold text-gray-800">📘 Formules enregistrées</h4>
-                            <button onclick="closeSavedFormulas()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                         </div>
-                        <div id="savedFormulasList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                    </div>
+                    
+                    {{-- Advanced Functions --}}
+                    <div>
+                        <p class="text-xs font-medium text-gray-600 mb-2 uppercase tracking-wide">Fonctions avancées</p>
+                        <div class="flex flex-wrap gap-2">
+                            @php
+                                $advOps = [
+                                    ['√', 'Racine carrée'],
+                                    ['ln()', 'Logarithme naturel'],
+                                    ['exp()', 'Exponentielle'],
+                                    ['mean()', 'Moyenne'],
+                                    ['sd()', 'Écart-type'],
+                                    ['zscore()', 'Score Z'],
+                                    ['min()', 'Minimum'],
+                                    ['max()', 'Maximum']
+                                ];
+                            @endphp
+                            @foreach($advOps as [$symbol, $desc])
+                                <button type="button" 
+                                    class="inline-flex items-center px-3 py-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300 text-purple-700 text-xs font-semibold rounded-lg transition-all duration-200 hover:shadow-md"
+                                    onclick="insertFormula('{{ $symbol }}')"
+                                    title="{{ $desc }}">
+                                    {{ $symbol }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Search Analyses --}}
+                <div>
+                    <label for="analysisSearch" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Rechercher une analyse
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="analysisSearch" 
+                            placeholder="Code ou nom..." 
+                            class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                            oninput="filterAnalyses()" />
+                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                {{-- Analysis Codes --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Codes d'analyses
+                    </label>
+                    <div class="bg-gray-50 border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+                        <div id="analysisButtons" class="flex flex-wrap gap-2">
+                            @if(isset($analyses) && count($analyses) > 0)
+                                @foreach($analyses as $analysisItem)
+                                    <button type="button" 
+                                        class="inline-flex items-center px-3 py-1.5 bg-white hover:bg-blue-50 text-xs font-medium border border-gray-300 hover:border-blue-300 text-gray-700 hover:text-blue-700 rounded-lg transition-all duration-200 analysis-btn"
+                                        onclick="insertFormula('{{ $analysisItem['code'] }}')"
+                                        data-code="{{ $analysisItem['code'] }}"
+                                        data-name="{{ $analysisItem['name'] ?? 'Analyse' }}"
+                                        title="{{ $analysisItem['name'] ?? 'Analyse' }}">
+                                        {{ $analysisItem['code'] }}
+                                    </button>
+                                @endforeach
+                            @else
+                                <div class="flex flex-col items-center justify-center w-full py-4 text-center">
+                                    <svg class="w-8 h-8 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <p class="text-sm text-gray-500">Aucune analyse disponible</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    {{-- Saved Formulas Modal --}}
+    <div id="savedFormulasModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg border border-gray-200 overflow-hidden">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h4 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    Formules enregistrées
+                </h4>
+                <button onclick="closeSavedFormulas()" 
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="savedFormulasList" class="p-6 space-y-2 max-h-96 overflow-y-auto"></div>
+        </div>
+    </div>
+</div>
+
 
             {{-- Status Card --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
