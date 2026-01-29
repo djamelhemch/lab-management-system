@@ -412,13 +412,170 @@
           Create Analysis
         </button>
       </div>
+        <input type="hidden" name="temp_sample_types" id="temp-sample-types" value="">
     </form>
   </div>
 </div>
 
+
+
+<script>
+// ✅ GLOBAL INITIALIZATION - Put this at the VERY TOP of your scripts
+window.tempSampleTypes = window.tempSampleTypes || [];
+window.tempIdCounter = window.tempIdCounter || 1;
+
+console.log('🚀 Global temp variables initialized:', {
+    tempSampleTypes: window.tempSampleTypes,
+    tempIdCounter: window.tempIdCounter
+});
+</script>
+
 {{-- Modals --}}
 @include('analyses.partials.category-modal')
 @include('analyses.partials.sample-type-modal')
+<script>
+// 🔥 CHIPS-AWARE MODAL - Waits for chips JS
+function initSampleTypeModal() {
+    console.log('🔥 Initializing modal - chips ready');
+    
+    window.tempSampleTypes = window.tempSampleTypes || [];
+    window.tempIdCounter = window.tempIdCounter || 1;
+    
+    console.log('✅ Modal init - temp arrays ready:', {
+        tempSampleTypes: window.tempSampleTypes,
+        tempIdCounter: window.tempIdCounter
+    });
+
+    window.openSampleTypeModal = function() { 
+        const modal = document.getElementById('sampleTypeModal');
+        if (modal) modal.classList.remove('hidden'); 
+    };
+
+    window.closeSampleTypeModal = function() { 
+        const modal = document.getElementById('sampleTypeModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            modal.style.opacity = '0';
+            
+            const nameInput = document.getElementById('sampleTypeName');
+            const errorDiv = document.getElementById('sampleTypeError');
+            if (nameInput) nameInput.value = '';
+            if (errorDiv) errorDiv.textContent = '';
+            
+            console.log('🔒 Modal closed');
+        }
+    };
+
+    const sampleTypeForm = document.getElementById('sampleTypeForm');
+    if (!sampleTypeForm) {
+        console.error('❌ sampleTypeForm not found!');
+        return;
+    }
+    
+    console.log('✅ Sample type form found, attaching event listener');
+
+    // ✅ Remove old listener if exists (prevent duplicates)
+    const newForm = sampleTypeForm.cloneNode(true);
+    sampleTypeForm.parentNode.replaceChild(newForm, sampleTypeForm);
+    const newSampleTypeForm = document.getElementById('sampleTypeForm');
+
+    newSampleTypeForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        console.log('🚀 ==================== MODAL FORM SUBMIT ====================');
+        console.log('🚀 window.tempSampleTypes BEFORE:', window.tempSampleTypes);
+        console.log('🚀 window.tempIdCounter:', window.tempIdCounter);
+
+        const chipsContainer = document.getElementById('chips-container');
+        const select = chipsContainer ? chipsContainer.querySelector('select') : null;
+        
+        if (!select) {
+            console.error('❌ Chips select missing!');
+            return;
+        }
+        console.log('✅ Chips select found:', select.id);
+
+        const nameInput = document.getElementById('sampleTypeName');
+        const name = nameInput.value.trim();
+        
+        if (!name) {
+            console.warn('⚠️ Sample type name is empty');
+            return;
+        }
+
+        const tempId = 'temp_' + (window.tempIdCounter++);
+        const tempSampleType = { id: tempId, name, isTemp: true };
+        
+        console.log('📝 Creating temp sample type:', tempSampleType);
+        
+        window.tempSampleTypes.push(tempSampleType);
+        
+        console.log('✅ Pushed to window.tempSampleTypes:', window.tempSampleTypes);
+
+        const option = new Option(`${name} (New)`, tempId, true, true);
+        option.className = 'text-emerald-600 font-medium bg-emerald-50';
+        select.add(option);
+        
+        console.log('✅ Added option to select');
+
+        if (typeof window.addChip === 'function') {
+            console.log('✅ Calling window.addChip...');
+            window.addChip(`${name} (New)`, tempId);
+            console.log('✅ Added chip successfully');
+        } else {
+            console.error('❌ window.addChip is not a function!', typeof window.addChip);
+        }
+
+        nameInput.value = '';
+        window.closeSampleTypeModal();
+        
+        console.log('✅ MODAL SUCCESS - window.tempSampleTypes final:', window.tempSampleTypes);
+        console.log('🚀 ==================== END MODAL SUBMIT ====================');
+    });
+    
+    console.log('✅ Event listener attached to sample type form');
+        
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.closeSampleTypeModal();
+        }
+    });
+    
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('sampleTypeModal');
+        if (e.target === modal) {
+            window.closeSampleTypeModal();
+        }
+    });
+}
+
+// ✅ PREVENT DUPLICATE INITIALIZATION
+let sampleTypeModalInitialized = false;
+
+// 🔥 WAIT FOR CHIPS JS THEN INIT
+const checkChipsReady = setInterval(() => {
+    const chipsContainer = document.getElementById('chips-container');
+    const select = chipsContainer ? chipsContainer.querySelector('select') : null;
+    if (select && typeof window.addChip === 'function' && !sampleTypeModalInitialized) {
+        console.log('🎯 Chips ready - init modal');
+        console.log('✅ window.addChip is available:', window.addChip);
+        clearInterval(checkChipsReady);
+        sampleTypeModalInitialized = true;
+        initSampleTypeModal();
+    }
+}, 100);  // Check every 100ms
+
+// Fallback after 2s (only if not already initialized)
+setTimeout(() => {
+    if (document.getElementById('sampleTypeForm') && !sampleTypeModalInitialized) {
+        console.log('⏰ Fallback init');
+        sampleTypeModalInitialized = true;
+        initSampleTypeModal();
+    }
+}, 2000);
+</script>
+
 @include('analyses.partials.unit-modal')
 <style>
 /* Chips styling */
@@ -447,8 +604,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updatePlaceholder = () => placeholder.style.display = chipsContainer.children.length ? 'none' : 'block';
 
-    const addChip = (text, value) => {
-        if ([...chipsContainer.children].some(chip => chip.dataset.value === value)) return;
+    // ✅ MAKE GLOBAL: So modal handler can call it
+    window.addChip = (text, value) => {
+        if ([...chipsContainer.children].some(chip => chip.dataset.value === value)) {
+            console.log('⚠️ Chip already exists:', value);
+            return;
+        }
 
         const chip = document.createElement('div');
         chip.className = 'inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-full border border-purple-200 shadow-sm transition-all duration-200';
@@ -565,7 +726,9 @@ function saveFormData() {
             name: document.getElementById('name')?.value || '',
             code: document.getElementById('code')?.value || '',
             category_analyse_id: document.getElementById('category_analyse_id')?.value || '',
-            sample_type_id: document.getElementById('sample_type_id')?.value || '',
+            sample_type_ids: Array.from(
+                    document.getElementById('sample_type_ids')?.selectedOptions || []
+                ).map(opt => opt.value),
             unit_id: document.getElementById('unit_id')?.value || '',
             formula: document.getElementById('formula')?.value || '',
             price: document.getElementById('price')?.value || '',
@@ -578,7 +741,7 @@ function saveFormData() {
             
             // Normal ranges
             normal_ranges: [],
-            
+            temp_sample_types: window.tempSampleTypes || [],
             timestamp: new Date().toISOString()
         };
         
@@ -772,7 +935,32 @@ window.acceptRestore = function() {
         if (data.name) document.getElementById('name').value = data.name;
         if (data.code) document.getElementById('code').value = data.code;
         if (data.category_analyse_id) document.getElementById('category_analyse_id').value = data.category_analyse_id;
-        if (data.sample_type_id) document.getElementById('sample_type_id').value = data.sample_type_id;
+        if (data.sample_type_ids && data.sample_type_ids.length > 0) {
+            const select = document.getElementById('sample_type_ids');
+            const chipsContainer = document.getElementById('selected-chips');
+            
+            if (select) {
+                // Clear existing selections
+                Array.from(select.options).forEach(opt => opt.selected = false);
+                
+                // Clear existing chips
+                if (chipsContainer) {
+                    chipsContainer.innerHTML = '';
+                }
+                
+                // Restore selections
+                data.sample_type_ids.forEach(typeId => {
+                    const option = select.querySelector(`option[value="${typeId}"]`);
+                    if (option) {
+                        option.selected = true;
+                        // Add chip if function exists
+                        if (typeof addChip === 'function') {
+                            addChip(option.textContent, typeId);
+                        }
+                    }
+                });
+            }
+        }
         if (data.unit_id) {
             document.getElementById('unit_id').value = data.unit_id;
             const unitSelect = document.getElementById('unit_id');
@@ -801,7 +989,28 @@ window.acceptRestore = function() {
                 addNormalRange(rangeData);
             });
         }
-        
+        if (data.temp_sample_types && data.temp_sample_types.length > 0) {
+            window.tempSampleTypes = data.temp_sample_types;
+
+            const chipsContainer = document.getElementById('chips-container');
+            const select = chipsContainer ? chipsContainer.querySelector('select') : null;
+
+            if (select) {
+                data.temp_sample_types.forEach(t => {
+                    const option = new Option(`${t.name} (New)`, t.id, true, true);
+                    option.dataset.temp = "1";
+                    select.add(option);
+
+                    // Sync with chips UI
+                    select.value = t.id;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+                    if (typeof addChip === 'function') {
+                        addChip(`${t.name} (New)`, t.id);
+                    }
+                });
+            }
+        }
         showToast('✅ Données restaurées avec succès!', 'success');
         
     } catch (error) {
@@ -826,43 +1035,59 @@ window.declineRestore = function() {
 
 // Restore form data from localStorage
 function restoreFormData() {
-    // ✅ Only show modal once per page load
-    if (hasRestoredOnce) {
-        return false;
-    }
-    
+    if (hasRestoredOnce) return false;
+
     try {
         const savedData = localStorage.getItem(AUTOSAVE_KEY);
-        if (!savedData) {
+
+        if (!savedData || savedData === "undefined" || savedData === "null") {
+            console.log('ℹ️ No autosave data found');
             return false;
         }
-        
-        const data = JSON.parse(savedData);
-        const timeSaved = new Date(data.timestamp).toLocaleString('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
+
+        let data;
+        try {
+            data = JSON.parse(savedData);
+        } catch (e) {
+            console.error('❌ Autosave JSON corrupted. Clearing...', e);
+            localStorage.removeItem(AUTOSAVE_KEY); 
+            return false;
+        }
+
+        if (!data || typeof data !== 'object') {
+            console.warn('⚠️ Invalid autosave structure');
+            localStorage.removeItem(AUTOSAVE_KEY);
+            return false;
+        }
+
+        const timeSaved = new Date(data.timestamp || Date.now())
+            .toLocaleString('fr-FR');
+
         hasRestoredOnce = true;
         showRestoreModal(data, timeSaved);
-        
         return true;
+
     } catch (error) {
-        console.error('Restore check failed:', error);
+        console.error('Restore failed:', error);
         return false;
     }
 }
-
 // Clear autosave
 function clearAutosave() {
-    localStorage.removeItem(AUTOSAVE_KEY);
-    console.log('🗑️ Autosave data cleared');
-    showToast('🗑️ Sauvegarde automatique effacée', 'info');
+    try {
+        localStorage.removeItem(AUTOSAVE_KEY);
+        console.log('🗑️ Autosave cleared');
+    } catch (e) {
+        console.error('Clear failed:', e);
+    }
 }
 
+function clearTempArrays() {
+    window.tempSampleTypes = [];
+    window.tempCategories = [];
+    window.tempUnits = [];
+    console.log('🗑️ Temp arrays cleared');
+}
 // Start auto-save timer
 function startAutosave() {
     const form = document.getElementById('analysisCreateForm');
@@ -889,32 +1114,276 @@ function startAutosave() {
     console.log('✅ Autosave enabled');
 }
 
-// Clear autosave on successful submission
-function handleFormSubmit(event) {
-    setTimeout(() => {
-        clearAutosave();
-    }, 1000);
-}
-
 // ========================================
 // INITIALIZE ON PAGE LOAD
 // ========================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('%c🚀 Autosave System Ready', 'color: #10b981; font-weight: bold; font-size: 14px');
-    
-    // Try to restore data first (only if saved data exists)
-    restoreFormData();
-    
-    // Start autosave system
-    startAutosave();
-    
-    // Attach to form submit
-    const form = document.getElementById('analysisCreateForm');
-    if (form) {
-        form.addEventListener('submit', handleFormSubmit);
-    }
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('%c✅ Autosave System Ready', 'color: #10b981; font-weight: bold; font-size: 14px');
+        
+        // Try to restore data first (only if saved data exists)
+        restoreFormData();
+        
+        // Start autosave system
+        startAutosave();
+
+    });
 </script>
+<script>
+// ✅ CRITICAL: Enhanced form submission with proper validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('analysisCreateForm');
+    
+    if (!form) {
+        console.error('❌ Form not found!');
+        return;
+    }
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        console.log('=== FORM SUBMISSION START ===');
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <svg class="animate-spin h-4 w-4 mr-2 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Enregistrement...
+            `;
+        }
+        
+        try {
+            // ✅ 1. Validate required fields
+            const name = document.getElementById('name')?.value.trim();
+            const price = document.getElementById('price')?.value;
+            
+            if (!name) {
+                showToast('❌ Le nom de l\'analyse est requis', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Analysis
+                    `;
+                }
+                return;
+            }
+            
+            if (!price || parseFloat(price) < 0) {
+                showToast('❌ Un prix valide est requis', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Analysis
+                    `;
+                }
+                return;
+            }
+            
+            // ✅ 2. Populate hidden input with temp sample types JSON
+            const hiddenInput = document.getElementById('temp-sample-types');
+            if (hiddenInput) {
+                const jsonStr = JSON.stringify(window.tempSampleTypes || []);
+                hiddenInput.value = jsonStr;
+                console.log('✅ Set temp-sample-types:', jsonStr);
+            } else {
+                console.error('❌ Hidden input temp-sample-types not found!');
+            }
+            
+            // ✅ 3. Remove old temp inputs to avoid duplicates
+            document.querySelectorAll('input[name="temp_categories[]"]').forEach(el => el.remove());
+            document.querySelectorAll('input[name="temp_units[]"]').forEach(el => el.remove());
+            
+            // ✅ 4. Add temp categories (if any)
+            if (window.tempCategories && window.tempCategories.length > 0) {
+                window.tempCategories.forEach(category => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'temp_categories[]';
+                    input.value = JSON.stringify(category);
+                    this.appendChild(input);
+                });
+                console.log('✅ Added temp categories:', window.tempCategories.length);
+            }
+            
+            // ✅ 5. Add temp units (if any)
+            if (window.tempUnits && window.tempUnits.length > 0) {
+                window.tempUnits.forEach(unit => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'temp_units[]';
+                    input.value = JSON.stringify(unit);
+                    this.appendChild(input);
+                });
+                console.log('✅ Added temp units:', window.tempUnits.length);
+            }
+            
+            // ✅ 6. Build JSON payload
+            const formData = new FormData(this);
+            const formDataObj = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (key.endsWith('[]')) {
+                    const cleanKey = key.replace('[]', '');
+                    if (!formDataObj[cleanKey]) formDataObj[cleanKey] = [];
+                    formDataObj[cleanKey].push(value);
+                } else {
+                    formDataObj[key] = value;
+                }
+            }
+            
+            // ✅ Handle sample_type_ids array
+            const sampleTypeSelect = document.getElementById('sampletypeids');
+            if (sampleTypeSelect) {
+                formDataObj.sample_type_ids = Array.from(sampleTypeSelect.selectedOptions).map(o => o.value);
+            }
+            
+            // ✅ Handle device_ids array
+            const deviceCheckboxes = document.querySelectorAll('input[name="device_ids[]"]:checked');
+            formDataObj.device_ids = Array.from(deviceCheckboxes).map(cb => cb.value);
+            
+            // ✅ Handle normal ranges
+            const normalRanges = [];
+            document.querySelectorAll('.normal-range-item').forEach((range, index) => {
+                const rangeData = {
+                    sex_applicable: range.querySelector('[name*="sex_applicable"]')?.value || 'All',
+                    age_min_years: parseInt(range.querySelector('[name*="age_min_years"]')?.value || 0),
+                    age_min_months: parseInt(range.querySelector('[name*="age_min_months"]')?.value || 0),
+                    age_min_days: parseInt(range.querySelector('[name*="age_min_days"]')?.value || 0),
+                    age_max_years: parseInt(range.querySelector('[name*="age_max_years"]')?.value || 0),
+                    age_max_months: parseInt(range.querySelector('[name*="age_max_months"]')?.value || 0),
+                    age_max_days: parseInt(range.querySelector('[name*="age_max_days"]')?.value || 0),
+                    normal_min: range.querySelector('[name*="normal_min"]')?.value || null,
+                    normal_max: range.querySelector('[name*="normal_max"]')?.value || null,
+                    pregnant_applicable: range.querySelector('[name*="pregnant_applicable"]')?.checked || false,
+                };
+                normalRanges.push(rangeData);
+            });
+            formDataObj.normal_ranges = normalRanges;
+            
+            console.log('=== FINAL PAYLOAD ===');
+            console.log(JSON.stringify(formDataObj, null, 2));
+            
+            // ✅ 7. Send AJAX request
+            const res = await fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(formDataObj),
+            });
+            
+            console.log('Response status:', res.status);
+            
+            const responseText = await res.text();
+            console.log('Response text:', responseText);
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseErr) {
+                console.error('❌ Response is not JSON:', parseErr);
+                
+                if (res.status === 200) {
+                    showToast('✅ Saved successfully. Redirecting...', 'success');
+                    clearAutosave();
+                    setTimeout(() => {
+                        window.location.href = '{{ route("analyses.index") }}';
+                    }, 700);
+                    return;
+                }
+                
+                showToast('❌ Invalid server response', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Analysis
+                    `;
+                }
+                return;
+            }
+            
+            // ✅ 8. Handle response
+            if (res.ok && data.success !== false) {
+                showToast(data.message || '✅ Analyse créée avec succès!', 'success');
+                clearAutosave();
+                clearTempArrays();
+                
+                setTimeout(() => {
+                    window.location.href = data.redirect || '{{ route("analyses.index") }}';
+                }, 700);
+            } else {
+                // Handle errors
+                console.error('❌ Server error:', data);
+                
+                let errorMessage = data.message || '❌ Échec de la création';
+                
+                if (data.errors) {
+                    const firstKey = Object.keys(data.errors)[0];
+                    const firstMsg = firstKey ? data.errors[firstKey][0] : 'Validation error';
+                    errorMessage = firstMsg;
+                }
+                
+                if (data.detail) {
+                    errorMessage += '\n' + (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+                }
+                
+                showToast(errorMessage, 'error');
+                
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Analysis
+                    `;
+                }
+            }
+            
+        } catch (err) {
+            console.error('❌ Exception during form submission:', err);
+            console.error('Stack:', err.stack);
+            showToast('❌ Network error. Please try again.', 'error');
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Create Analysis
+                `;
+            }
+        }
+        
+        console.log('=== FORM SUBMISSION END ===');
+    });
+});
+
+// ✅ Helper: Clear temp arrays
+function clearTempArrays() {
+    window.tempSampleTypes = [];
+    window.tempCategories = [];
+    window.tempUnits = [];
+    console.log('✅ Temp arrays cleared');
+}
+</script>
+
 {{-- FORMULA MANAGEMENT SCRIPT --}}
 <script>
 // ✅ FIXED: Use route() helper for HTTPS URL
@@ -1001,12 +1470,17 @@ async function saveFormula() {
     });
 
     if (res.ok) {
-      const saved = await res.json();
-      savedFormulas.unshift(saved);
-      localStorage.setItem('savedFormulas', JSON.stringify(savedFormulas));
-      showToast(`✅ Formula "${name}" saved successfully!`, "success");
-      clearFormula();
-    } else {
+        const data = await res.json();
+        showToast(data.message || 'Saved successfully!', 'success');
+        
+        // ✅ Clear everything ONLY after successful save
+        clearAutosave();
+        clearTempArrays();
+        
+        setTimeout(() => {
+            window.location.href = data.redirect || '{{ route("analyses.index") }}';
+        }, 700);
+    }else {
       const error = await res.json();
       throw new Error(error.detail || "API Error");
     }
@@ -1266,17 +1740,6 @@ function executeClearAll(silent = false) {
     }
 }
 
-// Test button functionality on page load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Clear button script loaded');
-    
-    const form = document.getElementById('analysisCreateForm');
-    if (form) {
-        console.log('✅ Form found');
-    } else {
-        console.error('❌ Form NOT found! Make sure your form has id="analysisCreateForm"');
-    }
-});
 </script>
 {{-- NORMAL RANGES MANAGEMENT SCRIPT --}}
 <script>
@@ -1285,7 +1748,7 @@ let rangeCounter = 0;
 let tempCategories = [];
 let tempSampleTypes = [];
 let tempUnits = [];
-let tempIdCounter = -1;
+let tempIdCounter = 1;
 
 // ✅ Update range badges (#1, #2, ...)
 function updateRangeNumbers() {
@@ -1763,21 +2226,21 @@ function closeCategoryModal() {
     }
 }
 
-function openSampleTypeModal() { 
-    const modal = document.getElementById('sampleTypeModal');
-    if (modal) modal.classList.remove('hidden'); 
-}
+// function openSampleTypeModal() { 
+//     const modal = document.getElementById('sampleTypeModal');
+//     if (modal) modal.classList.remove('hidden'); 
+// }
 
-function closeSampleTypeModal() { 
-    const modal = document.getElementById('sampleTypeModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        const nameInput = document.getElementById('sampleTypeName');
-        const errorDiv = document.getElementById('sampleTypeError');
-        if (nameInput) nameInput.value = '';
-        if (errorDiv) errorDiv.textContent = '';
-    }
-}
+// function closeSampleTypeModal() { 
+//     const modal = document.getElementById('sampleTypeModal');
+//     if (modal) {
+//         modal.classList.add('hidden');
+//         const nameInput = document.getElementById('sampleTypeName');
+//         const errorDiv = document.getElementById('sampleTypeError');
+//         if (nameInput) nameInput.value = '';
+//         if (errorDiv) errorDiv.textContent = '';
+//     }
+// }
 
 function openUnitModal() { 
     const modal = document.getElementById('unitModal');
@@ -1821,101 +2284,99 @@ document.addEventListener('DOMContentLoaded', () => {
     if (categoryForm) {
         categoryForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
             const nameInput = document.getElementById('categoryName');
-            const errorDiv = document.getElementById('categoryError');
+            const name = nameInput?.value.trim();
             
-            if (!nameInput || !errorDiv) return;
+            if (!name) return;
             
-            const name = nameInput.value.trim();
+            const tempId = 'temp_category';  // ✅ Fixed ID
+            const tempCategory = { id: tempId, name: name, isTemp: true };
             
-            if (!name) {
-                errorDiv.textContent = 'Category name is required';
-                return;
+            console.log('📝 Creating temp category:', tempCategory);
+            
+            // Replace any existing temp category
+            window.tempCategories = [tempCategory];  // ✅ Replace, don't push
+            
+            console.log('✅ window.tempCategories:', window.tempCategories);
+            
+            // Add to select
+            const categorySelect = document.querySelector('select[name="category_analyse_id"]');
+            if (categorySelect) {
+                // Remove old temp option if exists
+                const oldTemp = categorySelect.querySelector('option[value="temp_category"]');
+                if (oldTemp) oldTemp.remove();
+                
+                const option = new Option(name + ' (New)', tempId, true, true);
+                option.className = 'text-emerald-600 font-medium bg-emerald-50';
+                categorySelect.add(option);
             }
             
-            const select = document.querySelector('select[name="category_analyse_id"]');
-            if (!select) {
-                console.error('Category select not found');
-                return;
-            }
-            
-            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-            if (existingOptions.includes(name.toLowerCase())) {
-                errorDiv.textContent = 'Category already exists';
-                return;
-            }
-            
-            const tempCategory = { id: tempIdCounter--, name: name, isTemp: true };
-            tempCategories.push(tempCategory);
-            
-            const option = new Option(name + ' (New)', tempCategory.id, true, true);
-            option.className = 'text-emerald-600 font-medium';
-            select.add(option);
-            
-            closeCategoryModal();
+            nameInput.value = '';
+            window.closeCategoryModal();
         });
     }
     
     // Sample Type Form
-const sampleTypeForm = document.getElementById('sampleTypeForm');
-if (sampleTypeForm) {
-    sampleTypeForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const nameInput = document.getElementById('sampleTypeName');
-        const errorDiv = document.getElementById('sampleTypeError');
+// const sampleTypeForm = document.getElementById('sampleTypeForm');
+// if (sampleTypeForm) {
+//     sampleTypeForm.addEventListener('submit', function(e) {
+//         e.preventDefault();
+//         const nameInput = document.getElementById('sampleTypeName');
+//         const errorDiv = document.getElementById('sampleTypeError');
         
-        if (!nameInput || !errorDiv) return;
+//         if (!nameInput || !errorDiv) return;
         
-        const name = nameInput.value.trim();
-        if (!name) {
-            errorDiv.textContent = 'Sample type name is required';
-            return;
-        }
+//         const name = nameInput.value.trim();
+//         if (!name) {
+//             errorDiv.textContent = 'Sample type name is required';
+//             return;
+//         }
         
-        // ✅ CONTEXT-AWARE SELECT FINDER
-        let select = document.getElementById('edit-sample-type-select') ||  // Edit view
-                    document.getElementById('sampletypeids') ||           // Create view
-                    document.querySelector('select[name="sampletypeids"]'); // Fallback
+//         // ✅ CONTEXT-AWARE SELECT FINDER
+//         let select = document.getElementById('edit-sample-type-select') ||  // Edit view
+//                     document.getElementById('sampletypeids') ||           // Create view
+//                     document.querySelector('select[name="sampletypeids"]'); // Fallback
         
-        if (!select) {
-            console.error('Sample type select not found - checked IDs: edit-sample-type-select, sampletypeids');
-            errorDiv.textContent = 'Erreur: Sélecteur non trouvé';
-            return;
-        }
+//         if (!select) {
+//             console.error('Sample type select not found - checked IDs: edit-sample-type-select, sampletypeids');
+//             errorDiv.textContent = 'Erreur: Sélecteur non trouvé';
+//             return;
+//         }
         
-        // Check for duplicates (case-insensitive)
-        const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-        if (existingOptions.includes(name.toLowerCase())) {
-            errorDiv.textContent = 'Sample type already exists';
-            return;
-        }
+//         // Check for duplicates (case-insensitive)
+//         const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
+//         if (existingOptions.includes(name.toLowerCase())) {
+//             errorDiv.textContent = 'Sample type already exists';
+//             return;
+//         }
         
-        // Generate unique temp ID
-        if (typeof tempIdCounter === 'undefined') tempIdCounter = -1;
-        const tempId = 'temp_' + (tempIdCounter--);
+//         // Generate unique temp ID
+//         if (typeof tempIdCounter === 'undefined') tempIdCounter = -1;
+//         const tempId = 'temp_' + (tempIdCounter--);
         
-        // Global temp tracking
-        if (typeof tempSampleTypes === 'undefined') window.tempSampleTypes = [];
-        const tempSampleType = { id: tempId, name: name, isTemp: true };
-        window.tempSampleTypes.push(tempSampleType);
+//         // Global temp tracking
+//         if (typeof tempSampleTypes === 'undefined') window.tempSampleTypes = [];
+//         const tempSampleType = { id: tempId, name: name, isTemp: true };
+//         window.tempSampleTypes.push(tempSampleType);
         
-        // Add styled option
-        const option = new Option(name + ' (New)', tempId, true, true);
-        option.className = 'text-emerald-600 font-medium bg-emerald-50';
-        select.add(option);
+//         // Add styled option
+//         const option = new Option(name + ' (New)', tempId, true, true);
+//         option.className = 'text-emerald-600 font-medium bg-emerald-50';
+//         select.add(option);
         
-        // Trigger chip addition (if chips system exists)
-        if (typeof addChip === 'function') {
-            addChip(name + ' (New)', tempId);
-        }
+//         // Trigger chip addition (if chips system exists)
+//         if (typeof addChip === 'function') {
+//             addChip(name + ' (New)', tempId);
+//         }
         
-        // Clear & close
-        nameInput.value = '';
-        errorDiv.textContent = '';
-        closeSampleTypeModal();
-        showToast(`"${name}" ajouté temporairement`, 'success');
-    });
-}
+//         // Clear & close
+//         nameInput.value = '';
+//         errorDiv.textContent = '';
+//         closeSampleTypeModal();
+//         showToast(`"${name}" ajouté temporairement`, 'success');
+//     });
+// }
 
     
     // Unit Form
@@ -1923,115 +2384,262 @@ if (sampleTypeForm) {
     if (unitForm) {
         unitForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
             const nameInput = document.getElementById('unitName');
-            const errorDiv = document.getElementById('unitError');
+            const name = nameInput?.value.trim();
             
-            if (!nameInput || !errorDiv) return;
+            if (!name) return;
             
-            const name = nameInput.value.trim();
+            const tempId = 'temp_unit';  // ✅ Fixed ID
+            const tempUnit = { id: tempId, name: name, isTemp: true };
             
-            if (!name) {
-                errorDiv.textContent = 'Unit name is required';
-                return;
+            console.log('📝 Creating temp unit:', tempUnit);
+            
+            // Replace any existing temp unit (only one can exist)
+            window.tempUnits = [tempUnit];  // ✅ Replace, don't push
+            
+            console.log('✅ window.tempUnits:', window.tempUnits);
+            
+            // Add to select
+            const unitSelect = document.querySelector('select[name="unit_id"]');
+            if (unitSelect) {
+                // Remove old temp option if exists
+                const oldTemp = unitSelect.querySelector('option[value="temp_unit"]');
+                if (oldTemp) oldTemp.remove();
+                
+                const option = new Option(name + ' (New)', tempId, true, true);
+                option.className = 'text-emerald-600 font-medium bg-emerald-50';
+                unitSelect.add(option);
             }
             
-            const select = document.querySelector('select[name="unit_id"]');
-            if (!select) {
-                console.error('Unit select not found');
-                return;
-            }
-            
-            const existingOptions = Array.from(select.options).map(opt => opt.text.toLowerCase());
-            if (existingOptions.includes(name.toLowerCase())) {
-                errorDiv.textContent = 'Unit already exists';
-                return;
-            }
-            
-            const tempUnit = { id: tempIdCounter--, name: name, isTemp: true };
-            tempUnits.push(tempUnit);
-            
-            const option = new Option(name + ' (New)', tempUnit.id, true, true);
-            option.className = 'text-emerald-600 font-medium';
-            select.add(option);
-            
-            closeUnitModal();
+            nameInput.value = '';
+            window.closeUnitModal();
         });
     }
-    
-    // Main form submission
-    const mainForm = document.getElementById('analysisCreateForm');
-    if (mainForm) {
-        mainForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
+        
+    // // Main form submission
+    // const mainForm = document.getElementById('analysisCreateForm');
+    // if (mainForm) {
+    //     mainForm.addEventListener('submit', async function (e) {
+    //         e.preventDefault();
+            
+    //         console.log('📤 ==================== FORM SUBMIT ====================');
+    //         console.log('📤 window.tempSampleTypes BEFORE:', window.tempSampleTypes);
+    //         console.log('📤 window.tempSampleTypes length:', window.tempSampleTypes?.length || 0);
+            
+    //         // ✅ Get the selected sample type IDs from the select element
+    //         const selectElement = document.getElementById('sample_type_ids');
+    //         const selectedOptions = selectElement ? Array.from(selectElement.selectedOptions).map(o => o.value) : [];
+    //         console.log('📤 Selected sample_type_ids:', selectedOptions);
+            
+    //         // ✅ Check if any selected IDs are temp IDs (start with "temp_")
+    //         const hasTempIds = selectedOptions.some(id => typeof id === 'string' && id.startsWith('temp_'));
+    //         console.log('📤 Has temp IDs:', hasTempIds);
+            
+    //         // ✅ CRITICAL: ENSURE all temp arrays exist and are valid
+    //         if (!window.tempSampleTypes || !Array.isArray(window.tempSampleTypes)) {
+    //             console.warn('⚠️ window.tempSampleTypes not valid, initializing');
+    //             window.tempSampleTypes = [];
+    //         }
+    //         if (!window.tempCategories || !Array.isArray(window.tempCategories)) {
+    //             window.tempCategories = [];
+    //         }
+    //         if (!window.tempUnits || !Array.isArray(window.tempUnits)) {
+    //             window.tempUnits = [];
+    //         }
+            
+    //         // ✅ VALIDATION: If we have temp IDs selected, we MUST have temp sample types data
+    //         if (hasTempIds && window.tempSampleTypes.length === 0) {
+    //             console.error('❌ ERROR: Temp sample type IDs selected but no temp data available!');
+    //             console.error('   Selected IDs:', selectedOptions);
+    //             console.error('   window.tempSampleTypes:', window.tempSampleTypes);
+    //             showToast('❌ Error: Temporary sample type data missing. Please refresh the page and try again.', 'error');
+    //             return;
+    //         }
+            
+    //         console.log('✅ Temp arrays initialized:', {
+    //             tempSampleTypes: window.tempSampleTypes.length,
+    //             tempCategories: window.tempCategories.length,
+    //             tempUnits: window.tempUnits.length
+    //         });
+            
+    //         // ✅ CRITICAL: Populate hidden input with temp sample types JSON FIRST
+    //         const hiddenInput = document.getElementById('temp-sample-types');
+    //         if (hiddenInput) {
+    //             const jsonStr = JSON.stringify(window.tempSampleTypes);
+    //             hiddenInput.value = jsonStr;
+    //             console.log('✅ Hidden temp-sample-types set to:', jsonStr);
+    //             console.log('✅ Hidden input value attribute:', hiddenInput.getAttribute('value'));
+                
+    //             // ✅ Verify the value was actually set
+    //             const verifyValue = document.getElementById('temp-sample-types').value;
+    //             console.log('✅ Verification - Hidden input current value:', verifyValue);
+                
+    //             if (!verifyValue || verifyValue === '[]') {
+    //                 console.warn('⚠️ WARNING: Hidden input value is empty or []');
+    //             }
+    //         } else {
+    //             console.error('❌ Hidden input #temp-sample-types not found!');
+    //             showToast('❌ Error: Form configuration error. Please refresh the page.', 'error');
+    //             return;
+    //         }
+            
+    //         // ✅ For category and unit, we DO need array inputs since backend expects arrays
+    //         // Remove any existing temp input fields to avoid duplicates
+    //         document.querySelectorAll('input[name="temp_categories[]"]').forEach(el => el.remove());
+    //         document.querySelectorAll('input[name="temp_units[]"]').forEach(el => el.remove());
+            
+    //         // ✅ Add all temp categories as hidden inputs (backend expects array)
+    //         window.tempCategories.forEach(category => {
+    //             const input = document.createElement('input');
+    //             input.type = 'hidden';
+    //             input.name = 'temp_categories[]';
+    //             input.value = JSON.stringify(category);
+    //             this.appendChild(input);
+    //             console.log('📤 Added temp category:', category);
+    //         });
 
-            tempCategories.forEach(category => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'temp_categories[]';
-                input.value = JSON.stringify(category);
-                this.appendChild(input);
-            });
+    //         // ✅ Add all temp units as hidden inputs (backend expects array)
+    //         window.tempUnits.forEach(unit => {
+    //             const input = document.createElement('input');
+    //             input.type = 'hidden';
+    //             input.name = 'temp_units[]';
+    //             input.value = JSON.stringify(unit);
+    //             this.appendChild(input);
+    //             console.log('📤 Added temp unit:', unit);
+    //         });
+            
+    //         console.log('✅ All hidden inputs populated');
 
-            tempSampleTypes.forEach(sampleType => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'temp_sample_types[]';
-                input.value = JSON.stringify(sampleType);
-                this.appendChild(input);
-            });
+    //         // ✅ Add all temp units as hidden inputs (backend expects array)
+    //         window.tempUnits.forEach(unit => {
+    //             const input = document.createElement('input');
+    //             input.type = 'hidden';
+    //             input.name = 'temp_units[]';
+    //             input.value = JSON.stringify(unit);
+    //             this.appendChild(input);
+    //             console.log('📤 Added temp unit:', unit);
+    //         });
+            
+    //         console.log('✅ All hidden inputs populated')
 
-            tempUnits.forEach(unit => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'temp_units[]';
-                input.value = JSON.stringify(unit);
-                this.appendChild(input);
-            });
+    //         const submitBtn = this.querySelector('button[type="submit"]');
+    //         if (submitBtn) submitBtn.disabled = true;
 
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
+    //         try {
+    //             // ✅ Create FormData AFTER populating hidden inputs
+    //             const formData = new FormData(this);
+                
+    //             // ✅ Debug: Log what's in FormData
+    //             console.log('📤 FormData contents:');
+    //             for (let [key, value] of formData.entries()) {
+    //                 if (key === 'temp_sample_types' || key.includes('temp_')) {
+    //                     console.log(`  ${key}: ${value}`);
+    //                 }
+    //             }
+                
+    //             // ✅ FIX: Convert FormData to JSON object for proper content-type
+    //             const formDataObj = {};
+    //             const checkboxes = this.querySelectorAll('input[type="checkbox"]');
+    //             const selects = this.querySelectorAll('select');
+                
+    //             for (let [key, value] of formData.entries()) {
+    //                 // Handle array values (like normal_ranges[], device_ids[])
+    //                 if (key.endsWith('[]')) {
+    //                     if (!formDataObj[key]) {
+    //                         formDataObj[key] = [];
+    //                     }
+    //                     formDataObj[key].push(value);
+    //                 } else {
+    //                     formDataObj[key] = value;
+    //                 }
+    //             }
+                
+    //             // ✅ Ensure checkboxes are properly set
+    //             checkboxes.forEach(checkbox => {
+    //                 if (checkbox.name && !formDataObj[checkbox.name]) {
+    //                     formDataObj[checkbox.name] = checkbox.checked ? '1' : '0';
+    //                 }
+    //             });
+                
+    //             console.log('📤 JSON payload:', formDataObj);
+                
+    //             const res = await fetch(this.action, {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+    //                     'Content-Type': 'application/json',
+    //                     'Accept': 'application/json',
+    //                     'X-Requested-With': 'XMLHttpRequest'
+    //                 },
+    //                 body: JSON.stringify(formDataObj),
+    //             });
 
-            try {
-                const res = await fetch(this.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: new FormData(this),
-                });
+    //             console.log('📤 Response status:', res.status);
+    //             console.log('📤 Response headers:', {
+    //                 'content-type': res.headers.get('content-type')
+    //             });
 
-                if (res.status === 422) {
-                    const data = await res.json();
-                    const firstKey = Object.keys(data.errors || {})[0];
-                    const firstMsg = firstKey ? data.errors[firstKey][0] : 'Validation error';
-                    showToast(`⚠️ ${firstMsg}`, "warning");
-                    if (submitBtn) submitBtn.disabled = false;
-                    return;
-                }
+    //             // ✅ FIX: Clone response to avoid body consumption issues
+    //             const responseText = await res.clone().text();
+    //             console.log('📤 Response text length:', responseText.length);
+    //             console.log('📤 First 200 chars:', responseText.substring(0, 200));
 
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
-                    showToast(`❌ ${data.message || 'Failed to save.'}`, "error");
-                    if (submitBtn) submitBtn.disabled = false;
-                    return;
-                }
+    //             // ✅ Try to parse as JSON
+    //             let data;
+    //             try {
+    //                 data = JSON.parse(responseText);
+    //             } catch (parseErr) {
+    //                 console.error('❌ Response is not JSON:', parseErr);
+    //                 console.error('Full response:', responseText);
+                    
+    //                 // If response is 200 but not JSON, assume redirect happened
+    //                 if (res.status === 200) {
+    //                     showToast('✅ Saved successfully. Redirecting...', 'success');
+    //                     clearAutosave();
+    //                     setTimeout(() => {
+    //                         window.location.href = "{{ route('analyses.index') }}";
+    //                     }, 700);
+    //                     return;
+    //                 }
+                    
+    //                 showToast('❌ Invalid server response', 'error');
+    //                 if (submitBtn) submitBtn.disabled = false;
+    //                 return;
+    //             }
 
-                const data = await res.json();
-                showToast(`✅ ${data.message || 'Saved successfully.'}`, "success");
+    //             // ✅ Now handle based on status
+    //             if (res.status === 422) {
+    //                 const firstKey = Object.keys(data.errors || {})[0];
+    //                 const firstMsg = firstKey ? data.errors[firstKey][0] : 'Validation error';
+    //                 showToast(`⚠️ ${firstMsg}`, "warning");
+    //                 if (submitBtn) submitBtn.disabled = false;
+    //                 return;
+    //             }
 
-                setTimeout(() => {
-                    window.location.href = data.redirect || "{{ route('analyses.index') }}";
-                }, 700);
+    //             if (!res.ok) {
+    //                 showToast(`❌ ${data.message || 'Failed to save.'}`, "error");
+    //                 if (submitBtn) submitBtn.disabled = false;
+    //                 return;
+    //             }
 
-            } catch (err) {
-                console.error(err);
-                showToast("❌ Network error. Please try again.", "error");
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        });
-    }
+    //             // Success
+    //             showToast(`✅ ${data.message || 'Saved successfully.'}`, "success");
+    //             clearAutosave();       
+    //             setTimeout(() => {
+    //                 window.location.href = data.redirect || "{{ route('analyses.index') }}";
+    //             }, 700);
+
+    //         } catch (err) {
+    //             console.error('❌ Error during form submission:', err);
+    //             console.error('Stack:', err.stack);
+    //             showToast("❌ Network error. Please try again.", "error");
+    //             if (submitBtn) submitBtn.disabled = false;
+    //         }
+            
+    //         console.log('📤 ==================== END FORM SUBMIT ====================');
+    //     });
+    // }
     
     // Close modals on outside click
     document.addEventListener('click', function(e) {
