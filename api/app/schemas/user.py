@@ -24,6 +24,17 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[Role] = None
+    status: Optional[Status] = None
+    password: Optional[str] = None
+    
+    class Config:
+        use_enum_values = True
+        
 class UserOut(BaseModel):
     id: int
     username: str

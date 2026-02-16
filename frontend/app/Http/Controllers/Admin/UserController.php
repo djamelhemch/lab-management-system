@@ -159,47 +159,66 @@ public function store(Request $request)
         }
     }
 
-    public function update(Request $request, $id)
-    {
+    public function update(Request $request, $id) {
         $validated = $request->validate([
+            'username' => 'required|string|max:100',
             'full_name' => 'required|string|max:255',
             'email' => 'required|email',
             'role' => 'required|in:admin,biologist,technician,secretary,intern',
-            'status' => 'required|in:active,inactive',
-            'phone' => 'nullable|string|max:20',
-            'specialty' => 'nullable|string|max:255',
             'password' => 'nullable|confirmed|min:6',
         ]);
-
+        
+        // Prepare data for API - only send fields that should be updated
+        $apiData = [
+            'username' => $validated['username'],
+            'full_name' => $validated['full_name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+            // Status defaults to 'active' if not in form
+            'status' => $request->input('status', 'active'),
+        ];
+        
+        // Only include password if provided
+        if ($request->filled('password')) {
+            $apiData['password'] = $validated['password'];
+        }
+        
         try {
-            $response = $this->api->put("/users/{$id}", $validated);
-
+            $response = $this->api->put("/users/{$id}", $apiData);
+            
             if ($response->successful()) {
                 return redirect()->route('admin.users.index')
                     ->with('success', 'User updated successfully.');
             }
-
-            return back()->withErrors(['error' => 'Update failed'])->withInput();
+            
+            return back()->withErrors(['error' => 'Update failed: ' . $response->body()])
+                ->withInput();
         } catch (\Exception $e) {
             Log::error('Error updating user: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Server error'])->withInput();
+            return back()->withErrors(['error' => 'Server error: ' . $e->getMessage()])
+                ->withInput();
         }
     }
 
-    public function destroy(User $user)
+
+    public function destroy($id)  // Use $id instead of User $user
     {
         try {
-            $response = $this->api->delete("/users/{$user->id}");
+            // Call API to delete user
+            $response = $this->api->delete("/users/{$id}");
 
             if ($response->successful()) {
-                $user->delete(); // Optional: remove from Laravel too
-                return back()->with('success', 'User deleted.');
+                return redirect()->route('admin.users.index')
+                    ->with('success', 'User deleted successfully.');
             }
 
-            return back()->withErrors(['error' => 'Failed to delete user.']);
+            // Handle API error response
+            $errorMessage = $response->json()['detail'] ?? 'Failed to delete user.';
+            return back()->withErrors(['error' => $errorMessage]);
+
         } catch (\Exception $e) {
             Log::error('Error deleting user: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Server error.']);
+            return back()->withErrors(['error' => 'Server error occurred while deleting user.']);
         }
     }
 }

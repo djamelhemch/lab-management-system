@@ -9,7 +9,7 @@ from app.models.user import User
 from app.models.user_session import UserSession  # Ensure this path is correct
 from app.schemas.profile import ProfileCreate  # Add this import
 from app.crud import profile as crud_profile  # Add this import
-from app.schemas.user import UserCreate, UserOut
+from app.schemas.user import UserCreate, UserOut, UserUpdate  # Add UserUpdate import
 from fastapi import APIRouter
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -245,12 +245,19 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 
 @router.put("/users/{user_id}")
 @log_route("update_user")
-def update_user(user_id: int, user_data: UserCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user), request: Request = None):
+def update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     for field, value in user_data.dict(exclude_unset=True).items():
+        if field == "password":
+            value = hash_password(value)  # IMPORTANT
         setattr(db_user, field, value)
 
     db.commit()
