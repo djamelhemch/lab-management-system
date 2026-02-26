@@ -53,3 +53,21 @@ ALTER TABLE analysis_catalog
 ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1
 AFTER price;
 ALTER TABLE analysis_catalog MODIFY is_active BOOLEAN NOT NULL DEFAULT TRUE	
+--ticcket counter
+CREATE TABLE ticket_counters (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    date DATE UNIQUE NOT NULL,
+    reception_next INT DEFAULT 1,
+    blood_draw_next INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO ticket_counters (date, reception_next, blood_draw_next) 
+VALUES (CURDATE(), 1, 1) 
+ON DUPLICATE KEY UPDATE 
+    updated_at = CURRENT_TIMESTAMP;
+    
+ALTER TABLE queues 
+ADD COLUMN ticket_number INT NOT NULL DEFAULT 1 AFTER position,
+ADD INDEX idx_ticket_number (ticket_number);
