@@ -295,51 +295,31 @@ class AnalysisController extends Controller
         }
     }
 
-    public function show($id)
-{
-    $response = $this->api->get("analyses/{$id}");
+    public function show($id)  
+    {
+        $response = $this->api->get("analyses/{$id}");
 
-    if (!$response->successful()) {
-        abort(404, 'Analysis not found');
-    }
+        if (!$response->successful()) {
+            abort(404, 'Analysis not found');
+        }
 
-    $analysis = $response->json();
+        $analysis = $response->json();
 
-    if (!is_array($analysis) || !isset($analysis['id'])) {
-        abort(404, 'Invalid analysis data');
-    }
+        if (!is_array($analysis) || !isset($analysis['id'])) {
+            abort(404, 'Invalid analysis data');
+        }
 
-    // ✅ Set default fallbacks
-    $analysis['device_names'] = $analysis['device_names'] ?? [];
-    $analysis['tube_type'] = $analysis['tube_type'] ?? 'Not specified';
-    
-    // ✅ Ensure sample_types array exists (for backward compatibility)
-    $analysis['sample_types'] = $analysis['sample_types'] ?? [];
-    
-    // ✅ Extract sample_type_ids from sample_types if not present
-    if (!isset($analysis['sample_type_ids']) && !empty($analysis['sample_types'])) {
-        $analysis['sample_type_ids'] = array_column($analysis['sample_types'], 'id');
-    }
-
-    // ✅ Age formatting helper
-    $analysis['formatAge'] = function($days) {
-        if ($days === null) return 'N/A';
-        if ($days === 0) return 'Nouveau-né';
+        // ✅ Set default fallbacks
+        $analysis['device_names'] = $analysis['device_names'] ?? [];
+        $analysis['tube_type'] = $analysis['tube_type'] ?? null;
+        $analysis['sample_types'] = $analysis['sample_types'] ?? [];
         
-        $years = floor($days / 365);
-        $months = floor(($days % 365) / 30);
-        $daysRemain = $days % 30;
-        
-        $parts = [];
-        if ($years > 0) $parts[] = $years . ($years == 1 ? ' an' : ' ans');
-        if ($months > 0) $parts[] = $months . ' mois';
-        if ($daysRemain > 0 || empty($parts)) $parts[] = $daysRemain . ($daysRemain == 1 ? ' jour' : ' jours');
-        
-        return implode(' ', $parts);
-    };
+        if (!isset($analysis['sample_type_ids']) && !empty($analysis['sample_types'])) {
+            $analysis['sample_type_ids'] = array_column($analysis['sample_types'], 'id');
+        }
 
-    return view('analyses.show', compact('analysis'));
-}
+        return view('analyses.show', compact('analysis'));
+    }
 
     public function edit($id)  
 {  

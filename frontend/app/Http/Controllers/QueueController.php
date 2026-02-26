@@ -47,10 +47,20 @@ class QueueController extends Controller
                 $patientOptions[$patient['id']] = $name ?: "Patient #{$patient['id']}";
             }
 
+            // ✅ Fetch ticket counters with error handling
+            $countersResponse = Http::timeout($this->timeout)
+                ->get("{$this->apiUrl}/queues/counters");
+            $counters = $countersResponse->successful() 
+                ? $countersResponse->json() 
+                : ['reception_next' => 1, 'blood_draw_next' => 1];
+            $statusResponse = Http::timeout($this->timeout)->get("{$this->apiUrl}/queues/status");
+            $status = $statusResponse->successful() ? $statusResponse->json() : null;
             return view('queues.index', [
                 'receptionQueue' => $queues['reception'] ?? [],
                 'bloodDrawQueue' => $queues['blood_draw'] ?? [],
-                'patients' => $patientOptions
+                'patients' => $patientOptions,
+                'counters' => $counters , // ✅ Pass counters
+                'status' => $status 
             ]);
 
         } catch (\Exception $e) {
@@ -59,7 +69,8 @@ class QueueController extends Controller
             return view('queues.index', [
                 'receptionQueue' => [],
                 'bloodDrawQueue' => [],
-                'patients' => []
+                'patients' => [],
+                'counters' => ['reception_next' => 1, 'blood_draw_next' => 1]  // ✅ Fallback
             ])->withErrors('Unable to load queue data. Please try again.');
         }
     }
@@ -127,6 +138,7 @@ class QueueController extends Controller
                         'id' => $data['id'] ?? null,
                         'patient_id' => $data['patient_id'] ?? null,
                         'patient_name' => $data['patient_name'] ?? 'Patient',
+                        'ticket_number' => $data['ticket_number'] ?? null, 
                         'position' => $data['position'] ?? 1,
                         'queue_type' => $data['queue_type'] ?? 'blood_draw'
                     ]);
