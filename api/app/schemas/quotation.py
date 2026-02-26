@@ -1,13 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field, Field, model_validator
 from typing import List, Optional
 from datetime import datetime
 import enum
 from .quotation_item import QuotationItem, QuotationItemCreate
 from app.schemas.payment import PaymentCreate, PaymentSchema, NestedPaymentCreate
-from pydantic import BaseModel, computed_field, Field
-from typing import List, Optional
-from datetime import datetime
-import enum
 from app.schemas.analysis import NormalRangeResponse
 
 class AnalysisBase(BaseModel):
@@ -84,6 +80,12 @@ class QuotationCreate(BaseModel):
     discount_applied: Optional[float] = 0.0
     net_total: float
     outstanding: float
+    @model_validator(mode='after')
+    def validate_items(self):
+        if not all(item.analysis_id for item in self.analysis_items):
+            raise ValueError("All analysis_items must have valid analysis_id")
+        return self
+
     class Config:
         allow_population_by_field_name = True
 

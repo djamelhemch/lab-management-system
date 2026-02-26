@@ -1,17 +1,74 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_,select
 from datetime import datetime, timedelta, timezone
 from app.database import get_db
 from app.models.queue import Queue, QueueLog, QueueType, QueueStatus
 from app.models.patient import Patient
 from app.models.quotation import Quotation
 from app.schemas.queue import QueueCreate, QueueOut, QueuesResponse, QueueStats, QueueStatusResponse
-from typing import List, Optional
+from typing import List, Optional, AsyncGenerator
 import statistics
 import json
-
+import asyncio
+from datetime import date  
+from app.models.ticket_counter import TicketCounter  # create this model
 router = APIRouter(prefix="/queues", tags=["queues"])
+
+def get_queue_stats(queue_type: str, db: Session) -> dict:
+    """Shared stats logic for /status and /status/stream"""
+    waiting = (
+        db.query(func.count(Queue.id))
+        .filter(Queue.queue_type == queue_type, Queue.status == "waiting")
+        .scalar()
+    )
+
+    called = (
+        db.query(func.count(Queue.id))
+        .filter(Queue.queue_type == queue_type, Queue.status == "called")
+        .scalar()
+    )
+
+    in_progress = (
+        db.query(func.count(Queue.id))
+        .filter(Queue.queue_type == queue_type, Queue.status == "in_progress")
+        .scalar()
+    )
+
+    urgent = (
+        db.query(func.count(Queue.id))
+        .filter(
+            Queue.queue_type == queue_type,
+            Queue.status.in_(["waiting", "called"]),
+            Queue.priority > 0,
+        )
+        .scalar()
+    )
+
+    avg_service = get_avg_service_time(db, queue_type)
+    avg_wait_min = avg_service // 60
+    estimated_total = (waiting * avg_service) // 60
+
+    # ✅ current ticket: lowest ticket_number among waiting/called
+    current_ticket = (
+        db.query(func.min(Queue.ticket_number))
+        .filter(
+            Queue.queue_type == queue_type,
+            Queue.status.in_(["waiting", "called"]),
+        )
+        .scalar()
+    )
+
+    return {
+        "total_waiting": waiting,
+        "total_called": called,
+        "total_in_progress": in_progress,
+        "urgent_count": urgent,
+        "avg_wait_minutes": avg_wait_min,
+        "estimated_total_wait": estimated_total,
+        "current_ticket": current_ticket,  # ✅ this goes to SSE/JS
+    }
 
 def utc_now():
     """Get current UTC timestamp"""
@@ -119,12 +176,11 @@ def get_all_queues(db: Session = Depends(get_db)):
 def add_to_queue(data: QueueCreate, db: Session = Depends(get_db)):
     """Add patient to queue"""
     
-    # Check if patient exists
+    # Validation unchanged...
     patient = db.query(Patient).filter(Patient.id == data.patient_id).first()
     if not patient:
         raise HTTPException(404, "Patient not found")
     
-    # Check if already in queue
     existing = db.query(Queue).filter(
         Queue.patient_id == data.patient_id,
         Queue.queue_type == data.queue_type,
@@ -134,7 +190,32 @@ def add_to_queue(data: QueueCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(400, f"Patient already in {data.queue_type} queue")
     
-    # Get next position
+    # ✅ Daily ticket using utc_now()
+    today = utc_now().date()  # ✅ Uses your timezone-safe function!
+    
+    counter = db.execute(
+        select(TicketCounter)
+        .where(TicketCounter.date == today)
+        .with_for_update()
+    ).scalar_one_or_none()
+    
+    if not counter:
+        counter = TicketCounter(date=today)
+        db.add(counter)
+        db.flush()
+    
+    # Assign ticket
+    if data.queue_type == 'reception':
+        ticket_number = counter.reception_next
+        counter.reception_next += 1
+    else:
+        ticket_number = counter.blood_draw_next
+        counter.blood_draw_next += 1
+    
+    # Save counter
+    db.commit()
+    
+    # Relative position
     max_pos = db.query(func.max(Queue.position)).filter(
         Queue.queue_type == data.queue_type,
         Queue.status == 'waiting'
@@ -146,6 +227,7 @@ def add_to_queue(data: QueueCreate, db: Session = Depends(get_db)):
         quotation_id=data.quotation_id,
         queue_type=data.queue_type,
         position=max_pos + 1,
+        ticket_number=ticket_number,  # ✅ Global daily!
         priority=data.priority,
         status='waiting',
         notes=data.notes
@@ -154,20 +236,15 @@ def add_to_queue(data: QueueCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(queue_item)
     
-    # Log action
+    # Rest unchanged (log, reorder, enrich...)
     log_action(db, queue_item.id, data.patient_id, data.queue_type, 'added', 
                new_status='waiting', position=queue_item.position)
-    
-    # Reorder by priority
     reorder_queue(db, data.queue_type)
     db.refresh(queue_item)
-    
-    # Enrich response
     avg_time = get_avg_service_time(db, data.queue_type)
     enrich_queue_item(db, queue_item, avg_time)
     
     return QueueOut.from_orm(queue_item)
-
 @router.post("/move-next", response_model=QueueOut)
 def move_to_blood_draw(db: Session = Depends(get_db)):
     """Move next reception patient to blood draw"""
@@ -211,9 +288,11 @@ def move_to_blood_draw(db: Session = Depends(get_db)):
     if not next_patient:
         raise HTTPException(404, "No patients in reception queue")
     
+    # ✅ COPY ticket_number from reception!
     patient_id = next_patient.patient_id
     quotation_id = next_patient.quotation_id
     priority = next_patient.priority
+    ticket_number = next_patient.ticket_number  # ✅ Reuse same ticket!
     
     # Log reception completion
     now = utc_now()
@@ -232,12 +311,13 @@ def move_to_blood_draw(db: Session = Depends(get_db)):
     db.delete(next_patient)
     db.commit()
     
-    # Create in blood_draw
+    # Create in blood_draw WITH ticket_number
     new_item = Queue(
         patient_id=patient_id,
         quotation_id=quotation_id,
         queue_type='blood_draw',
         position=1,
+        ticket_number=ticket_number,  # ✅ Same ticket moves!
         priority=priority,
         status='called',
         called_at=now
@@ -308,41 +388,62 @@ def remove_from_queue(queue_id: int, reason: str = Query("manual_removal"),
 @router.get("/status", response_model=QueueStatusResponse)
 def get_queue_status(db: Session = Depends(get_db)):
     """Get queue statistics"""
-    
-    def get_stats(queue_type: str) -> QueueStats:
-        waiting = db.query(func.count(Queue.id)).filter(
-            Queue.queue_type == queue_type, Queue.status == 'waiting'
-        ).scalar()
-        
-        called = db.query(func.count(Queue.id)).filter(
-            Queue.queue_type == queue_type, Queue.status == 'called'
-        ).scalar()
-        
-        in_progress = db.query(func.count(Queue.id)).filter(
-            Queue.queue_type == queue_type, Queue.status == 'in_progress'
-        ).scalar()
-        
-        urgent = db.query(func.count(Queue.id)).filter(
-            Queue.queue_type == queue_type,
-            Queue.status.in_(['waiting', 'called']),
-            Queue.priority > 0
-        ).scalar()
-        
-        avg_service = get_avg_service_time(db, queue_type)
-        avg_wait_min = avg_service // 60
-        estimated_total = (waiting * avg_service) // 60
-        
-        return QueueStats(
-            total_waiting=waiting,
-            total_called=called,
-            total_in_progress=in_progress,
-            urgent_count=urgent,
-            avg_wait_minutes=avg_wait_min,
-            estimated_total_wait=estimated_total
-        )
-    
     return QueueStatusResponse(
-        reception=get_stats('reception'),
-        blood_draw=get_stats('blood_draw'),
+        reception=QueueStats(**get_queue_stats('reception', db)),  # ✅ Reuse
+        blood_draw=QueueStats(**get_queue_stats('blood_draw', db)),  # ✅ Reuse
         last_updated=utc_now()
     )
+
+@router.get("/status/stream")
+async def stream_queue_status(request: Request):
+    async def event_generator() -> AsyncGenerator[str, None]:
+        while True:
+            # ✅ NEW DB SESSION EVERY ITERATION
+            db = next(get_db())  # Fresh session
+            
+            try:
+                reception_ticket = db.query(func.min(Queue.ticket_number)).filter(
+                    Queue.queue_type == 'reception', 
+                    Queue.status.in_(['waiting', 'called'])
+                ).scalar()
+                
+                blood_draw_ticket = db.query(func.min(Queue.ticket_number)).filter(
+                    Queue.queue_type == 'blood_draw', 
+                    Queue.status.in_(['waiting', 'called', 'in_progress'])
+                ).scalar()
+                
+                data = {
+                    "reception": {"current_ticket": reception_ticket},
+                    "blood_draw": {"current_ticket": blood_draw_ticket},
+                    "timestamp": utc_now().isoformat()
+                }
+                
+                yield f"data: {json.dumps(data)}\n\n"
+                db.close()  # Explicit close
+                
+            except Exception as e:
+                print(f"SSE Error: {e}")
+                if 'db' in locals():
+                    db.close()
+            
+            await asyncio.sleep(2)  # Slower polling
+    
+    return StreamingResponse(
+        event_generator(), 
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+        }
+    )
+@router.get("/counters")
+def get_ticket_counters(db: Session = Depends(get_db)):
+    """Get current ticket counter values"""
+    today = utc_now().date()
+    counter = db.query(TicketCounter).filter(TicketCounter.date == today).first()
+    
+    return {
+        "reception_next": counter.reception_next if counter else 1,
+        "blood_draw_next": counter.blood_draw_next if counter else 1
+    }

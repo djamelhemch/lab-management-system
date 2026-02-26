@@ -34,7 +34,6 @@ class UserUpdate(BaseModel):
     
     class Config:
         use_enum_values = True
-        
 class UserOut(BaseModel):
     id: int
     username: str

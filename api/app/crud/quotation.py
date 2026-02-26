@@ -37,6 +37,9 @@ def create_quotation(db: Session, quotation_in: QuotationCreate):
         outstanding=Decimal(str(quotation_in.outstanding)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         analysis_items=items_data
     )
+    for item in quotation_in.analysis_items:
+        if not Analysis.get_by_id(db, item.analysis_id):
+            raise HTTPException(400, f"Invalid analysis_id: {item.analysis_id}")
     db.add(quotation)
     db.commit()
     db.refresh(quotation)

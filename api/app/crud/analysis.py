@@ -14,6 +14,7 @@ from app.models.analysis import (
 from app.schemas.analysis import (
     AnalysisCreate,
     AnalysisUpdate,
+    AnalysisResponse,
     NormalRangeCreate,
     NormalRangeUpdate,
     
@@ -157,19 +158,7 @@ class AnalysisCRUD:
         if not analysis:
             return None
         
-        # ✅ Serialize sample types (many-to-many)
-        sample_type_ids = [st.id for st in analysis.sample_types]
-        sample_types = [
-            {
-                "id": st.id,
-                "name": st.name,
-                "description": getattr(st, 'description', None),
-                "created_at": st.created_at
-            } 
-            for st in analysis.sample_types
-        ]
-        
-        # Device serialization
+        # Handle device_id serialization before Pydantic
         device_ids = []
         device_names = []
         if analysis.device_id:
@@ -178,16 +167,15 @@ class AnalysisCRUD:
             device_ids = [d.id for d in devices]
             device_names = [d.name for d in devices]
         
-        return {
-            **analysis.__dict__,
-            "sample_type_ids": sample_type_ids,
-            "sample_types": sample_types,
-            "device_ids": device_ids,
-            "device_names": device_names,
-            "category_analyse": analysis.category_analyse.__dict__ if analysis.category_analyse else None,
-            "unit": analysis.unit.__dict__ if analysis.unit else None,
-            "normal_ranges": [nr.__dict__ for nr in analysis.normal_ranges]
-        }
+        # ✅ Let Pydantic handle the rest
+        response = AnalysisResponse.from_orm(analysis)
+        response_dict = response.dict()
+        
+        # ✅ Add computed fields that aren't in the ORM model
+        response_dict['device_ids'] = device_ids
+        response_dict['device_names'] = device_names
+        
+        return response_dict
 
     def get_by_code(self, db: Session, code: str) -> Optional[AnalysisCatalog]:
         return (

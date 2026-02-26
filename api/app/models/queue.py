@@ -31,6 +31,7 @@ class Queue(Base):
     called_at = Column(TIMESTAMP, nullable=True)
     started_at = Column(TIMESTAMP, nullable=True)
     completed_at = Column(TIMESTAMP, nullable=True)
+    ticket_number = Column(Integer, nullable=False, index=True)   
 
 class QueueLog(Base):
     __tablename__ = "queue_logs"

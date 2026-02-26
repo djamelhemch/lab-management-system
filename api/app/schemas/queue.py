@@ -55,7 +55,7 @@ class QueueOut(BaseModel):
     completed_at: Optional[datetime] = None
     estimated_wait_minutes: Optional[int] = None
     patient_name: Optional[str] = None
-    
+    ticket_number: int  
     class Config:
         from_attributes = True
 
@@ -70,7 +70,7 @@ class QueueStats(BaseModel):
     urgent_count: int
     avg_wait_minutes: float
     estimated_total_wait: int
-
+    current_ticket: Optional[int] = None  
 class QueueStatusResponse(BaseModel):
     reception: QueueStats
     blood_draw: QueueStats
