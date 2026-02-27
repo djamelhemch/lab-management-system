@@ -18,7 +18,8 @@ origins = [
     "http://127.0.0.1:8080",  
     "*", # only for development  
     "https://abdelatiflab.hemchracing.com",
-    "https://app.hemchracing.com"
+    "https://app.hemchracing.com",
+    "https://api.hemchracing.com"
 ]  
 
 app.add_middleware(  

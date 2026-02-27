@@ -85,7 +85,7 @@
     </div>
 </div>
 <script>
-    const fastApiBase = "{{ env('FASTAPI_URL', 'http://localhost:8000') }}/queues";
+    const fastApiBase = "https://lab-api.hemchracing.com/queues";
     const openBtn = document.getElementById('openFullscreenBtn');
     const closeBtn = document.getElementById('closeFullscreenBtn');
     const overlay = document.getElementById('fullscreenOverlay');
