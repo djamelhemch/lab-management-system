@@ -416,11 +416,19 @@
                         </div>
                     </div>
 
-                    {{-- Agreement Section --}}
+                   {{-- Agreement Section --}}
                     <div class="bg-white rounded-xl shadow-md border border-gray-200">
-                        <div class="p-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800">Discount Agreement</h2>
-                            <p class="text-sm text-gray-500">Apply discounts if applicable</p>
+                        <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-800">Discount Agreement</h2>
+                                <p class="text-sm text-gray-500">Apply discounts if applicable</p>
+                            </div>
+                            {{-- ✅ New Agreement Button --}}
+                            <button type="button" 
+                                    onclick="showNewAgreementModal()" 
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                + New Agreement
+                            </button>
                         </div>
                         <div class="p-6">
                             <select name="agreement_id" id="agreement_id"
@@ -435,8 +443,7 @@
                             </select>
                         </div>
                     </div>
-                </div>
-
+ </div>
                 {{-- Sidebar - Payment & Summary --}}
                 <div class="xl:col-span-1 space-y-6 xl:sticky xl:top-6 self-start">
                     {{-- Financial Summary --}}
@@ -621,7 +628,38 @@
     </div>
     
     <!-- End Doctor Modal -->
-{{-- Toast Notification Container --}}
+{{-- ✅ New Agreement Modal --}}
+<div id="newAgreementModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-xl font-bold text-gray-900">New Discount Agreement</h3>
+        </div>
+        <form id="newAgreementForm" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select name="discount_type" id="discount_type" class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (DZD)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Value</label>
+                <input type="number" name="discount_value" id="discount_value" 
+                       min="0" step="0.01" 
+                       class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    Create & Apply
+                </button>
+                <button type="button" onclick="hideNewAgreementModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+    {{-- Toast Notification Container --}}
 <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-3"></div>
 
 {{-- Spinner Overlay (hidden by default) --}}
@@ -996,7 +1034,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-
+{{-- QUOTATION FORM SCRIPT --}}
 {{-- QUOTATION FORM SCRIPT --}}
 <script>
 function quotationForm() {
@@ -1004,11 +1042,33 @@ function quotationForm() {
         showNewPatientForm: false,
         showPatientModal: false,
         searchQuery: '',
-
         searchPatients() {
             // Optional: implement AJAX search logic
         }
     }
+}
+
+// ✅ Agreement Modal Functions
+function showNewAgreementModal() {
+    document.getElementById('newAgreementModal').classList.remove('hidden');
+    document.getElementById('discount_value').focus();
+}
+
+function hideNewAgreementModal() {
+    document.getElementById('newAgreementModal').classList.add('hidden');
+    document.getElementById('newAgreementForm').reset();
+}
+
+// ✅ Toast helper
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1027,7 +1087,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const changeRow = document.getElementById('change-row');
     const changeDisplay = document.getElementById('change-display');
     const outstandingDisplay = document.getElementById('outstanding-display');
-    const agreementSelect = document.querySelector('select[name="agreement_id"]');
+    const agreementSelect = document.getElementById('agreement_id');
 
     let subtotal = 0;
     let discount = 0;
@@ -1038,72 +1098,119 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Calculate subtotal, discount, and total
-function calculateTotal() {
-    subtotal = 0;
-    document.querySelectorAll('.analysis-price').forEach(input => {
-        subtotal += parseFloat(input.value) || 0;
-    });
+    function calculateTotal() {
+        subtotal = 0;
+        document.querySelectorAll('.analysis-price').forEach(input => {
+            subtotal += parseFloat(input.value) || 0;
+        });
 
-    // Discount
-    const agreementId = agreementSelect.value;
-    discount = 0;
-    if (agreementId) {
-        const agreement = agreements.find(a => a.id == agreementId);
-        if (agreement) {
-            if (agreement.discount_type === 'percentage') {
-                discount = subtotal * (agreement.discount_value / 100);
-            } else if (agreement.discount_type === 'fixed') {
-                discount = agreement.discount_value;
+        // Discount from agreement
+        const agreementId = agreementSelect.value;
+        discount = 0;
+        if (agreementId) {
+            const agreement = agreements.find(a => a.id == agreementId);
+            if (agreement) {
+                if (agreement.discount_type === 'percentage') {
+                    discount = subtotal * (agreement.discount_value / 100);
+                } else if (agreement.discount_type === 'fixed') {
+                    discount = agreement.discount_value;
+                }
+                discountRow.style.display = 'flex';
+                discountDisplay.textContent = `-DZD ${formatCurrency(discount)}`;
+            } else {
+                discountRow.style.display = 'none';
             }
-            discountRow.style.display = 'flex';
-            discountDisplay.textContent = `-DZD ${formatCurrency(discount)}`;
         } else {
             discountRow.style.display = 'none';
         }
-    } else {
-        discountRow.style.display = 'none';
+
+        total = Math.max(subtotal - discount, 0);
+        subtotalDisplay.textContent = `DZD ${formatCurrency(subtotal)}`;
+        totalDisplay.textContent = `DZD ${formatCurrency(total)}`;
+
+        updatePaymentSummary();
     }
-
-    total = Math.max(subtotal - discount, 0);
-    subtotalDisplay.textContent = `DZD ${formatCurrency(subtotal)}`;
-    totalDisplay.textContent = `DZD ${formatCurrency(total)}`;
-
-    // ✅ Recalculate payment-related values
-    updatePaymentSummary();
-}
 
     // Update payment summary dynamically
-function updatePaymentSummary() {
-    const payment = parseFloat(paymentAmountEl.value) || 0;
-    const method = paymentMethodEl.value;
+    function updatePaymentSummary() {
+        const payment = parseFloat(paymentAmountEl.value) || 0;
+        const method = paymentMethodEl.value;
 
-    // Net total to pay
-    document.getElementById('payment-amount-hidden').value = total;
-    receivedDisplay.textContent = `DZD ${formatCurrency(payment)}`;
+        document.getElementById('payment-amount-hidden').value = total;
+        receivedDisplay.textContent = `DZD ${formatCurrency(payment)}`;
 
-    // Change calculation (only for cash)
-    let change = 0;
-    if (method === 'cash') {
-        change = Math.max(payment - total, 0);
-        changeRow.style.display = 'flex';
-        changeDisplay.textContent = `DZD ${formatCurrency(change)}`;
-    } else {
-        changeRow.style.display = 'none';
+        let change = 0;
+        if (method === 'cash') {
+            change = Math.max(payment - total, 0);
+            changeRow.style.display = 'flex';
+            changeDisplay.textContent = `DZD ${formatCurrency(change)}`;
+        } else {
+            changeRow.style.display = 'none';
+        }
+        document.getElementById('payment-change-hidden').value = change;
+
+        const outstanding = Math.max(total - payment, 0);
+        outstandingDisplay.textContent = `DZD ${formatCurrency(outstanding)}`;
+
+        let outstandingHidden = document.getElementById('payment-outstanding-hidden');
+        if (outstandingHidden) {
+            outstandingHidden.value = outstanding;
+        }
     }
-    document.getElementById('payment-change-hidden').value = change;
 
-    // ✅ Outstanding balance
-    const outstanding = Math.max(total - payment, 0);
-    outstandingDisplay.textContent = `DZD ${formatCurrency(outstanding)}`;
+    // ✅ Create Agreement AJAX + Update Dropdown
+    document.getElementById('newAgreementForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Creating...';
+        submitBtn.disabled = true;
+        
+        try {
+            const response = await fetch('{{ route("agreements.quick") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+            
+            const newAgreement = await response.json();
+            
+            // Add to global agreements array for calculateTotal()
+            agreements.push(newAgreement);
+            
+            // Add to dropdown
+            const option = new Option(
+                `${newAgreement.discount_type === 'percentage' ? 'Percentage' : 'Fixed'} - ${newAgreement.discount_value}${newAgreement.discount_type === 'percentage' ? '%' : ' DZD'}`,
+                newAgreement.id
+            );
+            agreementSelect.appendChild(option);
+            
+            // Auto-select + recalculate
+            agreementSelect.value = newAgreement.id;
+            calculateTotal();
+            
+            hideNewAgreementModal();
+            showToast('✅ Agreement created and applied!');
+            
+        } catch (error) {
+            alert('Error creating agreement: ' + error.message);
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
 
-    // Optional: hidden input if you need it in backend
-    let outstandingHidden = document.getElementById('payment-outstanding-hidden');
-    if (outstandingHidden) {
-        outstandingHidden.value = outstanding;
-    }
-}
-
-    // Event listeners for payment inputs
+    // Event listeners
     paymentAmountEl.addEventListener('input', updatePaymentSummary);
     paymentMethodEl.addEventListener('change', updatePaymentSummary);
     agreementSelect.addEventListener('change', calculateTotal);
@@ -1173,6 +1280,7 @@ function updatePaymentSummary() {
     addAnalysisRow();
 });
 </script>
+
 {{-- JavaScript function for quick patient selection --}}
 <script>
 function quickSelectPatient(patientId) {

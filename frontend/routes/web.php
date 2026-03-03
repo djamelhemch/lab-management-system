@@ -99,7 +99,7 @@ Route::middleware(['auth.api'])->group(function () {
     Route::get('/api/queues/status', [QueueController::class, 'getQueueStatus'])->name('queues.status');
     // Agreements
     Route::resource('agreements', AgreementController::class);
-
+    Route::post('/agreements/quick', [AgreementController::class, 'storeQuick'])->name('agreements.quick');
     // Lab results
     Route::prefix('lab-results')->group(function () {
         Route::get('/', [LabResultController::class, 'index'])->name('lab-results.index');
